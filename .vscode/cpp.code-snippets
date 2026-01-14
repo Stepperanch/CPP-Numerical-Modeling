@@ -1,0 +1,312 @@
+{
+    "Main Function": {
+        "prefix": "main",
+        "body": [
+            "int main() {",
+            "    $0",
+            "    return 0;",
+            "}"
+        ],
+        "description": "Main function template"
+    },
+    "For Loop": {
+        "prefix": "fori",
+        "body": [
+            "for (int ${1:i} = 0; ${1:i} < ${2:n}; ++${1:i}) {",
+            "    $0",
+            "}"
+        ],
+        "description": "For loop with index"
+    },
+    "For Loop with Size": {
+        "prefix": "fors",
+        "body": [
+            "for (size_t ${1:i} = 0; ${1:i} < ${2:vec}.size(); ++${1:i}) {",
+            "    $0",
+            "}"
+        ],
+        "description": "For loop over vector size"
+    },
+    "Range-based For Loop": {
+        "prefix": "forr",
+        "body": [
+            "for (${1:auto}& ${2:item} : ${3:container}) {",
+            "    $0",
+            "}"
+        ],
+        "description": "Range-based for loop"
+    },
+    "While Loop": {
+        "prefix": "while",
+        "body": [
+            "while (${1:condition}) {",
+            "    $0",
+            "}"
+        ],
+        "description": "While loop"
+    },
+    "Vector Declaration": {
+        "prefix": "vec",
+        "body": [
+            "std::vector<${1:int}> ${2:vec};"
+        ],
+        "description": "Vector declaration"
+    },
+    "Vector with Initialization": {
+        "prefix": "veci",
+        "body": [
+            "std::vector<${1:int}> ${2:vec} = {$0};"
+        ],
+        "description": "Vector with initializer list"
+    },
+    "Vector with Size": {
+        "prefix": "vecs",
+        "body": [
+            "std::vector<${1:double}> ${2:vec}(${3:size});"
+        ],
+        "description": "Vector with size"
+    },
+    "Class Definition": {
+        "prefix": "class",
+        "body": [
+            "class ${1:ClassName} {",
+            "private:",
+            "    $2",
+            "    ",
+            "public:",
+            "    ${1:ClassName}();",
+            "    ~${1:ClassName}();",
+            "    ",
+            "    $0",
+            "};"
+        ],
+        "description": "Basic class definition"
+    },
+    "Struct Definition": {
+        "prefix": "struct",
+        "body": [
+            "struct ${1:StructName} {",
+            "    ${2:double x, y, z};",
+            "    $0",
+            "};"
+        ],
+        "description": "Struct definition"
+    },
+    "Function Definition": {
+        "prefix": "func",
+        "body": [
+            "${1:void} ${2:functionName}(${3:}) {",
+            "    $0",
+            "}"
+        ],
+        "description": "Function definition"
+    },
+    "If Statement": {
+        "prefix": "if",
+        "body": [
+            "if (${1:condition}) {",
+            "    $0",
+            "}"
+        ],
+        "description": "If statement"
+    },
+    "If-Else Statement": {
+        "prefix": "ife",
+        "body": [
+            "if (${1:condition}) {",
+            "    $2",
+            "} else {",
+            "    $0",
+            "}"
+        ],
+        "description": "If-else statement"
+    },
+    "Try-Catch": {
+        "prefix": "try",
+        "body": [
+            "try {",
+            "    $1",
+            "} catch (const ${2:std::exception}& ${3:e}) {",
+            "    std::cerr << \"Error: \" << ${3:e}.what() << std::endl;",
+            "    $0",
+            "}"
+        ],
+        "description": "Try-catch block"
+    },
+    "Print to Console": {
+        "prefix": "cout",
+        "body": [
+            "std::cout << ${1:\"text\"} << std::endl;$0"
+        ],
+        "description": "Print to console"
+    },
+    "Read from Console": {
+        "prefix": "cin",
+        "body": [
+            "std::cin >> ${1:variable};$0"
+        ],
+        "description": "Read from console"
+    },
+    "File Output": {
+        "prefix": "fout",
+        "body": [
+            "std::ofstream ${1:outFile}(\"${2:filename.txt}\");",
+            "if (${1:outFile}.is_open()) {",
+            "    ${1:outFile} << ${3:data} << std::endl;",
+            "    ${1:outFile}.close();",
+            "}$0"
+        ],
+        "description": "Write to file"
+    },
+    "File Input": {
+        "prefix": "fin",
+        "body": [
+            "std::ifstream ${1:inFile}(\"${2:filename.txt}\");",
+            "if (${1:inFile}.is_open()) {",
+            "    std::string ${3:line};",
+            "    while (std::getline(${1:inFile}, ${3:line})) {",
+            "        $0",
+            "    }",
+            "    ${1:inFile}.close();",
+            "}"
+        ],
+        "description": "Read from file"
+    },
+    "Lambda Function": {
+        "prefix": "lambda",
+        "body": [
+            "auto ${1:name} = [${2:}](${3:}) {",
+            "    $0",
+            "};"
+        ],
+        "description": "Lambda function"
+    },
+    "RK4 Integration Step": {
+        "prefix": "rk4",
+        "body": [
+            "// Runge-Kutta 4th order step",
+            "double k1 = ${1:f}(${2:t}, ${3:y});",
+            "double k2 = ${1:f}(${2:t} + ${4:dt}/2, ${3:y} + ${4:dt}*k1/2);",
+            "double k3 = ${1:f}(${2:t} + ${4:dt}/2, ${3:y} + ${4:dt}*k2/2);",
+            "double k4 = ${1:f}(${2:t} + ${4:dt}, ${3:y} + ${4:dt}*k3);",
+            "${3:y}_next = ${3:y} + (${4:dt}/6) * (k1 + 2*k2 + 2*k3 + k4);$0"
+        ],
+        "description": "Runge-Kutta 4th order integration step"
+    },
+    "Euler Integration Step": {
+        "prefix": "euler",
+        "body": [
+            "// Euler method step",
+            "${1:y}_next = ${1:y} + ${2:dt} * ${3:f}(${4:t}, ${1:y});$0"
+        ],
+        "description": "Euler method integration step"
+    },
+    "Numerical Derivative": {
+        "prefix": "deriv",
+        "body": [
+            "// Central difference derivative",
+            "double derivative = (${1:f}(${2:x} + ${3:h}) - ${1:f}(${2:x} - ${3:h})) / (2 * ${3:h});$0"
+        ],
+        "description": "Numerical derivative (central difference)"
+    },
+    "Trapezoidal Integration": {
+        "prefix": "trapz",
+        "body": [
+            "// Trapezoidal integration",
+            "double sum = 0.5 * (${1:f}(${2:a}) + ${1:f}(${3:b}));",
+            "for (int i = 1; i < ${4:n}; ++i) {",
+            "    sum += ${1:f}(${2:a} + i * ${5:h});",
+            "}",
+            "double integral = sum * ${5:h};$0"
+        ],
+        "description": "Trapezoidal rule for integration"
+    },
+    "Vector3D Struct": {
+        "prefix": "vec3d",
+        "body": [
+            "struct Vector3D {",
+            "    double x, y, z;",
+            "    ",
+            "    Vector3D operator+(const Vector3D& v) const {",
+            "        return {x + v.x, y + v.y, z + v.z};",
+            "    }",
+            "    ",
+            "    Vector3D operator*(double s) const {",
+            "        return {x * s, y * s, z * s};",
+            "    }",
+            "    ",
+            "    double magnitude() const {",
+            "        return std::sqrt(x*x + y*y + z*z);",
+            "    }",
+            "};$0"
+        ],
+        "description": "3D vector struct with basic operations"
+    },
+    "Particle Struct": {
+        "prefix": "particle",
+        "body": [
+            "struct Particle {",
+            "    double mass;",
+            "    Vector3D position;",
+            "    Vector3D velocity;",
+            "    Vector3D force;",
+            "};$0"
+        ],
+        "description": "Physics particle structure"
+    },
+    "Timer Class": {
+        "prefix": "timer",
+        "body": [
+            "auto ${1:start} = std::chrono::high_resolution_clock::now();",
+            "$0",
+            "auto ${2:end} = std::chrono::high_resolution_clock::now();",
+            "auto ${3:duration} = std::chrono::duration_cast<std::chrono::milliseconds>(${2:end} - ${1:start});",
+            "std::cout << \"Time: \" << ${3:duration}.count() << \" ms\" << std::endl;"
+        ],
+        "description": "Simple timer for benchmarking"
+    },
+    "Doxygen Function Comment": {
+        "prefix": "doxy",
+        "body": [
+            "/**",
+            " * @brief ${1:Brief description}",
+            " * ",
+            " * ${2:Detailed description}",
+            " * ",
+            " * @param ${3:param} ${4:Parameter description}",
+            " * @return ${5:Return value description}",
+            " * ",
+            " * @note ${6:Additional notes}",
+            " * ",
+            " * Example:",
+            " * @code",
+            " * ${7:// Example usage}",
+            " * @endcode",
+            " */"
+        ],
+        "description": "Doxygen function documentation"
+    },
+    "Include Guard": {
+        "prefix": "guard",
+        "body": [
+            "#ifndef ${1:HEADER_NAME}_H",
+            "#define ${1:HEADER_NAME}_H",
+            "",
+            "$0",
+            "",
+            "#endif  // ${1:HEADER_NAME}_H"
+        ],
+        "description": "Include guard for header file"
+    },
+    "Namespace": {
+        "prefix": "namespace",
+        "body": [
+            "namespace ${1:name} {",
+            "",
+            "$0",
+            "",
+            "}  // namespace ${1:name}"
+        ],
+        "description": "Namespace definition"
+    }
+}

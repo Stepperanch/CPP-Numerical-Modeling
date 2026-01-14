@@ -1,0 +1,100 @@
+# Git ignore file for C++ workspace
+
+# Compiled binaries
+bin/
+*.o
+*.out
+*.exe
+*.app
+*.so
+*.dylib
+*.dll
+
+# Object files
+obj/
+*.obj
+
+# Compiled Static libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Profiling
+gmon.out
+*.prof
+perf.data*
+
+# VS Code settings (keep some, ignore others)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Thumbnails
+Thumbs.db
+
+# Temporary files
+*~
+*.swp
+*.swo
+*.tmp
+*.temp
+*.bak
+*.log
+
+# Build directories
+build/
+Build/
+CMakeFiles/
+cmake-build-*/
+
+# CMake
+CMakeCache.txt
+cmake_install.cmake
+Makefile.user
+
+# Doxygen output
+docs/doxygen/html/
+docs/doxygen/latex/
+*.tag
+
+# Test results
+*.gcda
+*.gcno
+*.gcov
+coverage/
+
+# IDE files
+.idea/
+*.cbp
+*.workspace
+*.depend
+*.layout
+
+# Clang tools
+compile_commands.json
+.clang_complete
+.clangd/
+.cache/
+
+# Address Sanitizer
+*.asan
+
+# Dependencies (if using package managers)
+.conan/
+vcpkg_installed/

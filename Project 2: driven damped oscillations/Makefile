@@ -15,7 +15,7 @@ RELEASE_FLAGS = -O3 -DNDEBUG
 # Directories
 SRC_DIR = src
 INCLUDE_DIR = include
-BIN_DIR = ./bin  # Ensure bin is inside the project directory
+BIN_DIR = bin
 OBJ_DIR = obj
 
 # Source files (add your .cpp files here)
@@ -23,8 +23,8 @@ SOURCES = main.cpp src/oscillator.cpp src/processing.cpp
 # For multi-file projects, uncomment and modify:
 # SOURCES = main.cpp src/vector3d.cpp src/particle.cpp
 
-# Object files
-OBJECTS = $(SOURCES:.cpp=.o)
+# Object files (place in OBJ_DIR)
+OBJECTS = $(SOURCES:%.cpp=$(OBJ_DIR)/%.o)
 
 # Executable name
 TARGET = $(BIN_DIR)/main
@@ -38,8 +38,9 @@ $(TARGET): $(OBJECTS)
 	$(CXX) -o $@ $^ $(CXXFLAGS)
 	@echo "Build complete: $(TARGET)"
 
-# Compile source files
-%.o: %.cpp
+# Compile source files into OBJ_DIR
+$(OBJ_DIR)/%.o: %.cpp
+	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Debug build
@@ -57,12 +58,15 @@ run: $(TARGET)
 # Clean build artifacts
 clean:
 	rm -f $(OBJECTS)
-	rm -f $(TARGET)
+	rm -rf $(OBJ_DIR)
+	rm -rf $(BIN_DIR)
 	@echo "Clean complete"
 
-# Remove all generated files
+# Remove all generated files, including directories
 distclean: clean
 	rm -rf $(OBJ_DIR)
+	rm -rf $(BIN_DIR)
+	@echo "Distclean complete"
 
 # Phony targets
 .PHONY: all debug release run clean distclean

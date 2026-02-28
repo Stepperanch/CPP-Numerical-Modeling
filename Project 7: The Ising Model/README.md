@@ -2,6 +2,7 @@
 
 **Author:** Nels Buhrley
 **Language:** C++17 with OpenMP · Python 3 (visualization)
+**HPC:** Run on the BYU Supercomputer (128 CPUs via SLURM)
 **Build:** `make release` — see [Build & Run](#build--run)
 
 ---
@@ -233,6 +234,43 @@ slope = (n·ΣlogM·logT - ΣlogM·ΣlogT) / (n·ΣlogT² - (ΣlogT)²)
 beta_exponents[j] = slope;
 ```
 The extracted $\beta$ is saved alongside $T_c$ for each field row.
+
+---
+
+## Results
+
+### Magnetization Surface
+
+<p align="center">
+  <img src="output/magnetization_3d_surface.png" alt="3D magnetization surface M(T,h)" width="70%"/>
+</p>
+
+*3D surface plot of the average magnetization $\langle m \rangle(T, h)$. The sharp cliff at $T_c \approx 4.51\,J/k_B$ (at $h = 0$) marks the ferromagnetic phase transition — the system transitions from ordered (magnetized) to disordered (paramagnetic) as temperature rises.*
+
+<p align="center">
+  <img src="output/magnetization_3d_surface_angle1.png" alt="Surface rotation 1" width="48%"/>
+  <img src="output/magnetization_3d_surface_angle2.png" alt="Surface rotation 2" width="48%"/>
+</p>
+
+*Alternative viewing angles of the magnetization surface, showing the symmetry-breaking structure: for $h > 0$ the system prefers $+m$, for $h < 0$ it prefers $-m$, and the transition sharpens as $h \to 0$.*
+
+### Magnetization Contour Map
+
+<p align="center">
+  <img src="output/magnetization_contour.png" alt="2D contour map of magnetization" width="60%"/>
+</p>
+
+*Contour plot of $\langle m \rangle$ in the $(T, h)$ plane. The critical temperature is visible as the boundary between the ordered (blue/red) and disordered (white) phases.*
+
+### Magnetization vs. Temperature
+
+<p align="center">
+  <img src="output/magnetization_vs_temperature_h%3D0.1.png" alt="M(T) at h=0.1" width="32%"/>
+  <img src="output/magnetization_vs_temperature_h%3D1.png" alt="M(T) at h=1" width="32%"/>
+  <img src="output/magnetization_vs_temperature_h%3D10.png" alt="M(T) at h=10" width="32%"/>
+</p>
+
+*Magnetization as a function of temperature at three field strengths. At weak field ($h = 0.1$), the transition is sharp. Increasing $h$ smooths the transition and shifts the effective crossover temperature — at strong field ($h = 10$), magnetization persists well above $T_c$.*
 
 ---
 

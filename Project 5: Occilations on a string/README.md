@@ -224,6 +224,35 @@ L, c, kappa, r, dt = data["parameters"]
 
 ---
 
+## Results
+
+### Initial String Displacement
+
+<p align="center">
+  <img src="initial_state.png" alt="Initial string displacement — superimposed Gaussian pulses" width="70%"/>
+</p>
+
+*Initial displacement profile $u(x, 0)$ showing three superimposed Gaussian pulses at different positions, widths, and amplitudes. This is the starting condition before time evolution.*
+
+### Mean Power Spectrum
+
+<p align="center">
+  <img src="mean_power_spectrum.png" alt="Mean power spectrum of string oscillations" width="70%"/>
+</p>
+
+*Spatially averaged power spectrum $\langle |\hat{u}(f)|^2 \rangle_x$ revealing the excited normal-mode frequencies. Peaks at $f_n = nc/2L$ confirm the standing-wave structure predicted by the wave equation.*
+
+### String Propagation
+
+<p align="center">
+  <img src="output/string.png" alt="String oscillation snapshot" width="48%"/>
+  <img src="output/string_t0.png" alt="String at t=0" width="48%"/>
+</p>
+
+*Left: snapshot of the string displacement during time evolution. Right: initial state reference. The interplay of reflection, superposition, and damping shapes the evolving waveform.*
+
+---
+
 ## Build & Run
 
 ### Prerequisites

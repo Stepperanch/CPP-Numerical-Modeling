@@ -2,6 +2,7 @@
 
 **Author:** Nels Buhrley
 **Language:** C++17 with OpenMP · Python 3 (visualization)
+**HPC:** Run on the BYU Supercomputer
 **Build:** `make release` — see [Build & Run](#build--run)
 
 ---
@@ -198,6 +199,25 @@ positions = data["points"]     # shape: (steps, N, 3)
 rms       = data["rRMS"]       # shape: (steps,)
 cube, r0  = data["metadata"]   # cube side (m), step length (m)
 ```
+
+---
+
+## Results
+
+### Mean Squared Displacement
+
+<p align="center">
+  <img src="output/fixed_Mean_Squared_Distance_plot.png" alt="MSD plot — fixed step size" width="60%"/>
+</p>
+
+*Squared RMS displacement $r_{\text{RMS}}^2$ vs. step number for fixed-step random walks. The linear trend confirms Einstein's diffusion law $\langle r^2 \rangle = 6Dt$ in the free-diffusion regime before particles approach the reflective boundaries.*
+
+<p align="center">
+  <img src="output/volumetric_dist_Mean_Squared_Distance_plot.png" alt="MSD — volumetric step distribution" width="48%"/>
+  <img src="output/radial_dist_Mean_Squared_Distance_plot.png" alt="MSD — radial step distribution" width="48%"/>
+</p>
+
+*Comparison of different step-length distributions: volumetric (left) and radial (right). All produce the expected linear MSD growth, with differences in the effective diffusion coefficient $D$ arising from the mean squared step length.*
 
 ---
 

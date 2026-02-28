@@ -57,17 +57,18 @@ The projects follow a deliberate arc of increasing computational sophistication:
 ## Selected Results
 
 <p align="center">
-  <img src="Project%207%3A%20The%20Ising%20Model/output/magnetization_3d_surface.png" alt="Ising Model — 3D magnetization surface" width="48%"/>
+  <img src="Project%207%3A%20The%20Ising%20Model/output/Long output/magnetization_3d_surface_angle3.png" alt="Ising Model — 3D magnetization surface" width="48%"/>
   <img src="Project%207%3A%20The%20Ising%20Model/output/magnetization_contour.png" alt="Ising Model — contour map" width="48%"/>
 </p>
-<p align="center"><em>Project 7: Magnetization surface and contour map of the 3D Ising model, revealing the ferromagnetic phase transition at $T_c \approx 4.51\,J/k_B$.</em></p>
+<p>Project 7: Magnetization surface and contour map of the 3D Ising model, revealing the ferromagnetic phase transition at $T_c \approx 4.51\,J/k_B$.</p>
 
 <p align="center">
   <img src="Project%203%3A%20Celestial%20Dynamics/Output/celestial_analysis_5_3d.png" alt="Celestial Dynamics — 3D orbits" width="48%"/>
   <img src="Project%205%3A%20Occilations%20on%20a%20string/mean_power_spectrum.png" alt="String oscillations — power spectrum" width="48%"/>
 </p>
-<p align="center"><em>Left: N-body orbital dynamics of the Solar System. Right: Mean power spectrum of transverse string oscillations showing normal-mode peaks.</em></p>
-
+<p>Left: N-body orbital dynamics of the Solar System. <br> Right: Mean power spectrum of transverse string oscillations showing normal-mode peaks.
+</p>
+  
 <p align="center">
   <img src="Project%204%3A%20Overrelaxation/output/potential_3D_center_slice.png" alt="Electrostatic potential slice" width="48%"/>
   <img src="Project%206%3A%20Diffusion/output/fixed_Mean_Squared_Distance_plot.png" alt="Diffusion MSD" width="48%"/>

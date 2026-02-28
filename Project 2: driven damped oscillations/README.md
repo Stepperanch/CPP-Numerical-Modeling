@@ -174,13 +174,13 @@ The plotting script auto-detects output files in `Output/` and generates six-pan
 ## Example Parameter Sets
 
 ### Periodic Regime
-- $q/m = 0.5$, $g/L = 9.8$, $F_D/m = 0.5$, $\omega_D = 0.667$ rad/s
+- $q/m = 0.5\\ g/L = 9.8 \\ F_D/m = 0.5 \\ \omega_D = 0.667$ rad/s
 
 ### Chaotic Regime (Period Doubling)
-- $q/m = 0.5$, $g/L = 9.8$, $F_D/m = 1.2$, $\omega_D = 0.667$ rad/s
+- $q/m = 0.5\\ g/L = 9.8\\ F_D/m = 1.2\\ \omega_D = 0.667$ rad/s
 
 ### Deep Chaos
-- $q/m = 0.5$, $g/L = 9.8$, $F_D/m = 1.5$, $\omega_D = 0.667$ rad/s
+- $q/m = 0.5\\ g/L = 9.8\\ F_D/m = 1.5\\ \omega_D = 0.667$ rad/s
 
 ---
 

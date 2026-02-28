@@ -98,16 +98,11 @@ where $\nabla^2_h$ is the discrete Laplacian. The simulation converges when $R <
 ## Results
 
 <p align="center">
-  <img src="output/potential_3D_center_slice.png" alt="Electrostatic potential — center slice" width="48%"/>
-  <img src="output/potential_3D_center_slice100.png" alt="Electrostatic potential — slice at z=100" width="48%"/>
+  <img src="output/potential_3D_center_slice.png" alt="Electrostatic potential — center slice" width="84%"/>
+
 </p>
 
-<p align="center">
-  <img src="output/potential_3D_center_slice400.png" alt="Electrostatic potential — slice at z=400" width="48%"/>
-  <img src="output/potential_3D_center_slice600.png" alt="Electrostatic potential — slice at z=600" width="48%"/>
-</p>
-
-*2D slices through the 3D electrostatic potential field at different $z$-planes. The conducting disk (center) and dipole point charges (offset) create the characteristic equipotential structure. Color maps the potential magnitude.*
+*2D slice through the 3D electrostatic potential field at different $z$-planes. The conducting disk (center) and dipole point charges (offset) create the characteristic equipotential structure. Color maps the potential magnitude.*
 
 ---
 

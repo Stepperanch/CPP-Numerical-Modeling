@@ -28,7 +28,7 @@ Equivalently, $n$ is idoneal if every integer that can be represented in the for
 
 Euler discovered 65 idoneal numbers. The complete known list is:
 
-$$1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 16, 18, 21, 22, 24, 25, 28, 30, 33, 37, 40, 42, 45, 48, 57, 58, 60, 70, 72, 78, 85, 88, 93, 102, 105, 112, 120, 130, 133, 165, 168, 177, 190, 210, 232, 240, 253, 273, 280, 312, 330, 345, 357, 385, 408, 462, 520, 760, 840, 1320, 1365, 1848$$
+$$1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 16, 18, 21, 22, 24, 25, 28, \\30, 33, 37, 40, 42, 45, 48, 57, 58, 60, 70, 72, 78, 85, 88, 93, 102, 105, \\112, 120, 130, 133, 165, 168, 177, 190, 210, 232, 240, 253, 273, 280, \\312, 330, 345, 357, 385, 408, 462, 520, 760, 840, 1320, 1365, 1848$$
 
 It is conjectured (and proved under the Generalized Riemann Hypothesis) that these are the **only** idoneal numbers — there are no others. Unconditionally, at most one additional idoneal number could exist, and if it does, it would be extremely large.
 
@@ -66,7 +66,7 @@ for (long long a = 1; a * a * 3 + a * 2 <= limit; a++) {
 
 **Why `schedule(dynamic)`:** The inner loop bounds depend on $a$ — small values of $a$ produce far more $(b, c)$ pairs than large values. Dynamic scheduling distributes these unequal chunks across threads as they become available, maintaining high utilization. Static scheduling would leave threads idle once they exhaust their smaller chunks.
 
-**Thread safety:** The sieve array experiences only **monotonic writes** (`false` → `true`). Multiple threads may write to the same index simultaneously, but since all writes set the same value (`true`), no data race affects correctness. This is a classic "write-only sieve" pattern that requires no synchronization.
+**Thread safety:** The sieve array experiences only **monotonic writes** (`false` → `true`). Multiple threads may write to the same index simultaneously, but since all writes set the same value (`true`), no data race affects correctness. This is a "write-only sieve" pattern that requires no synchronization.
 
 ### Performance
 

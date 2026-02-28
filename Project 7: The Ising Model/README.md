@@ -2,6 +2,7 @@
 
 **Author:** Nels Buhrley
 **Language:** C++17 with OpenMP · Python 3 (visualization)
+**HPC:** Run on the BYU Supercomputer (128 CPUs via SLURM)
 **Build:** `make release` — see [Build & Run](#build--run)
 
 ---
@@ -10,7 +11,7 @@
 
 This project implements a full **Monte Carlo simulation of the three-dimensional Ising model** on a cubic lattice. The simulation sweeps across a two-dimensional parameter space of temperature $T$ and external magnetic field $h$, producing a surface of average magnetization $\langle m \rangle(T, h)$ that captures the system's full thermodynamic behavior — including the **ferromagnetic phase transition** and the **onset of spontaneous symmetry breaking**.
 
-The implementation emphasizes both physical correctness and computational performance, combining the **Metropolis–Hastings algorithm**, a **checkerboard (black-red) lattice decomposition**, **precomputed energy lookup tables**, and **OpenMP multi-threaded parallelism** to efficiently map the enormous parameter space.
+The implementation combines the **Metropolis–Hastings algorithm**, a **checkerboard (black-red) lattice decomposition**, **precomputed energy lookup tables**, and **OpenMP multi-threaded parallelism** to efficiently map the parameter space.
 
 ---
 
@@ -18,184 +19,273 @@ The implementation emphasizes both physical correctness and computational perfor
 
 ### The Ising Hamiltonian
 
-The Ising model is one of the foundational models of statistical mechanics. It places discrete binary spins $\sigma_i \in \{-1, +1\}$ on the sites of a lattice — here a three-dimensional cubic lattice of $N \times N \times N$ sites — and defines their total energy through the Hamiltonian:
+The Ising model places discrete binary spins $\sigma_i \in \{-1, +1\}$ on the sites of a 3D cubic lattice of $N \times N \times N$ sites, with total energy:
 
 $$\mathcal{H} = -J \sum_{\langle i,j \rangle} \sigma_i \sigma_j - h \sum_i \sigma_i$$
 
-where:
-- $J > 0$ is the **exchange coupling constant** (ferromagnetic in this implementation, set to 1 in natural units)
-- the first sum $\langle i, j \rangle$ runs over all **nearest-neighbor pairs** (each 3D site has exactly 6 neighbors)
-- $h$ is the **external magnetic field**, which biases the system toward spin alignment
-- the second sum runs over all $N^3$ spins
+where $J > 0$ is the ferromagnetic exchange coupling (set to 1 in natural units), the first sum runs over nearest-neighbor pairs (6 per site in 3D), and $h$ is the external magnetic field.
 
-### Phase Transitions and Critical Behavior
+### Phase Transition
 
-At low temperature and zero field, the system exhibits **spontaneous magnetization**: thermal fluctuations are insufficient to overcome the exchange energy, and the spins align collectively into a ferromagnetic phase. As temperature rises, entropy dominates and the magnetization collapses continuously toward zero at a **critical temperature** $T_c$ — the **Curie point**.
-
-This **second-order phase transition** is characterized by:
-
-- **Diverging correlation length** $\xi \sim |T - T_c|^{-\nu}$, meaning spins become correlated over arbitrarily large distances near $T_c$
-- **Power-law scaling** of the order parameter: $\langle m \rangle \sim (T_c - T)^\beta$ for $T < T_c$
-- **Critical slowing down** of Monte Carlo dynamics near $T_c$, as large correlated domains must reorganize
-
-The 3D Ising model (unlike the exactly solvable 2D case due to Onsager) has a **Curie temperature** of approximately:
+At low temperature and zero field the system exhibits **spontaneous magnetization**. As temperature rises, entropy dominates and magnetization collapses continuously to zero at the **Curie point** $T_c$. The 3D Ising model has:
 
 $$T_c \approx 4.51 \; J/k_B$$
 
-in units where $J = k_B = 1$. Observing this transition emerge naturally from the simulation — with no closed-form solution guiding it — is one of the most compelling demonstrations of the power of Monte Carlo methods.
+in units where $J = k_B = 1$.
 
 ### Observable: Average Magnetization
 
-The primary observable computed at each $(T, h)$ point is the **average magnetization per spin**:
+The primary output at each $(T, h)$ point is the **average magnetization per spin**:
 
 $$\langle m \rangle = \frac{1}{N^3} \sum_i \sigma_i$$
 
-Scanning $\langle m \rangle$ across the full $(T, h)$ plane reveals the **equation of state** of the model, including:
-- The ferromagnetic lobes at low $T$ and small $|h|$ where $\langle m \rangle \to \pm 1$
-- The sharp discontinuity in $\langle m \rangle(h)$ at $T < T_c$ as $h$ crosses zero (first-order transition in $h$)
-- The smooth, paramagnetic response at $T > T_c$
-
 ---
 
-## Algorithmic Design
+## Code Structure
 
-### Metropolis–Hastings Algorithm
+All simulation logic lives in two files:
 
-The simulation uses the **Metropolis–Hastings Markov Chain Monte Carlo (MCMC)** method to sample the Boltzmann distribution:
+| File | Role |
+|---|---|
+| `main.cpp` | Sets parameters, constructs `Simulation`, calls `runIsingSimulation()` |
+| `processing.h` | `Material` class (Metropolis engine), `Simulation` class (sweep, analysis, I/O) |
 
-$$P(\{\sigma\}) \propto e^{-\mathcal{H}/k_B T}$$
+### `Material` Class
 
-At each Monte Carlo step, a candidate spin flip $\sigma_i \to -\sigma_i$ is proposed. The energy change from flipping spin $i$ at local field $h$ depends only on the six nearest neighbors:
+Each `Material` instance represents one independent lattice at a fixed $(T, h)$ pair.
 
-$$\Delta E = 2\sigma_i \left(\sum_{j \in \text{nn}(i)} \sigma_j + h\right)$$
-
-The Metropolis acceptance rule then gives:
-
-$$P_{\text{accept}} = \begin{cases} 1 & \text{if } \Delta E \leq 0 \\ e^{-\Delta E / T} & \text{if } \Delta E > 0 \end{cases}$$
-
-This guarantees that the Markov chain satisfies **detailed balance**, so the long-time stationary distribution converges to the true thermal equilibrium of the system.
-
-### Precomputed Energy Lookup Tables
-
-A key optimization targets `flipSpin()`, the innermost function called $O(N^3 \times \text{iterations})$ times. In a 3D model with 6 neighbors, the neighbor sum $S = \sum_{j \in \text{nn}} \sigma_j$ is restricted to the discrete set $\{-6, -4, -2, 0, +2, +4, +6\}$ — only **7 values**. Combined with the 2 possible spin states ($\sigma_i = \pm 1$), only **14 distinct $\Delta E$ values** are ever possible.
-
-Rather than computing $e^{-\Delta E/T}$ inside the inner loop (which involves a costly floating-point exponential operation), both $\Delta E$ and $e^{-\Delta E / T}$ are **precomputed once** into small 2×7 tables at the start of each simulation:
+#### Construction
 
 ```cpp
-float deltaE_table[2][7];   // ΔE for each (spin, neighbor-sum) combination
-float exp_table[2][7];      // exp(-ΔE/T) for each combination
+Material(int n, float temperature, float magnetization, int numIterations, uint32_t seed)
 ```
 
-During the spin update, a neighbor sum is computed, mapped to a table index, and the acceptance probability is read with a simple array lookup — eliminating all redundant floating-point transcendental calls from the critical path. This is a well-known technique from the computational physics literature that yields substantial speedups at no loss of accuracy.
+The physical lattice is $N \times N \times N$ but the internal allocation is $(N+2)^3$ to hold **ghost boundary layers**. The constructor calls three setup methods in order:
 
-### Checkerboard (Black-Red) Decomposition
+1. `establishRNG()` — seeds a per-object `std::mt19937` from `seed`, giving each parallel worker its own independent random stream
+2. `initializeSpinsRandomly()` — fills the inner lattice with random $\pm 1$ values; an overload `initializeSpinsUniformly(int8_t)` sets all spins to a single value instead
+3. `precalculateEnergyTables()` — builds `deltaE_table[2][7]` and `exp_table[2][7]` (see [Precomputed Tables](#precomputed-energy-lookup-tables))
 
-To eliminate **locational biasies** during spin updates while preserving the ability to parallelize within a sweep, this implementation uses a **checkerboard decomposition** — also known as the black-red or odd-even subgraph partition.
-
-The 3D cubic lattice is colored in two alternating sublattices:
-- **Black sites**: all $(x, y, z)$ with $(x + y + z)$ even
-- **Red sites**: all $(x, y, z)$ with $(x + y + z)$ odd
-
-Because every neighbor of a black site is red, and vice versa, all black sites can be updated **simultaneously without conflict**: no two updated spins share a neighbor. The sweep performs a full black pass followed by a full red pass, completing one lattice-wide Monte Carlo step while maintaining the correct update statistics.
-
-In the code, this is implemented by striding the inner $z$-loop by 2, selecting the correct parity based on $(x + y) \% 2$:
-
-```cpp
-// Black pass
-for (z = (x + y) % 2 + 1; z < n - 1; z += 2)  flipSpin(x, y, z);
-// Red pass
-for (z = (x + y + 1) % 2 + 1; z < n - 1; z += 2)  flipSpin(x, y, z);
-```
-
-### Periodic Boundary Conditions via Ghost Layers
-
-To simulate a bulk material without artificial surface effects, the lattice uses **periodic boundary conditions** (PBCs). Rather than wrapping indices on every access — which introduces branch overhead in the inner loop — the lattice is allocated with **size $(N+2)^3$**, adding one layer of **ghost cells** on each face.
-
-Before each sweep, the ghost layers are explicitly refreshed by copying the opposite interior face:
-
-```cpp
-setSpin(x, y, 0,   getSpin(x, y, n-2));  // z-bottom ghost ← z-top interior
-setSpin(x, y, n-1, getSpin(x, y, 1));    // z-top ghost    ← z-bottom interior
-// ... similarly for x and y faces
-```
-
-This keeps the inner loop — which reads from ghost cells — branch-free and cache-friendly, at the cost of a brief $O(N^2)$ boundary refresh per sweep, which is negligible compared to the $O(N^3)$ inner work.
-
-### Memory Layout
-
-Spins are stored as `int8_t` (one signed byte each) in a flat 1D `std::vector<int8_t>` using row-major (C-order) indexing:
+Spins are stored as `int8_t` in a flat 1D `std::vector<int8_t>` using row-major indexing:
 
 $$\text{index}(x, y, z) = x \cdot N^2 + y \cdot N + z$$
 
-This representation is maximally cache-efficient for the sequential inner $z$-loop, ensuring that consecutive spin accesses fall in adjacent memory locations. Using `int8_t` rather than `int` reduces the lattice memory footprint by a factor of 4, keeping a 100×100×100 lattice well within L3 cache.
+Using `int8_t` rather than `int` keeps the $100^3$ lattice $4\times$ smaller and cache-friendly for the sequential $z$-loop. `getSpin()` and `setSpin()` are inlined accessors over this flat array.
 
 ---
 
-## Parallelization Strategy
+#### Precomputed Energy Lookup Tables
 
-The full simulation sweeps a **200 × 200 grid** of $(T, h)$ points — 40,000 independent Material instances — each run for 200 full lattice sweeps. The outer parameter sweep is trivially parallel: each $(T, h)$ pair is a completely independent simulation with no shared mutable state.
+`flipSpin()` is the innermost function, called $O(N^3 \times \text{iterations})$ times. In a 3D model with 6 neighbors, the neighbor sum $S \in \{-6,-4,-2,0,+2,+4,+6\}$ admits only **7 values**. Combined with the 2 spin states, only **14 distinct $\Delta E$ values** ever arise:
 
-### OpenMP Collapse + Dynamic Scheduling
+$$\Delta E = 2\sigma_i(S + h)$$
 
-The outer loops are parallelized with OpenMP:
+`precalculateEnergyTables()` computes both $\Delta E$ and $e^{-\Delta E/T}$ for all 14 combinations once, before any sweep:
 
 ```cpp
-#pragma omp parallel for collapse(2) schedule(dynamic)
-for (size_t i = 0; i < temps.size(); i++) {
-    for (size_t j = 0; j < h_values.size(); j++) {
-        Material material(n, temps[i], h_values[j], iterations, thread_seeds[i]);
-        material.runSimulation();
-        avg_magnetizations[j][i] = material.getAverageMagnetization();
+float deltaE_table[2][7];
+float exp_table[2][7];
+```
+
+The inner loop then performs a plain array dereference instead of calling `exp()`.
+
+---
+
+#### `flipSpin(x, y, z)` — Metropolis Step
+
+For site $(x,y,z)$, the neighbor sum is computed and mapped to a table index:
+
+```cpp
+void flipSpin(int x, int y, int z) {
+    uint8_t neighborstate = (sum of 6 neighbors) / 2 + 3;  // maps [-6,6] → [0,6]
+    uint8_t spinState = (getSpin(x, y, z) + 1) / 2;        // maps {-1,+1} → {0,1}
+    if (deltaE_table[spinState][neighborstate] <= 0 ||
+        distribution(gen) < exp_table[spinState][neighborstate]) {
+        setSpin(x, y, z, -getSpin(x, y, z));
+        currentTotalMagnetization += 2 * getSpin(x, y, z);  // incremental update
     }
 }
 ```
 
-- **`collapse(2)`** flattens the two-dimensional $(T, h)$ loop into a single iteration space of 40,000 tasks, allowing the OpenMP runtime to distribute work evenly across all available cores without manual tiling.
-- **`schedule(dynamic)`** enables adaptive load distribution. Simulations near the critical temperature $T_c$ exhibit **critical slowing down** — Monte Carlo chains mix more slowly, so nearby $(T, h)$ points may take longer. Dynamic scheduling handles this variance automatically by assigning new tasks to idle threads as they finish.
-
-### Thread-Safe Random Number Generation
-
-Each Material object maintains its own **Mersenne Twister** (`std::mt19937`) instance, seeded independently. A single-threaded **master RNG** generates unique, cryptographically determined seeds from `std::random_device` before the parallel region launches:
-
-```cpp
-std::random_device rd;
-std::mt19937 master_gen(rd());
-std::uniform_int_distribution<uint32_t> seed_dist;
-
-for (size_t i = 0; i < temps.size(); i++)
-    thread_seeds[i] = seed_dist(master_gen);
-```
-
-This avoids two common parallelism pitfalls:
-1. **Seed correlation** — naively seeding with `i` or `omp_get_thread_num()` produces correlated random streams, biasing results near the phase boundary
-2. **Data races** — sharing a single RNG across threads without locking corrupts the generator's internal state
-
-Each thread owns its RNG exclusively; no mutexes or atomic operations are needed in the hot loop.
+The Metropolis acceptance rule is satisfied: always flip if $\Delta E \leq 0$, otherwise flip with probability $e^{-\Delta E/T}$. When a flip occurs, `currentTotalMagnetization` is updated by $\pm 2$ rather than recomputed — avoiding an $O(N^3)$ sum every step.
 
 ---
 
-## Sources of Error and Limitations
+#### `iteration()` — One Full Lattice Sweep
+
+Each call performs three stages.
+
+**Stage 1 — Ghost layer refresh** (periodic boundary conditions):
+
+Rather than wrapping indices on every neighbor access, the $(N+2)^3$ lattice carries one ghost cell on each face. Before each sweep all six faces are refreshed by copying the opposite interior face:
+
+```cpp
+// Z faces
+for (x) for (y) {
+    setSpin(x, y, 0,   getSpin(x, y, n-2));   // bottom ghost ← top interior
+    setSpin(x, y, n-1, getSpin(x, y, 1));     // top ghost ← bottom interior
+}
+// Y and X faces updated the same way
+```
+
+This is $O(N^2)$ per sweep, negligible against the $O(N^3)$ spin work, and keeps the inner loop branch-free.
+
+**Stage 2 — Black pass** (sites where $(x+y+z)$ is even):
+
+```cpp
+for (x = 1; x < n-1; x++)
+    for (y = 1; y < n-1; y++)
+        for (z = (x+y)%2 + 1; z < n-1; z += 2)
+            flipSpin(x, y, z);
+```
+
+**Stage 3 — Red pass** (sites where $(x+y+z)$ is odd):
+
+```cpp
+for (x = 1; x < n-1; x++)
+    for (y = 1; y < n-1; y++)
+        for (z = (x+y+1)%2 + 1; z < n-1; z += 2)
+            flipSpin(x, y, z);
+```
+
+The parity offset `(x+y)%2` selects the correct starting $z$ so every visited site satisfies the desired color. Striding by 2 ensures no two sites in the same pass share a neighbor, making all updates within a pass **conflict-free**. A black pass followed by a red pass constitutes one full Monte Carlo sweep.
+
+---
+
+#### `runSimulation()` and `MagneticSusceptibility()`
+
+`runSimulation()` runs in two phases:
+
+**Phase 1 — Burn-in (5 * n sweeps):**
+```cpp
+for (int i = 0; i < 5 * n; i++) iteration();
+```
+These sweeps allow the system to reach thermal equilibrium from its initial state without contributing to any observable. The initial spin state (random or uniform) is forgotten here.
+
+**Phase 2 — Measurement (`numIterations` sweeps):**
+```cpp
+for (int i = 0; i < numIterations; i++) {
+    iteration();
+    float m = (float)currentTotalMagnetization / N;
+    sum_magnetization        += m;
+    sum_magnetization_squared += m * m;
+    sum_abs_magnetization    += std::abs(m);
+}
+averageAbsMagnetization     = sum_abs_magnetization     / numIterations;
+averagemagnetization        = sum_magnetization          / numIterations;
+averageMagnetizationSquared = sum_magnetization_squared  / numIterations;
+```
+
+After each sweep, the instantaneous magnetization per spin $m = M_\text{total}/N^3$ is read from `currentTotalMagnetization` (maintained incrementally by `flipSpin`) — no full-lattice sum is needed. Three accumulators are kept to compute $\langle m \rangle$, $\langle |m| \rangle$, and $\langle m^2 \rangle$.
+
+`MagneticSusceptibility()` is called after the simulation completes and derives $\chi$ from the variance of $|m|$:
+
+$$\chi = \frac{N^3}{T}\left(\langle m^2 \rangle - \langle |m| \rangle^2\right)$$
+
+Using $\langle |m| \rangle$ rather than $\langle m \rangle^2$ avoids cancellation errors in symmetry-broken phases where positive and negative magnetization states are sampled equally, which would drive $\langle m \rangle \to 0$ even deep in the ferromagnetic phase.
+
+---
+
+### `Simulation` Class
+
+The `Simulation` class owns the full parameter sweep, analysis, and output. `main.cpp` constructs one instance and calls `runIsingSimulation()`, which chains three methods:
+
+```
+Simulation::runIsingSimulation()
+    ├── runSimulation()                       — parallel Metropolis sweep
+    ├── findCriticalTemperatureAndCalculateBeta()  — post-process
+    └── saveResults()                         — NPZ + CSV output
+```
+
+#### `Simulation::runSimulation()` — Parallel Sweep
+
+```
+1. Generate a unique seed for every (h, T) pair from a master RNG
+2. #pragma omp parallel for collapse(2) schedule(dynamic)
+      for each (T[i], h[j]):
+          Material material(n, T[i], h[j], iterations, +1, seed[j][i])
+          material.runSimulation()
+          avg_magnetizations[j][i]       = material.averageMagnetization
+          magnetic_susceptibilities[j][i] = material.magneticSusceptibility
+```
+
+Each `Material` is initialized with all spins uniformly $+1$ (via the second constructor overload), which biases the system into the ferromagnetic minimum and reduces equilibration time. Seeds are drawn from a 2D array populated by a single-threaded master RNG before the parallel region, eliminating data races on the generator state.
+
+#### `findCriticalTemperatureAndCalculateBeta()` — Critical Analysis
+
+This runs in a second OpenMP parallel loop over field rows `j`:
+
+**Step 1 — Find $T_c$:**
+The critical temperature for each $h$ value is identified as the temperature where $\chi(T)$ is maximum:
+```cpp
+for (i in 0..numTempSteps)
+    if (magnetic_susceptibilities[j][i] > maxSusceptibility)
+        criticalTempIndex = i;
+critical_temperatures[j] = temperatures[criticalTempIndex];
+```
+This works because $\chi$ diverges (and in a finite system peaks sharply) at $T_c$.
+
+**Step 2 — Fit $\beta$:**
+Near $T_c$ the order parameter scales as $\langle |m| \rangle \sim (T_c - T)^\beta$. Taking logs gives:
+$$\ln \langle |m| \rangle = \beta \ln(T_c - T) + \text{const}$$
+The code selects up to 40 points just below $T_c$ (filtering out points where $|m| < 0.01$ or $T \geq T_c$ to avoid log-of-zero issues) and fits the slope via ordinary least squares in log-log space:
+```cpp
+slope = (n·ΣlogM·logT - ΣlogM·ΣlogT) / (n·ΣlogT² - (ΣlogT)²)
+beta_exponents[j] = slope;
+```
+The extracted $\beta$ is saved alongside $T_c$ for each field row.
+
+---
+
+## Results
+
+### Magnetization Surface
+
+<p align="center">
+  <img src="output/magnetization_3d_surface.png" alt="3D magnetization surface M(T,h)" width="70%"/>
+</p>
+
+*3D surface plot of the average magnetization $\langle m \rangle(T, h)$. The sharp cliff at $T_c \approx 4.51\,J/k_B$ (at $h = 0$) marks the ferromagnetic phase transition — the system transitions from ordered (magnetized) to disordered (paramagnetic) as temperature rises.*
+
+<p align="center">
+  <img src="output/magnetization_3d_surface_angle1.png" alt="Surface rotation 1" width="48%"/>
+  <img src="output/magnetization_3d_surface_angle2.png" alt="Surface rotation 2" width="48%"/>
+</p>
+
+*Alternative viewing angles of the magnetization surface, showing the symmetry-breaking structure: for $h > 0$ the system prefers $+m$, for $h < 0$ it prefers $-m$, and the transition sharpens as $h \to 0$.*
+
+### Magnetization Contour Map
+
+<p align="center">
+  <img src="output/magnetization_contour.png" alt="2D contour map of magnetization" width="60%"/>
+</p>
+
+*Contour plot of $\langle m \rangle$ in the $(T, h)$ plane. The critical temperature is visible as the boundary between the ordered (blue/red) and disordered (white) phases.*
+
+### Magnetization vs. Temperature
+
+<p align="center">
+  <img src="output/magnetization_vs_temperature_h%3D0.1.png" alt="M(T) at h=0.1" width="32%"/>
+  <img src="output/magnetization_vs_temperature_h%3D1.png" alt="M(T) at h=1" width="32%"/>
+  <img src="output/magnetization_vs_temperature_h%3D10.png" alt="M(T) at h=10" width="32%"/>
+</p>
+
+*Magnetization as a function of temperature at three field strengths. At weak field ($h = 0.1$), the transition is sharp. Increasing $h$ smooths the transition and shifts the effective crossover temperature — at strong field ($h = 10$), magnetization persists well above $T_c$.*
+
+---
+
+## Sources of Error
 
 | Source | Nature | Mitigation |
 |---|---|---|
-| **Statistical fluctuations** | Monte Carlo results are stochastic; each run differs slightly | Increase `iterations`; ensemble-average over multiple seeds |
-| **Finite-size effects** | A finite $N$ smears the phase transition; $T_c(N)$ differs from the thermodynamic limit $T_c(\infty)$ | Increase $N$; apply finite-size scaling analysis ($\xi \sim N$ at $T_c$) |
-| **Equilibration error** | Early sweeps retain memory of the initial state (random or uniform) | Discard a thermalization burn-in period before accumulating observables |
-| **Discretization of parameter space** | $T$ and $h$ are sampled on finite grids | Increase `tempSteps` / `numHSteps` in regions of interest |
-| **Model simplification** | The model uses $J = k_B = 1$, nearest-neighbor coupling only, and classical spins | Extend to longer-range or anisotropic couplings for more realistic materials |
+| Statistical fluctuations | MC results are stochastic | Increase `iterations`; ensemble-average over seeds |
+| Finite-size effects | Finite $N$ smears the transition; $T_c(N) \neq T_c(\infty)$ | Increase $N$; apply finite-size scaling |
+| Equilibration error | Early sweeps retain memory of the initial state | 100-sweep burn-in is hardcoded in `runSimulation()`; increase for larger $N$ |
+| Parameter discretization | $T$ and $h$ sampled on finite grids | Increase `tempSteps`/`numHSteps` near $T_c$ |
 
-**Computational complexity** (per $(T, h)$ point):
+**Computational complexity** (per $(T,h)$ point): $\mathcal{O}(N^3 \times \text{iterations})$
 
-$$\mathcal{O}\!\left(N^3 \times \text{iterations}\right)$$
-
-**Total simulation complexity:**
-
-$$\mathcal{O}\!\left(N^3 \times \text{iterations} \times N_T \times N_h\right)$$
-
-For the default parameters ($N = 100$, iterations $= 200$, $N_T = N_h = 200$):
-$$\sim 8 \times 10^{10} \text{ spin-update operations}$$
-
-This is only tractable at the chosen scale because of the combined effect of precomputed lookup tables, checkerboard parallelism within each sweep, and OpenMP multi-core parallelism across the parameter space.
+**Total**: $\mathcal{O}(N^3 \times \text{iterations} \times N_T \times N_h)$ — roughly $8 \times 10^{10}$ spin-update operations at default parameters.
 
 ---
 
@@ -203,25 +293,18 @@ This is only tractable at the chosen scale because of the combined effect of pre
 
 ### Prerequisites
 
-- **C++17** compatible compiler (`g++` or `clang++`)
-- **OpenMP** (via Homebrew: `brew install libomp` on macOS)
-- **zlib** (for `.npz` file output)
-- **Python 3** with `numpy` and `matplotlib` (for visualization)
+- **C++17** compiler (`g++` or `clang++`)
+- **OpenMP** (`brew install libomp` on macOS)
+- **zlib** (for `.npz` output)
+- **Python 3** with `numpy` and `matplotlib`
 
-### Build
+### Build Targets
 
 ```bash
-# Standard optimized build
-make release
-
-# Aggressive optimization (may introduce minor floating-point drift)
-make unsafe
-
-# Debug build (no OpenMP, full warnings)
-make debug
-
-# Profile-guided optimization (two-step)
-make profile-gen && ./bin/main && make profile-use
+make release   # Optimized build (-O3, LTO, vectorization, march=native)
+make unsafe    # Adds -ffast-math (may introduce minor FP drift)
+make debug     # -O0, full warnings, OpenMP disabled
+make profile-gen && ./bin/main && make profile-use  # Profile-guided optimization
 ```
 
 ### Run
@@ -230,13 +313,16 @@ make profile-gen && ./bin/main && make profile-use
 ./bin/main
 ```
 
-Output is saved to `output/ising_results.npz` as three NumPy arrays:
+Output is saved to `output/ising_results.npz` and `output/ising_results.csv`:
 
 | Array | Shape | Description |
 |---|---|---|
-| `avg_magnetizations` | `(N_h, N_T)` | Average magnetization $\langle m \rangle$ at each $(h, T)$ point |
+| `avg_magnetization` | `(N_h, N_T)` | $\langle m \rangle$ at each $(h, T)$ |
+| `magnetic_susceptibility` | `(N_h, N_T)` | $\chi$ at each $(h, T)$ |
 | `temperatures` | `(N_T,)` | Temperature grid |
 | `magnetic_fields` | `(N_h,)` | Magnetic field grid |
+| `critical_temperatures` | `(N_h,)` | $T_c(h)$ — peak susceptibility per field row |
+| `beta_exponents` | `(N_h,)` | Fitted $\beta$ exponent per field row |
 
 ### Visualize
 
@@ -244,9 +330,7 @@ Output is saved to `output/ising_results.npz` as three NumPy arrays:
 python3 plotting.py
 ```
 
-Produces:
-- **`output/magnetization_3d_surface_angle[1-4].png`** — 3D surface plots of $\langle m \rangle(T, h)$ from four azimuthal angles
-- **`output/magnetization_contour.png`** — 2D contour map of the magnetization surface
+Produces 3D surface plots and a 2D contour map in `output/`.
 
 ---
 
@@ -256,41 +340,32 @@ Configured in [main.cpp](main.cpp):
 
 | Parameter | Default | Description |
 |---|---|---|
-| `N` | 100 | Cubic lattice edge length ($N^3$ spins total) |
-| `iterations` | 200 | Monte Carlo sweeps per $(T, h)$ point |
-| `minTemp` / `maxTemp` | 0 – 45 | Temperature range (units: $J/k_B$) |
-| `tempSteps` | 200 | Number of temperature grid points |
+| `N` | 100 | Cubic lattice edge length ($N^3$ spins) |
+| `iterations` | 200 | MC sweeps per $(T, h)$ point |
+| `minTemp` / `maxTemp` | 0 – 45 | Temperature range ($J/k_B$) |
+| `tempSteps` | 200 | Temperature grid points |
 | `hMin` / `hMax` | −15 – +15 | External field range |
-| `numHSteps` | 200 | Number of field grid points |
+| `numHSteps` | 200 | Field grid points |
 
 ---
 
-## Project Structure
-
-```
-Project 7: The Ising Model/
-├── main.cpp          # Entry point: sets simulation parameters and calls runIsingSimulation()
-├── processing.h      # Material class, Metropolis engine, parallelized sweep, NPZ output
-├── Makefile          # Multi-target build: debug, release, unsafe, profile-guided
-├── plotting.py       # Python visualization: 3D surface and 2D contour plots
-└── output/
-    └── ising_results.npz   # Simulation output (NumPy archive)
-```
-
----
-
-## Key Techniques at a Glance
+## Key Techniques
 
 | Technique | Purpose |
 |---|---|
-| Metropolis–Hastings MCMC | Correct Boltzmann sampling of spin configurations |
-| Precomputed $\Delta E$ and $e^{-\Delta E/T}$ tables | Eliminates exponential calls from the inner loop |
+| Metropolis–Hastings MCMC | Correct Boltzmann sampling |
+| Precomputed $\Delta E$ and $e^{-\Delta E/T}$ tables | Eliminates `exp()` from the inner loop |
 | Checkerboard (black-red) decomposition | Race-free simultaneous updates within a sweep |
-| Ghost boundary layers | Branch-free periodic boundary condition enforcement |
-| `int8_t` spin storage + flat 1D array | Cache-efficient memory layout ($4\times$ smaller than `int`) |
-| OpenMP `collapse(2)` + `dynamic` scheduling | Scalable multi-core parallelism across the $(T, h)$ parameter space |
-| Per-thread Mersenne Twister with master-seeded seeds | Statistically independent, uncorrelated random streams |
-| Profile-guided optimization (PGO) | Compiler uses runtime profiling data for branch prediction and inlining |
+| Ghost boundary layers | Branch-free periodic boundary enforcement |
+| `int8_t` + flat 1D array | $4\times$ smaller than `int`; cache-friendly $z$-loop |
+| Incremental magnetization tracking | $O(1)$ magnetization update per flip instead of $O(N^3)$ |
+| 100-sweep burn-in | Discards initial transient before measuring observables |
+| Running accumulators for $\langle m \rangle$, $\langle |m| \rangle$, $\langle m^2 \rangle$ | Enables susceptibility and critical-exponent analysis |
+| Peak susceptibility $\to T_c$ | Locates the critical temperature per field row |
+| Log-log OLS regression $\to \beta$ | Extracts the critical exponent from magnetization scaling below $T_c$ |
+| `collapse(2)` + `dynamic` scheduling | Scalable multi-core parallelism across $(T, h)$ |
+| Per-thread Mersenne Twister | Statistically independent, uncorrelated random streams |
+| Profile-guided optimization (PGO) | Compiler uses runtime data for branch prediction and inlining |
 
 ---
 

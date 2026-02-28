@@ -10,17 +10,17 @@ VIEW_ELEVATION = 25
 VIEW_AZIMUTH = 45
 
 # Set to True to save multiple rotations of the 3D plot
-SAVE_MULTIPLE_ANGLES = False
+SAVE_MULTIPLE_ANGLES = True
 
 # Angles to save if SAVE_MULTIPLE_ANGLES is True
 ROTATION_ANGLES = [(25, 45), (25, 135), (25, 225), (25, 315)]
 
 # Load the npz file
-data = np.load('output/ising_results.npz')
+data = np.load('output/Out 1/ising_results.npz')
 
 temperatures = data['temperatures']
 magnetic_fields = data['magnetic_fields']
-magnetizations = data['avg_magnetizations']
+magnetizations = data['avg_magnetization']
 
 # Reshape magnetization data to 2D
 # Data is saved as (h_values.size, temps.size)
@@ -53,7 +53,7 @@ def save_3d_plot(elev, azim, output_suffix=''):
 
     plt.show()
     # Save the 3D plot
-    filename = f'output/magnetization_3d_surface{output_suffix}.png'
+    filename = f'output/Out 1/magnetization_3d_surface{output_suffix}.png'
     plt.savefig(filename, dpi=600, bbox_inches='tight')
     print(f"3D surface plot saved to {filename} (elev={elev}°, azim={azim}°)")
     plt.close()
@@ -82,7 +82,7 @@ ax2.clabel(contour_lines, inline=True, fontsize=8)
 plt.tight_layout()
 
 # Save the contour plot
-plt.savefig('output/magnetization_contour.png', dpi=300, bbox_inches='tight')
+plt.savefig('output/Out 1/magnetization_contour.png', dpi=300, bbox_inches='tight')
 print("Contour plot saved to output/magnetization_contour.png")
 
 plt.show()

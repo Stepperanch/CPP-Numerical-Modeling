@@ -242,14 +242,14 @@ The extracted $\beta$ is saved alongside $T_c$ for each field row.
 ### Magnetization Surface
 
 <p align="center">
-  <img src="output/magnetization_3d_surface.png" alt="3D magnetization surface M(T,h)" width="70%"/>
+  <img src="output/Out_3/magnetization_3d_surface_angle3.png" alt="3D magnetization surface M(T,h)" width="70%"/>
 </p>
 
 *3D surface plot of the average magnetization $\langle m \rangle(T, h)$. The sharp cliff at $T_c \approx 4.51\,J/k_B$ (at $h = 0$) marks the ferromagnetic phase transition — the system transitions from ordered (magnetized) to disordered (paramagnetic) as temperature rises.*
 
 <p align="center">
-  <img src="output/magnetization_3d_surface_angle1.png" alt="Surface rotation 1" width="48%"/>
-  <img src="output/magnetization_3d_surface_angle2.png" alt="Surface rotation 2" width="48%"/>
+  <img src="output/Out_3/magnetization_3d_surface_angle4.png" alt="Surface rotation 1" width="48%"/>
+  <img src="output/Out_3/magnetization_3d_surface_angle2.png" alt="Surface rotation 2" width="48%"/>
 </p>
 
 *Alternative viewing angles of the magnetization surface, showing the symmetry-breaking structure: for $h > 0$ the system prefers $+m$, for $h < 0$ it prefers $-m$, and the transition sharpens as $h \to 0$.*
@@ -257,17 +257,17 @@ The extracted $\beta$ is saved alongside $T_c$ for each field row.
 ### Magnetization Contour Map
 
 <p align="center">
-  <img src="output/magnetization_contour.png" alt="2D contour map of magnetization" width="60%"/>
+  <img src="output/Out_3/magnetization_contour.png" alt="2D contour map of magnetization" width="60%"/>
 </p>
 
-*Contour plot of $\langle m \rangle$ in the $(T, h)$ plane. The critical temperature is visible as the boundary between the ordered (blue/red) and disordered (white) phases.*
+*Contour plot of $\langle m \rangle$ in the $(T, h)$ plane. The critical temperature is visible as the boundary between the ordered (yellow/purple) and disordered (color gradiant) phases.*
 
 ### Magnetization vs. Temperature
 
 <p align="center">
-  <img src="output/magnetization_vs_temperature_h%3D0.1.png" alt="M(T) at h=0.1" width="32%"/>
-  <img src="output/magnetization_vs_temperature_h%3D1.png" alt="M(T) at h=1" width="32%"/>
-  <img src="output/magnetization_vs_temperature_h%3D10.png" alt="M(T) at h=10" width="32%"/>
+  <img src="output/Magnetization%20Vs.%20Temperture%20at%20destinct%20H%20values/magnetization_vs_temperature_h=0.1.png" alt="M(T) at h=0.1" width="32%"/>
+  <img src="output/Magnetization%20Vs.%20Temperture%20at%20destinct%20H%20values/magnetization_vs_temperature_h=1.png" alt="M(T) at h=1" width="32%"/>
+  <img src="output/Magnetization%20Vs.%20Temperture%20at%20destinct%20H%20values/magnetization_vs_temperature_h=10.png" alt="M(T) at h=10" width="32%"/>
 </p>
 
 *Magnetization as a function of temperature at three field strengths. At weak field ($h = 0.1$), the transition is sharp. Increasing $h$ smooths the transition and shifts the effective crossover temperature — at strong field ($h = 10$), magnetization persists well above $T_c$.*
@@ -366,6 +366,49 @@ Configured in [main.cpp](main.cpp):
 | `collapse(2)` + `dynamic` scheduling | Scalable multi-core parallelism across $(T, h)$ |
 | Per-thread Mersenne Twister | Statistically independent, uncorrelated random streams |
 | Profile-guided optimization (PGO) | Compiler uses runtime data for branch prediction and inlining |
+
+---
+## Project Structure
+
+```
+Project 7: The Ising Model/
+├── main.cpp        # Entry point: configures and launches the simulation
+├── processing.h    # Material + Simulation classes: Metropolis engine, sweep, analysis, I/O
+├── Makefile        # Multi-target build: debug, release, unsafe, profile-guided
+├── plotting.py     # Python visualization: 3D surface plots + contour map
+├── job.sh          # SLURM batch script (BYU Supercomputer — 128 CPUs, 1 hr)
+├── requirements.txt
+├── slurm_out/      # SLURM stderr logs from HPC runs
+│   ├── slurm_10498461.err
+│   ├── slurm_10498501.err
+│   ├── slurm_10537695.err
+│   ├── slurm_10537987.err
+│   └── slurm_10538011.err
+└── output/
+    ├── Out_1/                              # Simulation run 1 (Best Visuals)
+    │   ├── magnetization_3d_surface_angle1–4.png
+    │   ├── magnetization_contour.png
+    │   └── notes.md
+    ├── Out_2/                              # Simulation run 2 (Finest Mesh)
+    │   ├── ising_results.npz
+    │   ├── magnetization_3d_surface_angle1–4.png
+    │   ├── magnetization_contour.png
+    │   └── notes.md
+    ├── Out_3/                              # Simulation run 3 (most recent full output)
+    │   ├── ising_results.npz              # Compressed simulation data (NumPy)
+    │   ├── ising_results.csv              # Magnetization + susceptibility (CSV)
+    │   ├── magnetization_3d_surface_angle1–4.png
+    │   ├── magnetization_contour.png      # 2D contour map M(T,h)
+    │   └── notes.md
+    ├── Magnetization Vs. Temperture at destinct H values/
+    │   ├── magnetization_vs_temperature_h=0.1.png
+    │   ├── magnetization_vs_temperature_h=1.png
+    │   └── magnetization_vs_temperature_h=10.png
+    └── Testing Output/                    # Small test run
+        ├── ising_results.npz
+        ├── magnetization_3d_surface.png
+        └── magnetization_contour.png
+```
 
 ---
 

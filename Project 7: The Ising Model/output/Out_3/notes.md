@@ -1,0 +1,1 @@
+More complicated loops and structured input to find magnetic suceptability and Beta exponent

@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH --job-name=ising_model
-#SBATCH --output=slurm_%j.out       # stdout log (%j = job ID)
-#SBATCH --error=slurm_%j.err        # stderr log
+#SBATCH --output=slurm_out/slurm_%j.out       # stdout log (%j = job ID)
+#SBATCH --error=slurm_out/slurm_%j.err        # stderr log
 #SBATCH --nodes=1                   # single node (OpenMP, not MPI)
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=128          # number of OpenMP threads — adjust to node size
-#SBATCH --mem=8G
-#SBATCH --time=01:00:00             # wall time — increase if needed
+#SBATCH --cpus-per-task=64          # number of OpenMP threads — adjust to node size
+#SBATCH --mem=4G
+#SBATCH --time=00:15:00             # wall time — increase if needed
 ##SBATCH --partition=compute        # uncomment and set your partition name if required
 ##SBATCH --account=your_account     # uncomment and set your allocation if required
 

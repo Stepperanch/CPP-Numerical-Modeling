@@ -2,10 +2,8 @@
 #include <cmath>
 #include <cstdint>
 #include <filesystem>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <random>
 #include <random>
 #include <string>
 #include <vector>
@@ -54,14 +52,26 @@ class Material {
 
    public:
     Material(int n, float temperature, float magnetization, int numIterations, uint32_t seed)
-        : n(n + 2), actual_n(n), N(actual_n * actual_n * actual_n), temperature(temperature), h(magnetization), numIterations(numIterations), seed(seed) {
+        : n(n + 2),
+          actual_n(n),
+          N(actual_n * actual_n * actual_n),
+          temperature(temperature),
+          h(magnetization),
+          numIterations(numIterations),
+          seed(seed) {
         establishRNG();
         initializeSpinsRandomly();
         precalculateEnergyTables();
     }
 
     Material(int n, float temperature, float magnetization, int numIterations, int8_t initialSpinValue, uint32_t seed)
-        : n(n + 2), actual_n(n), N(actual_n * actual_n * actual_n), temperature(temperature), h(magnetization), numIterations(numIterations), seed(seed) {
+        : n(n + 2),
+          actual_n(n),
+          N(actual_n * actual_n * actual_n),
+          temperature(temperature),
+          h(magnetization),
+          numIterations(numIterations),
+          seed(seed) {
         establishRNG();
         initializeSpinsUniformly(initialSpinValue);
         precalculateEnergyTables();
@@ -147,7 +157,7 @@ class Material {
         uint8_t spinState = (getSpin(x, y, z) + 1) / 2;  // Map -1 to 0 and +1 to 1
         // Decide whether to flip the spin
         if (deltaE_table[spinState][neighborstate] <= 0 || (distribution(gen) < exp_table[spinState][neighborstate])) {
-            setSpin(x, y, z, -getSpin(x, y, z));  // Flip the spin
+            setSpin(x, y, z, -getSpin(x, y, z));                // Flip the spin
             currentTotalMagnetization += 2 * getSpin(x, y, z);  // Update total magnetization
         }
     }
@@ -155,8 +165,10 @@ class Material {
     /**
      * @brief Performs one iteration of the Metropolis algorithm across the entire lattice.
      * The method consists of two main parts:
-     * 1. Updating the boundary conditions: The outer layers of the lattice are updated to mirror the inner lattice, ensuring periodic boundary conditions.
-     * 2. Iterating through the inner lattice: The method iterates through the inner lattice (excluding the boundary layers) in a Black and Red pattern and attempts to flip spins based on their coordinates.
+     * 1. Updating the boundary conditions: The outer layers of the lattice are updated to mirror the inner lattice, ensuring periodic boundary
+     * conditions.
+     * 2. Iterating through the inner lattice: The method iterates through the inner lattice (excluding the boundary layers) in a Black and Red
+     * pattern and attempts to flip spins based on their coordinates.
      */
     void iteration() {
         int x, y, z;
@@ -222,7 +234,8 @@ class Material {
     }
 
     void MagneticSusceptibility() {
-        magneticSusceptibility = actual_n * actual_n * actual_n * (averageMagnetizationSquared - averageAbsMagnetization * averageAbsMagnetization) / temperature;
+        magneticSusceptibility =
+            actual_n * actual_n * actual_n * (averageMagnetizationSquared - averageAbsMagnetization * averageAbsMagnetization) / temperature;
     }
 };
 
@@ -236,6 +249,9 @@ class Simulation {
     std::vector<float> critical_temperatures;
     std::vector<int> critical_indices;
     std::vector<float> beta_exponents;
+
+    float averageBetaExponent_h0;  // Average beta exponent at zero magnetic field
+    float averageCriticalTemperature_h0;  // Average critical temperature at zero magnetic field
 
     int n;
     int iterations;
@@ -267,11 +283,11 @@ class Simulation {
         magnetic_fields[0] = hMin;
 
         for (int i = 1; i < numHSteps; i++) {
-            //if (magnetic_fields[i-1] > 0 && magnetic_fields[i] < 0) {
-            //    magnetic_fields[i] = 0.0f;  // Ensure we include zero field
-            //} else {
-            //    magnetic_fields[i] = hMin + i * hStep;
-            //}
+            // if (magnetic_fields[i-1] > 0 && magnetic_fields[i] < 0) {
+            //     magnetic_fields[i] = 0.0f;  // Ensure we include zero field
+            // } else {
+            //     magnetic_fields[i] = hMin + i * hStep;
+            // }
 
             magnetic_fields[i] = hMin + i * hStep;
         }
@@ -376,9 +392,35 @@ class Simulation {
         }
     }
 
+    void FindAverageBetaExponentAndCritTempAtZeroField() {
+        // Find the index of the zero magnetic field
+        int zeroFieldIndex = -1;
+        for (int j = 0; j < numHSteps; j++) {
+            if (magnetic_fields[j] == 0.0f) {
+                zeroFieldIndex = j;
+                break;
+            }
+        }
+
+        if (zeroFieldIndex == -1) {
+            averageBetaExponent_h0 = std::numeric_limits<float>::quiet_NaN();  // No zero field data
+            averageCriticalTemperature_h0 = std::numeric_limits<float>::quiet_NaN();
+            return;
+        }
+
+        for (int i = 0; i < numTempSteps; i++) {
+            averageBetaExponent_h0 += beta_exponents[zeroFieldIndex];
+            averageCriticalTemperature_h0 += critical_temperatures[zeroFieldIndex];
+        }
+
+        averageBetaExponent_h0 /= numTempSteps;
+        averageCriticalTemperature_h0 /= numTempSteps;
+    }
+
     void runIsingSimulation() {
         runSimulation();
         findCriticalTemperatureAndCalculateBeta();
+        FindAverageBetaExponentAndCritTempAtZeroField();
     }
 
     void saveResultsToNPZ(const std::string& filename) {
@@ -386,8 +428,19 @@ class Simulation {
         std::vector<double> avgMagnetizationFlat;
         std::vector<double> magneticSusceptibilityFlat;
 
+        std::vector<float> metadata;
+
         avgMagnetizationFlat.resize(numHSteps * numTempSteps);
         magneticSusceptibilityFlat.resize(numHSteps * numTempSteps);
+
+        metadata.push_back((float)n);
+        metadata.push_back((float)iterations);
+        metadata.push_back(hMin);
+        metadata.push_back(hMax);
+        metadata.push_back((float)numHSteps);
+        metadata.push_back(tempMin);
+        metadata.push_back(tempMax);
+        metadata.push_back((float)numTempSteps);
 
 #pragma omp parallel for collapse(2) schedule(static)
         for (int i = 0; i < numHSteps; i++) {
@@ -397,17 +450,27 @@ class Simulation {
             }
         }
 
-        cnpy::npz_save(filename, "avg_magnetization", avgMagnetizationFlat.data(), std::vector<size_t>{(size_t)numHSteps, (size_t)numTempSteps}, "w");
+        cnpy::npz_save(filename, "metadata", metadata.data(), std::vector<size_t>{metadata.size()}, "w");
+        cnpy::npz_save(filename, "avg_magnetization", avgMagnetizationFlat.data(), std::vector<size_t>{(size_t)numHSteps, (size_t)numTempSteps}, "a");
         cnpy::npz_save(filename, "magnetic_susceptibility", magneticSusceptibilityFlat.data(),
                        std::vector<size_t>{(size_t)numHSteps, (size_t)numTempSteps}, "a");
         cnpy::npz_save(filename, "temperatures", temperatures.data(), std::vector<size_t>{(size_t)numTempSteps}, "a");
         cnpy::npz_save(filename, "magnetic_fields", magnetic_fields.data(), std::vector<size_t>{(size_t)numHSteps}, "a");
         cnpy::npz_save(filename, "critical_temperatures", critical_temperatures.data(), std::vector<size_t>{(size_t)numHSteps}, "a");
         cnpy::npz_save(filename, "beta_exponents", beta_exponents.data(), std::vector<size_t>{(size_t)numHSteps}, "a");
+        cnpy::npz_save(filename, "average_beta_exponent_h0", &averageBetaExponent_h0, std::vector<size_t>{1}, "a");
+        cnpy::npz_save(filename, "average_critical_temperature_h0", &averageCriticalTemperature_h0, std::vector<size_t>{1}, "a");
     }
 
     void saveResultsToCSV(const std::string& filename) {
         std::ofstream file(filename);
+        file << "# This CSV file contains the results of the Ising model simulation.\n";
+        file << "# Each row corresponds to a specific temperature and magnetic field combination.\n";
+        file << "# n: " << n << "\n# iterations: " << iterations << "\n# hMin: " << hMin << "\n# hMax: " << hMax << "\n# numHSteps: " << numHSteps
+             << "\n# tempMin: " << tempMin << "\n# tempMax: " << tempMax << "\n# numTempSteps: " << numTempSteps << "\n";
+
+        file << "# average_beta_exponent_h0: " << averageBetaExponent_h0 << "\n";
+        file << "# average_critical_temperature_h0: " << averageCriticalTemperature_h0 << "\n";
         file << "Temperature,MagneticField,AverageMagnetization,MagneticSusceptibility,BetaExponent\n";
 
         std::vector<std::string> buffers(numTempSteps);
@@ -418,7 +481,8 @@ class Simulation {
             buffer.reserve(numHSteps * 100);
             for (int j = 0; j < numHSteps; j++) {
                 buffer += std::to_string(temperatures[i]) + "," + std::to_string(magnetic_fields[j]) + "," +
-                          std::to_string(avg_magnetizations[j][i]) + "," + std::to_string(magnetic_susceptibilities[j][i]) + "," + std::to_string(beta_exponents[j]) + "\n";
+                          std::to_string(avg_magnetizations[j][i]) + "," + std::to_string(magnetic_susceptibilities[j][i]) + "," +
+                          std::to_string(beta_exponents[j]) + "\n";
             }
         }
 

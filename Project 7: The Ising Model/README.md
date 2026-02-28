@@ -245,14 +245,14 @@ The extracted $\beta$ is saved alongside $T_c$ for each field row.
   <img src="output/Out_1/magnetization_3d_surface_angle3.png" alt="3D magnetization surface M(T,h)" width="70%"/>
 </p>
 
-*3D surface plot of the average magnetization $\langle m \rangle(T, h)$. The sharp cliff at $T_c \approx 4.51\,J/k_B$ (at $h = 0$) marks the ferromagnetic phase transition — the system transitions from ordered (magnetized) to disordered (paramagnetic) as temperature rises.*
+3D surface plot of the average magnetization $\langle m \rangle(T, h)$. The sharp cliff at $T_c \approx 4.51\,J/k_B$ (at $h = 0$) marks the ferromagnetic phase transition — the system transitions from ordered (magnetized) to disordered (paramagnetic) as temperature rises.
 
 <p align="center">
   <img src="output/Out_1/magnetization_3d_surface_angle4.png" alt="Surface rotation 1" width="48%"/>
   <img src="output/Out_1/magnetization_3d_surface_angle2.png" alt="Surface rotation 2" width="48%"/>
 </p>
 
-*Alternative viewing angles of the magnetization surface, showing the symmetry-breaking structure: for $h > 0$ the system prefers $+m$, for $h < 0$ it prefers $-m$, and the transition sharpens as $h \to 0$.*
+Alternative viewing angles of the magnetization surface, showing the symmetry-breaking structure: for $h > 0$ the system prefers $+m$, for $h < 0$ it prefers $-m$, and the transition sharpens as $h \to 0$.
 
 ### Magnetization Contour Map
 
@@ -260,7 +260,7 @@ The extracted $\beta$ is saved alongside $T_c$ for each field row.
   <img src="output/Out_1/magnetization_contour.png" alt="2D contour map of magnetization" width="60%"/>
 </p>
 
-*Contour plot of $\langle m \rangle$ in the $(T, h)$ plane. The critical temperature is visible as the boundary between the ordered (yellow/purple) and disordered (color gradiant) phases.*
+Contour plot of $\langle m \rangle$ in the $(T, h)$ plane. The critical temperature is visible as the boundary between the ordered (yellow/purple) and disordered (color gradiant) phases.
 
 ### Magnetization vs. Temperature
 
@@ -270,7 +270,7 @@ The extracted $\beta$ is saved alongside $T_c$ for each field row.
   <img src="output/Magnetization%20Vs.%20Temperture%20at%20destinct%20H%20values/magnetization_vs_temperature_h=10.png" alt="M(T) at h=10" width="32%"/>
 </p>
 
-*Magnetization as a function of temperature at three field strengths. At weak field ($h = 0.1$), the transition is sharp. Increasing $h$ smooths the transition and shifts the effective crossover temperature — at strong field ($h = 10$), magnetization persists well above $T_c$.*
+Magnetization as a function of temperature at three field strengths. At weak field ($h = 0.1$), the transition is sharp. Increasing $h$ smooths the transition and shifts the effective crossover temperature — at strong field ($h = 10$), magnetization persists well above $T_c$.
 
 ---
 

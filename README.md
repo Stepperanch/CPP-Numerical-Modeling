@@ -29,10 +29,10 @@ This repository is a collection of **nine numerical simulation and computational
 | 1 | [Realistic Projectile Motion](Project%201%3A%20realistic%20projectile%20motion/) | 3D ballistics with drag, spin (Magnus), wind | 4th-order Runge-Kutta | — | — |
 | 2 | [Driven Damped Oscillations](Project%202%3A%20driven%20damped%20oscillations/) | Nonlinear pendulum → periodic & chaotic regimes | RK4 + Euler-Cromer; Poincaré sections | — | — |
 | 3 | [Celestial Dynamics](Project%203%3A%20Celestial%20Dynamics/) | N-body gravitational orbits (full Solar System) | RK4, Euler-Cromer, Störmer-Verlet | — | — |
-| 4 | [Overrelaxation](Project%204%3A%20Overrelaxation/) | 3D Laplace's equation (electrostatics) | Red-Black SOR with optimal $\omega$ | ✓ `collapse(2)` | ✓ |
+| 4 | [Overrelaxation](Project%204%3A%20Overrelaxation/) | 3D Laplace's equation (electrostatics) | Red-Black SOR with optimal $\omega$ | ✓  | ✓ |
 | 5 | [Oscillations on a String](Project%205%3A%20Occilations%20on%20a%20string/) | Damped stiff wave equation + spectral analysis | Finite differences (2nd + 4th order) + KissFFT | ✓ parallel spatial | — |
 | 6 | [Diffusion](Project%206%3A%20Diffusion/) | 3D Brownian random-walk ensemble | Monte Carlo with reflective BCs | ✓ parallel particles | ✓ |
-| 7 | [The Ising Model](Project%207%3A%20The%20Ising%20Model/) | 3D ferromagnetic phase transition | Metropolis MCMC, checkerboard sweep | ✓ `collapse(2)` | ✓ 128 CPUs |
+| 7 | [The Ising Model](Project%207%3A%20The%20Ising%20Model/) | 3D ferromagnetic phase transition | Metropolis MCMC, checkerboard sweep | ✓ multifactor parallel | ✓ 128 CPUs |
 
 ### Progression
 
@@ -57,8 +57,8 @@ The projects follow a deliberate arc of increasing computational sophistication:
 ## Selected Results
 
 <p align="center">
-  <img src="Project%207%3A%20The%20Ising%20Model/output/Long output/magnetization_3d_surface_angle3.png" alt="Ising Model — 3D magnetization surface" width="48%"/>
-  <img src="Project%207%3A%20The%20Ising%20Model/output/magnetization_contour.png" alt="Ising Model — contour map" width="48%"/>
+  <img src="Project%207%3A%20The%20Ising%20Model/output/Out_1/magnetization_3d_surface_angle3.png" alt="Ising Model — 3D magnetization surface" width="48%"/>
+  <img src="Project%207%3A%20The%20Ising%20Model/output/Out_1/magnetization_contour.png" alt="Ising Model — contour map" width="48%"/>
 </p>
 
 Project 7: Magnetization surface and contour map of the 3D Ising model, revealing the ferromagnetic phase transition at $T_c \approx 4.51\,J/k_B$.

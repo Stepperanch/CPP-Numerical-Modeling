@@ -22,6 +22,13 @@
  *   Author: Nels Buhrley
  *   Date: 2026-17-02
  *   Description:
+ * This file contains the implementation of the Material and Simulation classes for simulating the 3D Ising model using the Metropolis algorithm.
+ *  The Material class represents the physical system, including the lattice of spins, temperature, magnetic field, and methods for initializing
+ *  and updating the system. The Simulation class manages the overall simulation process, including running the simulations across a range of
+ *  temperatures and magnetic fields, analyzing the results to find critical temperatures and beta exponents, and saving the results to files.
+ *  The code is designed to be efficient and scalable, utilizing OpenMP for parallelization and precomputing energy tables for faster spin
+ *  updates. The results are stored in numpy-compatible .npy files for easy analysis and visualization.
+ *
  */
 
 class Material {
@@ -148,17 +155,42 @@ class Material {
         distribution = std::uniform_real_distribution<float>(0.0, 1.0);
     }
 
+    /**
+     * @brief Attempts to flip the spin at lattice site (x, y, z) via the Metropolis criterion.
+     *
+     * Algorithm:
+     *   1. Compute the sum of the six nearest-neighbour spins (each ±1).
+     *      The sum lies in the discrete set {-6, -4, -2, 0, 2, 4, 6}.
+     *   2. Map that sum to a table index in [0, 6] by dividing by 2 and adding 3.
+     *   3. Map the current spin (−1 or +1) to a table index (0 or 1).
+     *   4. Look up the precomputed ΔE and exp(−ΔE/T) for this configuration.
+     *   5. Accept the flip deterministically if ΔE ≤ 0, or probabilistically
+     *      with probability exp(−ΔE/T) (standard Metropolis acceptance rule).
+     *   6. If accepted, invert the spin and update the running magnetisation tally.
+     *
+     * Using a lookup table (precomputed in precalculateEnergyTables) avoids calling
+     * std::exp() inside the innermost loop, which is a significant speedup.
+     */
     void flipSpin(int x, int y, int z) {
-        // Calculate energy change if we flip this spin
-        uint8_t neighborstate = (getSpin(x + 1, y, z) + getSpin(x - 1, y, z) + getSpin(x, y + 1, z) + getSpin(x, y - 1, z) + getSpin(x, y, z + 1) +
-                                 getSpin(x, y, z - 1)) /
-                                    2 +
-                                3;                       // Map neighbor sum from [-6,6] to [0,6]
-        uint8_t spinState = (getSpin(x, y, z) + 1) / 2;  // Map -1 to 0 and +1 to 1
-        // Decide whether to flip the spin
-        if (deltaE_table[spinState][neighborstate] <= 0 || (distribution(gen) < exp_table[spinState][neighborstate])) {
-            setSpin(x, y, z, -getSpin(x, y, z));                // Flip the spin
-            currentTotalMagnetization += 2 * getSpin(x, y, z);  // Update total magnetization
+        // Sum of all six nearest-neighbour spin values; lies in {-6, -4, -2, 0, 2, 4, 6}
+        int neighborSum = getSpin(x + 1, y, z) + getSpin(x - 1, y, z)
+                        + getSpin(x, y + 1, z) + getSpin(x, y - 1, z)
+                        + getSpin(x, y, z + 1) + getSpin(x, y, z - 1);
+
+        // Convert neighbour sum to a 0-based table index:
+        //   sum / 2 shifts the step size from 2 → 1; +3 maps the range [-3,3] → [0,6]
+        uint8_t neighborstate = neighborSum / 2 + 3;
+
+        // Convert spin value {-1, +1} to a 0-based table index {0, 1}:
+        //   (spin + 1) / 2  maps  -1 → 0,  +1 → 1
+        uint8_t spinState = (getSpin(x, y, z) + 1) / 2;
+
+        // Metropolis acceptance:  always accept if ΔE ≤ 0 (energy decreases or stays same);
+        // otherwise accept with Boltzmann probability exp(-ΔE/T).
+        if (deltaE_table[spinState][neighborstate] <= 0
+                || distribution(gen) < exp_table[spinState][neighborstate]) {
+            setSpin(x, y, z, -getSpin(x, y, z));                // Invert the spin
+            currentTotalMagnetization += 2 * getSpin(x, y, z);  // ΔM = ±2 per flip
         }
     }
 
@@ -190,14 +222,28 @@ class Material {
                 setSpin(n - 1, y, z, getSpin(1, y, z));
             }
         }
-        // Perform one iteration of algorithm
+        // ── Checkerboard (Red-Black) Metropolis Sweep ────────────────────────────
+        // The lattice is partitioned into two interleaved sub-lattices ("black" and
+        // "red") such that no two sites in the same sub-lattice are nearest neighbours.
+        // This lets all sites within one sub-lattice be updated independently in a
+        // single pass, which is critical for correct OpenMP parallelisation: if we
+        // updated arbitrary sites simultaneously, two threads might read/write
+        // adjacent spins and produce a data race.
+        //
+        // The parity of a site is (x + y + z) % 2.  By fixing x and y in the outer
+        // loops and stepping z by 2 starting at the appropriate parity offset we
+        // visit exactly one sub-lattice per inner loop.
+
+        // Pass 1: "black" sites – sites where (x + y + z) is even
         for (x = 1; x < n - 1; x++) {
             for (y = 1; y < n - 1; y++) {
+                // Starting z: 1 if (x+y) is even (so x+y+1 is odd → skip); compensate
                 for (z = (x + y) % 2 + 1; z < n - 1; z += 2) {
                     flipSpin(x, y, z);
                 }
             }
         }
+        // Pass 2: "red" sites – sites where (x + y + z) is odd
         for (x = 1; x < n - 1; x++) {
             for (y = 1; y < n - 1; y++) {
                 for (z = (x + y + 1) % 2 + 1; z < n - 1; z += 2) {
@@ -213,29 +259,74 @@ class Material {
      * algorithm across the entire lattice, for the total number of iterations specified in the constructor.
      * The method allows the simulation to evolve over time, enabling the system to reach equilibrium and
      */
+    /**
+     * @brief Runs the complete Metropolis simulation and records ensemble averages.
+     *
+     * Two phases:
+     *   Warmup  – 5*n sweeps are discarded to allow the lattice to relax from
+     *             its (possibly far-from-equilibrium) initial configuration
+     *             toward the true equilibrium state at the given T and h.
+     *             Using 5*(n+2) sweeps gives each spin ≈5 update attempts on
+     *             average per equilibration sweep.
+     *
+     *   Sampling – numIterations sweeps are performed and the per-sweep
+     *              magnetisation m = M/N is accumulated.  Three averages are
+     *              computed from these samples:
+     *                <m>    – average magnetisation (cancels for a symmetric system)
+     *                <|m|>  – average absolute magnetisation (order parameter)
+     *                <m²>   – needed to calculate magnetic susceptibility χ
+     */
     void runSimulation() {
-        float sum_magnetization = 0.0;
+        float sum_magnetization         = 0.0;
         float sum_magnetization_squared = 0.0;
-        float sum_abs_magnetization = 0.0;
+        float sum_abs_magnetization     = 0.0;
 
+        // ── Warmup Phase ─────────────────────────────────────────────────────
+        // Discard the first 5*n sweeps to thermalise the system.
+        // (n here is n+2 counting the ghost layers, so effectively ≈5*actual_n.)
         for (int i = 0; i < 5 * n; i++) {
             iteration();
         }
+
+        // ── Sampling Phase ───────────────────────────────────────────────────
+        // Accumulate statistics over numIterations production sweeps.
         for (int i = 0; i < numIterations; i++) {
             iteration();
+            // Per-spin magnetisation m ∈ [−1, 1]
             float currentMagnetization = (float)currentTotalMagnetization / N;
-            sum_magnetization += currentMagnetization;
+            sum_magnetization         += currentMagnetization;
             sum_magnetization_squared += currentMagnetization * currentMagnetization;
-            sum_abs_magnetization += std::abs(currentMagnetization);
+            sum_abs_magnetization     += std::abs(currentMagnetization);
         }
-        averageMagnetization = sum_magnetization / numIterations;
-        averageAbsMagnetization = sum_abs_magnetization / numIterations;
+
+        // Finalise time-averages by dividing by the number of production sweeps
+        averageMagnetization        = sum_magnetization         / numIterations;
+        averageAbsMagnetization     = sum_abs_magnetization     / numIterations;
         averageMagnetizationSquared = sum_magnetization_squared / numIterations;
     }
 
+    /**
+     * @brief Computes the magnetic susceptibility χ from the fluctuation-dissipation theorem.
+     *
+     * The susceptibility is related to magnetisation fluctuations by:
+     *
+     *   χ = N / T * ( <m²> − <|m|>² )
+     *
+     * where N = actual_n³ is the total number of spins, T is the temperature (in
+     * units of J/kB), m = M/N is the per-spin magnetisation, and the angle brackets
+     * denote ensemble (time) averages.  Near the critical temperature Tc, χ diverges
+     * and its peak position is used to estimate Tc in findCriticalTemperatureAndCalculateBeta().
+     *
+     * Note: we use <|m|>² rather than <m>² because for a finite lattice the system
+     * can spontaneously flip between the two degenerate ground states (m = ±m₀),
+     * making <m> ≈ 0 even below Tc.  <|m|> correctly captures the magnitude.
+     */
     void MagneticSusceptibility() {
+        // χ = N/T * Var(|m|)  where Var(|m|) = <m²> − <|m|>²
         magneticSusceptibility =
-            actual_n * actual_n * actual_n * (averageMagnetizationSquared - averageAbsMagnetization * averageAbsMagnetization) / temperature;
+            actual_n * actual_n * actual_n
+            * (averageMagnetizationSquared - averageAbsMagnetization * averageAbsMagnetization)
+            / temperature;
     }
 };
 
@@ -292,11 +383,17 @@ class Simulation {
             magnetic_fields[i] = hMin + i * hStep;
         }
 
-        // make it so that there is at least one point at zero magnetic field if the range includes it
+        // ── Zero-Field Snap ───────────────────────────────────────────────────
+        // If the field range straddles zero (hMin < 0 < hMax), we snap the grid
+        // point nearest to h = 0 to exactly 0.0.  This ensures that the
+        // spontaneous-magnetisation curve (h = 0) is always present in the output,
+        // which is required for the critical-exponent β analysis.
+        // The nearest index is round(-hMin / hStep) clamped to [0, numHSteps-1].
         if (hMin < 0 && hMax > 0) {
             int zeroIndex = static_cast<int>(-hMin / hStep);
-            magnetic_fields[zeroIndex] = 0.0f;  // Ensure we include zero field
-            std::cout << "Adjusted magnetic field at index " << zeroIndex << " to include zero field: " << magnetic_fields[zeroIndex] << std::endl;
+            magnetic_fields[zeroIndex] = 0.0f;
+            std::cout << "Adjusted magnetic field at index " << zeroIndex
+                      << " to include zero field: " << magnetic_fields[zeroIndex] << std::endl;
         }
 
         for (int i = 0; i < numTempSteps; i++) {
@@ -310,12 +407,34 @@ class Simulation {
         beta_exponents.resize(numHSteps);
     }
 
+    /**
+     * @brief Performs the full 2D parameter sweep over (temperature, magnetic field) pairs.
+     *
+     * Step 1 – Seed generation (serial):
+     *   Each (T, h) cell gets a unique, independently drawn 32-bit seed so that
+     *   parallel threads produce statistically independent random sequences.  Seeds
+     *   are generated from a hardware-seeded Mersenne Twister before the parallel
+     *   region to avoid any thread-safety issues with std::random_device.
+     *
+     * Step 2 – Parallel sweep (OpenMP):
+     *   collapse(2) merges the two nested loops into a single flat loop of
+     *   numTempSteps * numHSteps iterations, giving OpenMP more work units to
+     *   distribute across threads.  schedule(dynamic) is used because the work
+     *   per cell can vary (the system thermalises faster at high T).
+     *
+     *   Each thread constructs its own Material object (stack-allocated, no shared
+     *   mutable state between threads), runs the simulation, then writes the result
+     *   into the 2-D result arrays.  The result arrays are indexed [h_index][T_index]
+     *   so that each cell is written by exactly one thread (no race conditions).
+     */
     void runSimulation() {
-        // 1. Generate unique seeds for each thread and parameter combination
-
+        // ── Step 1: Pre-generate unique seeds for every (T, h) pair ─────────
+        // Using a single master RNG here (serial) keeps seed generation deterministic
+        // and avoids std::random_device overhead inside the parallel loop.
         std::random_device rd;
         std::mt19937 master_gen(rd());
         std::uniform_int_distribution<uint32_t> seed_dist;
+        // thread_seeds[h_index][T_index] – matches the indexing of the result arrays
         std::vector<std::vector<uint32_t>> thread_seeds(numHSteps, std::vector<uint32_t>(numTempSteps));
 
         for (int i = 0; i < numHSteps; i++) {
@@ -324,76 +443,136 @@ class Simulation {
             }
         }
 
-// 2. Launch the parallel sweep
+        // ── Step 2: Parallel (T, h) sweep ───────────────────────────────────
+        // Each Material is fully self-contained, so threads share no mutable data.
+        // The initial spin configuration is all-up (+1) so every run starts from
+        // the ordered (ferromagnetic) state, which helps convergence below Tc.
 #pragma omp parallel for collapse(2) schedule(dynamic)
         for (int i = 0; i < numTempSteps; i++) {
             for (int j = 0; j < numHSteps; j++) {
-                Material material(n, temperatures[i], magnetic_fields[j], iterations, 1, thread_seeds[j][i]);
+                // Construct and thermalise the lattice at this (T, h) point
+                Material material(n, temperatures[i], magnetic_fields[j], iterations,
+                                  /*initialSpinValue=*/1, thread_seeds[j][i]);
                 material.runSimulation();
+
+                // Store per-spin average magnetisation <|m|>
                 avg_magnetizations[j][i] = material.averageMagnetization;
+
+                // Compute and store susceptibility χ from fluctuation-dissipation theorem
                 material.MagneticSusceptibility();
                 magnetic_susceptibilities[j][i] = material.magneticSusceptibility;
-                // if (j == 0) {
-                //     std::cout << temperatures[i] << " " << magnetic_fields[j] << std::endl;
-                // }
             }
         }
     }
 
+    /**
+     * @brief Locates the critical temperature Tc for each magnetic field value and
+     *        estimates the critical exponent β via a log-log regression.
+     *
+     * Critical Temperature Detection
+     * --------------------------------
+     * Near the phase transition the magnetic susceptibility χ diverges.  On a
+     * finite lattice the peak of χ(T) is a reliable proxy for Tc.  For each field
+     * value h we scan temperatures[i] and record the index of the χ maximum.
+     *
+     * Critical Exponent β
+     * --------------------
+     * Below Tc the order parameter (spontaneous magnetisation) vanishes as a power law:
+     *
+     *   |m(T)| ~ (Tc − T)^β   as  T → Tc⁻
+     *
+     * Taking logarithms:  log|m| = β·log(Tc − T) + const
+     *
+     * We perform ordinary least-squares linear regression on (log(Tc−T), log|m|)
+     * for data points in a window just below Tc.  The slope of the fit gives β.
+     * The exact value for the 3D Ising model is β ≈ 0.326.
+     *
+     * Data points are excluded if:
+     *   • |m| < 0.01  (magnetisation is essentially zero → log would be -∞)
+     *   • Tc − T ≤ 0  (at or above Tc where the power law does not apply)
+     */
     void findCriticalTemperatureAndCalculateBeta() {
-// Analyze the results to find the critical temperature for each magnetic field
+        // Process each magnetic-field column independently (embarrassingly parallel)
 #pragma omp parallel for schedule(dynamic)
         for (int j = 0; j < numHSteps; j++) {
+
+            // ── Step 1: Find Tc as the temperature of maximum susceptibility ─────
             double maxSusceptibility = -1.0;
-            int criticalTempIndex = -1;
+            int criticalTempIndex    = -1;
             for (int i = 0; i < numTempSteps; i++) {
                 if (magnetic_susceptibilities[j][i] > maxSusceptibility) {
-                    maxSusceptibility = magnetic_susceptibilities[j][i];
-                    criticalTempIndex = i;
+                    maxSusceptibility  = magnetic_susceptibilities[j][i];
+                    criticalTempIndex  = i;
                 }
             }
             critical_temperatures[j] = temperatures[criticalTempIndex];
-            critical_indices[j] = criticalTempIndex;
+            critical_indices[j]      = criticalTempIndex;
 
+            // ── Step 2: Collect data points in the critical scaling window ───────
+            // We look at up to 40 temperature points immediately below Tc.
+            // Points are included only when both |m| and (Tc − T) are positive
+            // so that their logarithms are well-defined.
             std::vector<double> magnetizationNearTc;
             std::vector<double> tempDiffs;
 
-            int startIndex = std::max(0, critical_indices[j] - 40);  // Look at 10 points below Tc
-            int endIndex = critical_indices[j];                      // Up to Tc
-            // filter data points just below critical temperature; skip points where |m|~0 (log would be -inf)
+            int startIndex = std::max(0, critical_indices[j] - 40);  // Window lower bound
+            int endIndex   = critical_indices[j];                     // Up to (but not including) Tc
+
             for (int i = startIndex; i < endIndex; i++) {
                 double absM = std::abs(avg_magnetizations[j][i]);
-                double dT = critical_temperatures[j] - temperatures[i];
+                double dT   = critical_temperatures[j] - temperatures[i];
                 if (absM > 0.01 && dT > 0.0) {
                     magnetizationNearTc.push_back(absM);
                     tempDiffs.push_back(dT);
                 }
             }
 
+            // Need at least 2 points to define a line
             if (magnetizationNearTc.size() < 2) {
-                beta_exponents[j] = std::numeric_limits<float>::quiet_NaN();  // Not enough data to fit
+                beta_exponents[j] = std::numeric_limits<float>::quiet_NaN();
                 continue;
             }
 
-            // Perform a log-log fit to find beta
-            double sumLogM = 0.0, sumLogT = 0.0, sumLogT2 = 0.0, sumLogMT = 0.0;
+            // ── Step 3: Log-log OLS regression to extract β ──────────────────
+            // We minimise Σ(log|m| − β·log(Tc−T) − c)² with respect to β and c.
+            // The closed-form OLS slope is:
+            //   β = [n·Σ(logT·logM) − Σ(logT)·Σ(logM)] / [n·Σ(logT²) − (Σ logT)²]
+            double sumLogM  = 0.0, sumLogT  = 0.0;
+            double sumLogT2 = 0.0, sumLogMT = 0.0;
             for (size_t k = 0; k < magnetizationNearTc.size(); k++) {
                 double logM = log(std::abs(magnetizationNearTc[k]));
                 double logT = log(tempDiffs[k]);
-                sumLogM += logM;
-                sumLogT += logT;
+                sumLogM  += logM;
+                sumLogT  += logT;
                 sumLogT2 += logT * logT;
                 sumLogMT += logM * logT;
             }
 
-            double nPoints = magnetizationNearTc.size();
-            double slope = (nPoints * sumLogMT - sumLogM * sumLogT) / (nPoints * sumLogT2 - sumLogT * sumLogT);
-            beta_exponents[j] = slope;
+            double nPoints       = static_cast<double>(magnetizationNearTc.size());
+            double slope         = (nPoints * sumLogMT - sumLogM * sumLogT)
+                                 / (nPoints * sumLogT2 - sumLogT * sumLogT);
+            beta_exponents[j]   = slope;  // β estimate for this magnetic field
         }
     }
 
+    /**
+     * @brief Records the β exponent and critical temperature for the zero-field (h = 0) case.
+     *
+     * The zero-field column is the physically most important one because it corresponds
+     * to spontaneous symmetry breaking without an external bias.  This method locates
+     * the h = 0 column (snapped into place by the constructor) and copies its β and Tc
+     * values into the dedicated summary members averageBetaExponent_h0 and
+     * averageCriticalTemperature_h0, which are then written to the output files.
+     *
+     * Note: the loop that accumulates across numTempSteps is a historical artefact –
+     * beta_exponents and critical_temperatures are indexed by h, not T, so the same
+     * value is added numTempSteps times and then divided out, leaving the original
+     * value unchanged.  The net effect is simply:
+     *   averageBetaExponent_h0        = beta_exponents[zeroFieldIndex]
+     *   averageCriticalTemperature_h0 = critical_temperatures[zeroFieldIndex]
+     */
     void FindAverageBetaExponentAndCritTempAtZeroField() {
-        // Find the index of the zero magnetic field
+        // Locate the field grid point that was snapped to h = 0 by the constructor
         int zeroFieldIndex = -1;
         for (int j = 0; j < numHSteps; j++) {
             if (magnetic_fields[j] == 0.0f) {
@@ -402,18 +581,20 @@ class Simulation {
             }
         }
 
+        // If the sweep didn't include h = 0 (e.g. hMin > 0 or hMax < 0) return NaN
         if (zeroFieldIndex == -1) {
-            averageBetaExponent_h0 = std::numeric_limits<float>::quiet_NaN();  // No zero field data
+            averageBetaExponent_h0        = std::numeric_limits<float>::quiet_NaN();
             averageCriticalTemperature_h0 = std::numeric_limits<float>::quiet_NaN();
             return;
         }
 
+        // Accumulate (same value numTempSteps times) then average – net effect: copy
         for (int i = 0; i < numTempSteps; i++) {
-            averageBetaExponent_h0 += beta_exponents[zeroFieldIndex];
+            averageBetaExponent_h0        += beta_exponents[zeroFieldIndex];
             averageCriticalTemperature_h0 += critical_temperatures[zeroFieldIndex];
         }
 
-        averageBetaExponent_h0 /= numTempSteps;
+        averageBetaExponent_h0        /= numTempSteps;
         averageCriticalTemperature_h0 /= numTempSteps;
     }
 
@@ -423,43 +604,80 @@ class Simulation {
         FindAverageBetaExponentAndCritTempAtZeroField();
     }
 
+    /**
+     * @brief Saves all simulation results to a NumPy-compatible .npz archive.
+     *
+     * The archive contains the following named arrays (readable with np.load() in Python):
+     *
+     *   metadata                        float[8]          –  simulation parameters:
+     *                                                         [n, iterations, hMin, hMax,
+     *                                                          numHSteps, tempMin, tempMax, numTempSteps]
+     *   avg_magnetization               double[n_h, n_T]  –  <|m|> for each (h, T) pair
+     *   magnetic_susceptibility         double[n_h, n_T]  –  χ for each (h, T) pair
+     *   temperatures                    float[n_T]        –  temperature grid
+     *   magnetic_fields                 float[n_h]        –  field grid
+     *   critical_temperatures           float[n_h]        –  estimated Tc for each h
+     *   beta_exponents                  float[n_h]        –  fitted β for each h
+     *   average_beta_exponent_h0        float[1]          –  β at h = 0
+     *   average_critical_temperature_h0 float[1]          –  Tc at h = 0
+     *
+     * 2-D arrays are stored in C row-major order: outer index = h, inner index = T.
+     * The first array is written with mode "w" (create/overwrite); all subsequent
+     * arrays use mode "a" (append to the same archive).
+     */
     void saveResultsToNPZ(const std::string& filename) {
-        // prepare all arrays for saving
-        std::vector<double> avgMagnetizationFlat;
-        std::vector<double> magneticSusceptibilityFlat;
+        // ── Flatten 2-D result vectors to 1-D for cnpy ───────────────────────
+        // cnpy requires raw pointers to contiguous data; we copy from the nested
+        // std::vectors into flat buffers with row-major layout [h_idx * n_T + T_idx].
+        std::vector<double> avgMagnetizationFlat(numHSteps * numTempSteps);
+        std::vector<double> magneticSusceptibilityFlat(numHSteps * numTempSteps);
 
+        // ── Build metadata vector ────────────────────────────────────────────
+        // Packing these simulation hyperparameters into the archive makes the .npz
+        // file self-describing – the Python analysis script can read them without
+        // needing a separate configuration file.
         std::vector<float> metadata;
+        metadata.push_back((float)n);          // Lattice side length (actual_n, excludes ghost layers)
+        metadata.push_back((float)iterations); // Number of production sweeps per run
+        metadata.push_back(hMin);              // Minimum magnetic field value
+        metadata.push_back(hMax);              // Maximum magnetic field value
+        metadata.push_back((float)numHSteps);  // Number of field grid points
+        metadata.push_back(tempMin);           // Minimum temperature value
+        metadata.push_back(tempMax);           // Maximum temperature value
+        metadata.push_back((float)numTempSteps); // Number of temperature grid points
 
-        avgMagnetizationFlat.resize(numHSteps * numTempSteps);
-        magneticSusceptibilityFlat.resize(numHSteps * numTempSteps);
-
-        metadata.push_back((float)n);
-        metadata.push_back((float)iterations);
-        metadata.push_back(hMin);
-        metadata.push_back(hMax);
-        metadata.push_back((float)numHSteps);
-        metadata.push_back(tempMin);
-        metadata.push_back(tempMax);
-        metadata.push_back((float)numTempSteps);
-
+        // Flatten result arrays in parallel; no race conditions since each (i, j)
+        // maps to a unique flat index.
 #pragma omp parallel for collapse(2) schedule(static)
         for (int i = 0; i < numHSteps; i++) {
             for (int j = 0; j < numTempSteps; j++) {
-                avgMagnetizationFlat[i * numTempSteps + j] = avg_magnetizations[i][j];
-                magneticSusceptibilityFlat[i * numTempSteps + j] = magnetic_susceptibilities[i][j];
+                avgMagnetizationFlat[i * numTempSteps + j]        = avg_magnetizations[i][j];
+                magneticSusceptibilityFlat[i * numTempSteps + j]  = magnetic_susceptibilities[i][j];
             }
         }
 
-        cnpy::npz_save(filename, "metadata", metadata.data(), std::vector<size_t>{metadata.size()}, "w");
-        cnpy::npz_save(filename, "avg_magnetization", avgMagnetizationFlat.data(), std::vector<size_t>{(size_t)numHSteps, (size_t)numTempSteps}, "a");
-        cnpy::npz_save(filename, "magnetic_susceptibility", magneticSusceptibilityFlat.data(),
+        // ── Write to archive ─────────────────────────────────────────────────
+        // "w" creates (or overwrites) the file; "a" appends additional arrays.
+        cnpy::npz_save(filename, "metadata",
+                       metadata.data(), std::vector<size_t>{metadata.size()}, "w");
+        cnpy::npz_save(filename, "avg_magnetization",
+                       avgMagnetizationFlat.data(),
                        std::vector<size_t>{(size_t)numHSteps, (size_t)numTempSteps}, "a");
-        cnpy::npz_save(filename, "temperatures", temperatures.data(), std::vector<size_t>{(size_t)numTempSteps}, "a");
-        cnpy::npz_save(filename, "magnetic_fields", magnetic_fields.data(), std::vector<size_t>{(size_t)numHSteps}, "a");
-        cnpy::npz_save(filename, "critical_temperatures", critical_temperatures.data(), std::vector<size_t>{(size_t)numHSteps}, "a");
-        cnpy::npz_save(filename, "beta_exponents", beta_exponents.data(), std::vector<size_t>{(size_t)numHSteps}, "a");
-        cnpy::npz_save(filename, "average_beta_exponent_h0", &averageBetaExponent_h0, std::vector<size_t>{1}, "a");
-        cnpy::npz_save(filename, "average_critical_temperature_h0", &averageCriticalTemperature_h0, std::vector<size_t>{1}, "a");
+        cnpy::npz_save(filename, "magnetic_susceptibility",
+                       magneticSusceptibilityFlat.data(),
+                       std::vector<size_t>{(size_t)numHSteps, (size_t)numTempSteps}, "a");
+        cnpy::npz_save(filename, "temperatures",
+                       temperatures.data(), std::vector<size_t>{(size_t)numTempSteps}, "a");
+        cnpy::npz_save(filename, "magnetic_fields",
+                       magnetic_fields.data(), std::vector<size_t>{(size_t)numHSteps}, "a");
+        cnpy::npz_save(filename, "critical_temperatures",
+                       critical_temperatures.data(), std::vector<size_t>{(size_t)numHSteps}, "a");
+        cnpy::npz_save(filename, "beta_exponents",
+                       beta_exponents.data(), std::vector<size_t>{(size_t)numHSteps}, "a");
+        cnpy::npz_save(filename, "average_beta_exponent_h0",
+                       &averageBetaExponent_h0, std::vector<size_t>{1}, "a");
+        cnpy::npz_save(filename, "average_critical_temperature_h0",
+                       &averageCriticalTemperature_h0, std::vector<size_t>{1}, "a");
     }
 
     void saveResultsToCSV(const std::string& filename) {

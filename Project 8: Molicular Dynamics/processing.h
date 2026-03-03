@@ -206,15 +206,17 @@ class MolucularSystem {
     }
 
     void energyCalculations(int t) {
-        if (energyFunctionIndex < energyFunction.size() && t == energyFunction[energyFunctionIndex].first && currentKE_times2 > 1) {
+        if (energyFunctionIndex < energyFunction.size() && t == energyFunction[energyFunctionIndex].first /*&& (currentKE_times2 > 1 || energyFunction[energyFunctionIndex].second > 0)*/) {
             double desiredEnergyChange = energyFunction[energyFunctionIndex].second;  // Get the desired energy change for this time step
 
             double scaleingFactor =
                 std::sqrt(1.0 + 2 * desiredEnergyChange / currentKE_times2);  // Calculate scaling factor based on the desired energy change
 #pragma omp parallel for schedule(static) if (numParticles > 200)  // Only parallelize if there are enough particles to justify the overhead
             for (int i = 0; i < numParticles; i++) {
-                velocities[i][0] *= scaleingFactor;
-                velocities[i][1] *= scaleingFactor;
+                if (std::abs(velocities[i][0]) > 1.0 || scaleingFactor > 1)  // Only scale if the velocity is above a certain threshold or if we are adding energy to the system
+                    velocities[i][0] *= scaleingFactor;
+                if (std::abs(velocities[i][1]) > 1.0 || scaleingFactor > 1)  // Only scale if the velocity is above a certain threshold or if we are adding energy to the system
+                    velocities[i][1] *= scaleingFactor;
             }
             currentKE_times2 += 2 * desiredEnergyChange;  // Update kinetic energy to reflect the change
             energyFunctionIndex++;
@@ -314,12 +316,22 @@ std::vector<std::pair<int, double>> buildEnergyFunction(int totalTimeSteps) {
     // then for the next 45% of time steps, add energy to the system at a rate of 1 unit of energy per 1% of time steps
     // then for the next 45% of time steps, remove energy from the system at a rate of 1 unit of energy per 1% of time steps
     // then for the last 5% of time steps, dont do anything
-    int fivePercent = totalTimeSteps / 20;
-    for (int i = fivePercent; i < totalTimeSteps / 2; i++) {
-        energyFunction.push_back({i, 40.0 / (totalTimeSteps / 100)});
+    int onePercent = totalTimeSteps / 100;
+
+    for (int i = 1; i < onePercent * 5; i++) {
+        energyFunction.push_back({i, 5 / onePercent});
     }
-    for (int i = totalTimeSteps / 2; i < totalTimeSteps - fivePercent; i++) {
-        energyFunction.push_back({i, -40.1 / (totalTimeSteps / 100)});
+
+    for (int i = onePercent * 5; i < onePercent * 10; i++) {
+        energyFunction.push_back({i, -30.0 / onePercent});
+    }
+
+    for (int i = onePercent * 20; i < onePercent * 60; i++) {
+        energyFunction.push_back({i, 50.0 / onePercent});
+    }
+
+    for (int i = onePercent * 60; i < onePercent * 95; i++) {
+        energyFunction.push_back({i, -100.0 / onePercent});
     }
 
     return energyFunction;

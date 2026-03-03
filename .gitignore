@@ -58,7 +58,7 @@ Thumbs.db
 *.mov
 
 # Plots
-# *.png
+*.png
 # *.jpg
 # *.jpeg
 
@@ -112,3 +112,7 @@ compile_commands.json
 # Dependencies (if using package managers)
 .conan/
 vcpkg_installed/
+
+# Slurm output files
+slurm_*.out
+slurm_*.err

@@ -27,9 +27,9 @@ plt.rcParams["animation.ffmpeg_path"] = FFMPEG
 
 # ── Animation controls ────────────────────────────────────────────────────────
 FPS         = 30    # frames per second
-STEP_SKIP   = 25     # data timesteps skipped between frames
+STEP_SKIP   = 5     # data timesteps skipped between frames
 FINAL_INDEX = None  # last data index to animate (None = use all)
-N_WORKERS   = min(128, max(1, mp.cpu_count() - 1))  # cap to avoid OOM
+N_WORKERS   = min(32, max(1, mp.cpu_count() - 1))  # cap to avoid OOM
 
 # ── Find most recent output directory ────────────────────────────────────────
 output_root = os.path.join(os.path.dirname(__file__), "output")
@@ -77,7 +77,7 @@ def render_segment(args):
 
     scat = ax.scatter(
         pos_slice[0, :, 0], pos_slice[0, :, 1],
-        s=20, c="steelblue", edgecolors="k", linewidths=0.4
+        s=10, c="steelblue", edgecolors="k", linewidths=0.4
     )
 
     def update(local_idx):

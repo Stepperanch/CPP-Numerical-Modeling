@@ -50,7 +50,7 @@ Thumbs.db
 
 # Output data files
 *.csv
-# *.npz
+*.npz
 
 # Anamations
 *.mp4

@@ -12,8 +12,8 @@ int main() {
     }
 
 
-    unsigned int timeSteps = 10000;
-    double finalTime = 300.0;
+    unsigned int timeSteps = 100000;
+    double finalTime = 400.0;
     float boxSize = 75.0;
 
 

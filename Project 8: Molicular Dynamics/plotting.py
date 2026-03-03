@@ -27,24 +27,28 @@ plt.rcParams["animation.ffmpeg_path"] = FFMPEG
 
 # ── Animation controls ────────────────────────────────────────────────────────
 FPS         = 30    # frames per second
-STEP_SKIP   = 5     # data timesteps skipped between frames
+STEP_SKIP   = 10     # data timesteps skipped between frames
 FINAL_INDEX = None  # last data index to animate (None = use all)
-N_WORKERS   = min(32, max(1, mp.cpu_count() - 1))  # cap to avoid OOM
+N_WORKERS   = min(8, max(1, mp.cpu_count() - 1))  # cap to avoid OOM
 
 # ── Find most recent output directory ────────────────────────────────────────
 output_root = os.path.join(os.path.dirname(__file__), "output")
+i = 0
 run_dirs = sorted(
     [d for d in os.listdir(output_root) if d.startswith("out_")],
     key=lambda d: int(d.split("_")[1])
 )
+
 if not run_dirs:
     raise FileNotFoundError(f"No output directories found in {output_root}")
+
+i = int(run_dirs[-1].split("_")[1])
 
 latest = os.path.join(output_root, run_dirs[-1])
 print(f"Loading from: {latest}")
 
 # ── Load data ─────────────────────────────────────────────────────────────────
-data              = np.load(os.path.join(latest, "results.npz"))
+data              = np.load(os.path.join(latest, f"results_{i}.npz"))
 positions         = data["positions"]           # (timeSteps, numParticles, 2)
 temperatures      = data["temperatures"]        # (timeSteps,)
 potentialEnergies = data["potentialEnergies"]   # (timeSteps,)
@@ -120,7 +124,7 @@ with open(concat_list, "w") as f:
     for p in seg_paths:
         f.write(f"file '{p}'\n")
 
-anim_path = os.path.join(latest, "md_animation.mp4")
+anim_path = os.path.join(latest, f"md_animation_{i}.mp4")
 subprocess.run([
     FFMPEG, "-y", "-f", "concat", "-safe", "0",
     "-i", concat_list,
@@ -160,7 +164,7 @@ axes[2].grid(True)
 fig2.suptitle("Molecular Dynamics — Energy Analysis")
 fig2.tight_layout()
 
-energy_plot_path = os.path.join(latest, "energy_plot.png")
+energy_plot_path = os.path.join(latest, f"energy_plot_{i}.png")
 fig2.savefig(energy_plot_path, dpi=150)
 print(f"Energy plot saved to: {energy_plot_path}")
 

@@ -304,9 +304,9 @@ class MolucularSystem {
         }
         outputDir += "out_" + std::to_string(i);
         std::filesystem::create_directories(outputDir);
-        saveResultsToNPZ(outputDir + "/results.npz");
-        saveEnergyToCSV(outputDir + "/energy_data.csv");
-        savePositionsToCSV(outputDir + "/positions_data.csv");
+        saveResultsToNPZ(outputDir + "/results_" + std::to_string(i) + ".npz");
+        saveEnergyToCSV(outputDir + "/energy_data_" + std::to_string(i) + ".csv");
+        savePositionsToCSV(outputDir + "/positions_data_" + std::to_string(i) + ".csv");
     }
 };
 
@@ -318,20 +318,20 @@ std::vector<std::pair<int, double>> buildEnergyFunction(int totalTimeSteps) {
     // then for the last 5% of time steps, dont do anything
     int onePercent = totalTimeSteps / 100;
 
-    for (int i = 1; i < onePercent * 5; i++) {
+    for (int i = 1; i < onePercent * 2; i++) {
         energyFunction.push_back({i, 5 / onePercent});
     }
 
-    for (int i = onePercent * 5; i < onePercent * 10; i++) {
+    for (int i = onePercent * 2; i < onePercent * 7; i++) {
         energyFunction.push_back({i, -30.0 / onePercent});
     }
 
-    for (int i = onePercent * 20; i < onePercent * 60; i++) {
-        energyFunction.push_back({i, 50.0 / onePercent});
+    for (int i = onePercent * 15; i < onePercent * 50; i++) {
+        energyFunction.push_back({i, 18.0 / onePercent});
     }
 
-    for (int i = onePercent * 60; i < onePercent * 95; i++) {
-        energyFunction.push_back({i, -100.0 / onePercent});
+    for (int i = onePercent * 50; i < onePercent * 95; i++) {
+        energyFunction.push_back({i, -250.0 / onePercent});
     }
 
     return energyFunction;

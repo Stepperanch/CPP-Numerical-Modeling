@@ -27,9 +27,9 @@ plt.rcParams["animation.ffmpeg_path"] = FFMPEG
 
 # ── Animation controls ────────────────────────────────────────────────────────
 FPS         = 30    # frames per second
-STEP_SKIP   = 10     # data timesteps skipped between frames
+STEP_SKIP   = 4     # data timesteps skipped between frames
 FINAL_INDEX = None  # last data index to animate (None = use all)
-N_WORKERS   = min(8, max(1, mp.cpu_count() - 1))  # cap to avoid OOM
+N_WORKERS   = min(16, max(1, mp.cpu_count() - 1))  # cap to avoid OOM
 
 # ── Find most recent output directory ────────────────────────────────────────
 output_root = os.path.join(os.path.dirname(__file__), "output")
@@ -48,21 +48,42 @@ latest = os.path.join(output_root, run_dirs[-1])
 print(f"Loading from: {latest}")
 
 # ── Load data ─────────────────────────────────────────────────────────────────
-data              = np.load(os.path.join(latest, f"results_{i}.npz"))
-positions         = data["positions"]           # (timeSteps, numParticles, 2)
-temperatures      = data["temperatures"]        # (timeSteps,)
-potentialEnergies = data["potentialEnergies"]   # (timeSteps,)
-kineticEnergies   = data["kineticEnergies"]     # (timeSteps,)
-totalEnergies     = data["totalEnergies"]       # (timeSteps,)
-metadata          = data["metadata"]            # [L, numParticles, timeSteps, finalTime]
+# Support both new individual .npy files and legacy .npz format
+npz_path = os.path.join(latest, f"results_{i}.npz")
+npy_pos  = os.path.join(latest, "positions.npy")
+
+if os.path.exists(npy_pos):
+    # New format: individual .npy files (avoids 4 GB ZIP limit)
+    print("Loading individual .npy files...")
+    positions         = np.load(os.path.join(latest, "positions.npy"))           # (timeSteps/5, numParticles, 2)
+    temperatures      = np.load(os.path.join(latest, "temperatures.npy"))        # (timeSteps,)
+    potentialEnergies = np.load(os.path.join(latest, "potentialEnergies.npy"))   # (timeSteps,)
+    kineticEnergies   = np.load(os.path.join(latest, "kineticEnergies.npy"))     # (timeSteps,)
+    totalEnergies     = np.load(os.path.join(latest, "totalEnergies.npy"))       # (timeSteps,)
+    metadata          = np.load(os.path.join(latest, "metadata.npy"))            # [L, numParticles, timeSteps, finalTime]
+elif os.path.exists(npz_path):
+    # Legacy format: single .npz file
+    print("Loading legacy .npz file...")
+    data              = np.load(npz_path)
+    positions         = data["positions"]
+    temperatures      = data["temperatures"]
+    potentialEnergies = data["potentialEnergies"]
+    kineticEnergies   = data["kineticEnergies"]
+    totalEnergies     = data["totalEnergies"]
+    metadata          = data["metadata"]
+else:
+    raise FileNotFoundError(f"No results found in {latest}")
 
 L            = float(metadata[0])
 numParticles = int(metadata[1])
 timeSteps    = int(metadata[2])
 finalTime    = float(metadata[3])
 
-end = FINAL_INDEX if FINAL_INDEX is not None else timeSteps - 1
+numPosFrames = positions.shape[0]  # may be timeSteps / skip from the C++ side
+end = FINAL_INDEX if FINAL_INDEX is not None else numPosFrames - 1
 frame_indices = np.arange(0, end + 1, STEP_SKIP)
+
+print(f"Loaded data: {numPosFrames} position frames, {timeSteps} timesteps, {numParticles} particles.")
 
 # ── Parallel segment renderer ─────────────────────────────────────────────────
 def render_segment(args):
@@ -72,7 +93,7 @@ def render_segment(args):
     seg_frames, pos_slice, L, FPS, out_path = args
     # pos_slice shape: (len(seg_frames), numParticles, 2)
 
-    fig, ax = plt.subplots(figsize=(6, 6))
+    fig, ax = plt.subplots(figsize=(8, 8), dpi = 200)
     ax.set_xlim(0, L)
     ax.set_ylim(0, L)
     ax.set_aspect("equal")
@@ -81,7 +102,7 @@ def render_segment(args):
 
     scat = ax.scatter(
         pos_slice[0, :, 0], pos_slice[0, :, 1],
-        s=10, c="steelblue", edgecolors="k", linewidths=0.4
+        s=5, c="steelblue", edgecolors="k", linewidths=0.4
     )
 
     def update(local_idx):
@@ -93,11 +114,14 @@ def render_segment(args):
         fig, update, frames=range(len(seg_frames)), interval=1000 // FPS, blit=True
     )
     writer = animation.FFMpegWriter(
-        fps=FPS, bitrate=1800, codec="mpeg4",
+        fps=FPS, bitrate=15000, codec="mpeg4",
         extra_args=["-pix_fmt", "yuv420p"]
     )
     ani.save(out_path, writer=writer)
     plt.close(fig)
+
+    print(f"Segment with frames {seg_frames[0]}-{seg_frames[-1]} saved to: {out_path}")
+
     return out_path
 
 # ── Split frames into segments and render in parallel ────────────────────────

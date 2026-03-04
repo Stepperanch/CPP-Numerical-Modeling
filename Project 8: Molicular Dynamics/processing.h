@@ -26,6 +26,8 @@ class MolucularSystem {
 
     float L;  // Size of the box in units of sigma (assuming a box for simplicity)
 
+    float gravity;  // Strength of the constant downward force to simulate gravity
+
     std::vector<std::array<double, d>> positions;
     std::vector<std::array<double, d>> velocities;
     std::vector<std::array<double, d>> accelerations;
@@ -49,13 +51,14 @@ class MolucularSystem {
 
     // Assume sigma, epsilon, and mass are all 1 for simplicity in reduced units
 
-    MolucularSystem(std::vector<std::array<double, d>> initialPositions, std::vector<std::pair<int, double>> energyFunction, unsigned int timeSteps,
+    MolucularSystem(std::vector<std::array<double, d>> initialPositions, std::vector<std::pair<int, double>> energyFunction, float gravity, unsigned int timeSteps,
                     double finalTime, float boxSize) {
         this->numParticles = initialPositions.size();
         this->timeSteps = timeSteps;
         this->finalTime = finalTime;
         this->L = boxSize;
         this->energyFunction = energyFunction;
+        this->gravity = gravity;
         positions.resize(numParticles * timeSteps);
         accelerations.resize(numParticles);
         velocities.resize(numParticles);
@@ -101,9 +104,11 @@ class MolucularSystem {
 #pragma omp for schedule(guided)
             for (int p1_ind = 0; p1_ind < numParticles; ++p1_ind) {
                 std::array<double, d>& p1_pos = getPosition(t, p1_ind);
+                // localPE += -gravity * p1_pos[1];  // Add potential energy contribution from the constant downward force to simulate gravity
 
                 for (int p2_ind = p1_ind + 1; p2_ind < numParticles; p2_ind++) {
                     std::array<double, d>& p2_pos = getPosition(t, p2_ind);
+                    //localPE += -gravity * p2_pos[1];  // Add potential energy contribution from the constant downward force to simulate gravity
 
                     double dx = p1_pos[0] - p2_pos[0];
                     double dy = p1_pos[1] - p2_pos[1];
@@ -130,11 +135,11 @@ class MolucularSystem {
                     // double fz = force_magnitude * dz / r; // For 3D
 
                     localAccelerations[p1_ind][0] += ax;  // Update acceleration for particle 1
-                    localAccelerations[p1_ind][1] += ay;
+                    localAccelerations[p1_ind][1] += ay /*- gravity*/;  // Update acceleration for particle 1 and add a small constant downward force to simulate gravity
                     // accelerations[p1_ind][2] += fz; // For 3D
 
                     localAccelerations[p2_ind][0] -= ax;  // Update acceleration for particle 2 (Newton's third law)
-                    localAccelerations[p2_ind][1] -= ay;
+                    localAccelerations[p2_ind][1] -= ay /*- gravity*/;  // Update acceleration for particle 2 and add a small constant downward force to simulate gravity
                     // accelerations[p2_ind][2] = -fz; // For 3D
                 }
             }
@@ -206,16 +211,19 @@ class MolucularSystem {
     }
 
     void energyCalculations(int t) {
-        if (energyFunctionIndex < energyFunction.size() && t == energyFunction[energyFunctionIndex].first /*&& (currentKE_times2 > 1 || energyFunction[energyFunctionIndex].second > 0)*/) {
+        if (energyFunctionIndex < energyFunction.size() &&
+            t == energyFunction[energyFunctionIndex].first /*&& (currentKE_times2 > 1 || energyFunction[energyFunctionIndex].second > 0)*/) {
             double desiredEnergyChange = energyFunction[energyFunctionIndex].second;  // Get the desired energy change for this time step
 
             double scaleingFactor =
                 std::sqrt(1.0 + 2 * desiredEnergyChange / currentKE_times2);  // Calculate scaling factor based on the desired energy change
 #pragma omp parallel for schedule(static) if (numParticles > 200)  // Only parallelize if there are enough particles to justify the overhead
             for (int i = 0; i < numParticles; i++) {
-                if (std::abs(velocities[i][0]) > 1.0 || scaleingFactor > 1)  // Only scale if the velocity is above a certain threshold or if we are adding energy to the system
+                if (std::abs(velocities[i][0]) > 1.0 ||
+                    scaleingFactor > 1)  // Only scale if the velocity is above a certain threshold or if we are adding energy to the system
                     velocities[i][0] *= scaleingFactor;
-                if (std::abs(velocities[i][1]) > 1.0 || scaleingFactor > 1)  // Only scale if the velocity is above a certain threshold or if we are adding energy to the system
+                if (std::abs(velocities[i][1]) > 1.0 ||
+                    scaleingFactor > 1)  // Only scale if the velocity is above a certain threshold or if we are adding energy to the system
                     velocities[i][1] *= scaleingFactor;
             }
             currentKE_times2 += 2 * desiredEnergyChange;  // Update kinetic energy to reflect the change
@@ -244,20 +252,45 @@ class MolucularSystem {
         }
     }
 
-    void saveResultsToNPZ(const std::string& filename) {
-        // Implement the logic to save the results (positions, energies, etc.) to a file
-        // Cast to double* so sizeof(T)==8 and shape {timeSteps,numParticles,d} is correct.
-        // Passing std::array<double,d>* would double-count d in the byte count and overread.
-        cnpy::npz_save(filename, "positions", reinterpret_cast<double*>(positions.data()), {(size_t)timeSteps, (size_t)numParticles, (size_t)d}, "w");
-        cnpy::npz_save(filename, "velocities", reinterpret_cast<double*>(velocities.data()), {(size_t)numParticles, (size_t)d}, "a");
-        cnpy::npz_save(filename, "accelerations", reinterpret_cast<double*>(accelerations.data()), {(size_t)numParticles, (size_t)d}, "a");
-        cnpy::npz_save(filename, "temperatures", temperatures.data(), {timeSteps}, "a");
-        cnpy::npz_save(filename, "potentialEnergies", potentialEnergies.data(), {timeSteps}, "a");
-        cnpy::npz_save(filename, "kineticEnergies", kineticEnergies.data(), {timeSteps}, "a");
-        cnpy::npz_save(filename, "totalEnergies", totalEnergies.data(), {timeSteps}, "a");
+    void saveResultsToNpy(const std::string& directory) {
+        // Save each array as a separate .npy file to avoid the 4 GB ZIP/NPZ size limit.
+        // Only save one in 5 positions to reduce file size; all data saved as float.
+        std::vector<float> positions_float, temperatures_float, potentialEnergies_float, kineticEnergies_float, totalEnergies_float;
+        positions_float.resize((timeSteps / 5) * numParticles * d);
+        temperatures_float.resize(timeSteps);
+        potentialEnergies_float.resize(timeSteps);
+        kineticEnergies_float.resize(timeSteps);
+        totalEnergies_float.resize(timeSteps);
+
+        int skip = 5;
+
+#pragma omp parallel for collapse(3) schedule(static) if ((timeSteps / 5) * numParticles * d > 1000)
+        for (int t = 0; t < timeSteps; t += skip) {
+            for (int i = 0; i < numParticles; i++) {
+                for (int j = 0; j < d; j++) {
+                    int idx = ((t / skip) * numParticles + i) * d + j;
+                    positions_float[idx] = static_cast<float>(positions[(t * numParticles + i)][j]);
+                }
+            }
+        }
+
+// Convert scalar time-series (these are small, no need for skip)
+#pragma omp parallel for schedule(static) if (timeSteps > 1000)
+        for (int t = 0; t < (int)timeSteps; t++) {
+            temperatures_float[t] = static_cast<float>(temperatures[t]);
+            potentialEnergies_float[t] = static_cast<float>(potentialEnergies[t]);
+            kineticEnergies_float[t] = static_cast<float>(kineticEnergies[t]);
+            totalEnergies_float[t] = static_cast<float>(totalEnergies[t]);
+        }
+
+        cnpy::npy_save(directory + "/positions.npy", positions_float.data(), {(size_t)(timeSteps / 5), (size_t)numParticles, (size_t)d}, "w");
+        cnpy::npy_save(directory + "/temperatures.npy", temperatures_float.data(), {timeSteps}, "w");
+        cnpy::npy_save(directory + "/potentialEnergies.npy", potentialEnergies_float.data(), {timeSteps}, "w");
+        cnpy::npy_save(directory + "/kineticEnergies.npy", kineticEnergies_float.data(), {timeSteps}, "w");
+        cnpy::npy_save(directory + "/totalEnergies.npy", totalEnergies_float.data(), {timeSteps}, "w");
 
         std::vector<double> metadata = {L, static_cast<double>(numParticles), static_cast<double>(timeSteps), finalTime};
-        cnpy::npz_save(filename, "metadata", metadata.data(), {metadata.size()}, "a");
+        cnpy::npy_save(directory + "/metadata.npy", metadata.data(), {metadata.size()}, "w");
     }
 
     void saveEnergyToCSV(const std::string& filename) {
@@ -304,13 +337,13 @@ class MolucularSystem {
         }
         outputDir += "out_" + std::to_string(i);
         std::filesystem::create_directories(outputDir);
-        saveResultsToNPZ(outputDir + "/results_" + std::to_string(i) + ".npz");
+        saveResultsToNpy(outputDir);
         saveEnergyToCSV(outputDir + "/energy_data_" + std::to_string(i) + ".csv");
         savePositionsToCSV(outputDir + "/positions_data_" + std::to_string(i) + ".csv");
     }
 };
 
-std::vector<std::pair<int, double>> buildEnergyFunction(int totalTimeSteps) {
+std::vector<std::pair<int, double>> buildEnergyFunction(int totalTimeSteps, int numParticles) {
     std::vector<std::pair<int, double>> energyFunction;
     // For the first 5% of time steps, dont do anything
     // then for the next 45% of time steps, add energy to the system at a rate of 1 unit of energy per 1% of time steps
@@ -318,20 +351,22 @@ std::vector<std::pair<int, double>> buildEnergyFunction(int totalTimeSteps) {
     // then for the last 5% of time steps, dont do anything
     int onePercent = totalTimeSteps / 100;
 
+    float nP = static_cast<float>(numParticles);
+
     for (int i = 1; i < onePercent * 2; i++) {
-        energyFunction.push_back({i, 10 / onePercent});
+        energyFunction.push_back({i, 10.0 / 5000.0 * nP / onePercent});
     }
 
     for (int i = onePercent * 2; i < onePercent * 7; i++) {
-        energyFunction.push_back({i, -60.0 / onePercent});
+        energyFunction.push_back({i, -60.0 / 5000.0 * nP / onePercent});
     }
 
     for (int i = onePercent * 15; i < onePercent * 50; i++) {
-        energyFunction.push_back({i, 300.0 / onePercent});
+        energyFunction.push_back({i, 300.0 / 5000.0 * nP / onePercent});
     }
 
     for (int i = onePercent * 50; i < onePercent * 98; i++) {
-        energyFunction.push_back({i, -750.0 / onePercent});
+        energyFunction.push_back({i, -750.0 / 5000.0 * nP / onePercent});
     }
 
     return energyFunction;

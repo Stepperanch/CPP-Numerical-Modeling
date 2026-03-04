@@ -4,8 +4,8 @@
 #SBATCH --error=slurm_out/slurm_%j.err        # stderr log
 #SBATCH --nodes=1                   # single node (OpenMP, not MPI)
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16          # number of OpenMP threads — adjust to node size
-#SBATCH --mem=20G
+#SBATCH --cpus-per-task=8          # number of OpenMP threads — adjust to node size
+#SBATCH --mem=100G
 #SBATCH --time=02:00:00             # wall time — increase if needed
 #SBATCH --qos=standby
 ##SBATCH --partition=compute        # uncomment and set your partition name if required
@@ -31,7 +31,7 @@ echo "=== Building (release) on $(hostname) at $(date) ==="
 # Get data about processer and store it in a log for reference
 # lscpu > lscpu.log
 
-make release
+time make release
 if [ $? -ne 0 ]; then
     echo "Build failed — aborting." >&2
     exit 1

@@ -17,7 +17,7 @@ DEBUG_FLAGS = -O0 -g \
 RELEASE_FLAGS = -O3 -DNDEBUG \
 	-march=native \
 	-mtune=native \
-	-flto \
+	-flto=auto \
 	-funroll-loops \
 	-ftree-vectorize \
 	-fno-math-errno \
@@ -57,7 +57,7 @@ debug: clean $(TARGET)
 
 # Release build
 release: CXXFLAGS += $(RELEASE_FLAGS)
-release: LDFLAGS += -flto
+release: LDFLAGS += -flto=auto
 release: clean $(TARGET)
 
 # Unsafe release build (with aggressive optimizations)

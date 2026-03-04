@@ -319,19 +319,19 @@ std::vector<std::pair<int, double>> buildEnergyFunction(int totalTimeSteps) {
     int onePercent = totalTimeSteps / 100;
 
     for (int i = 1; i < onePercent * 2; i++) {
-        energyFunction.push_back({i, 5 / onePercent});
+        energyFunction.push_back({i, 10 / onePercent});
     }
 
     for (int i = onePercent * 2; i < onePercent * 7; i++) {
-        energyFunction.push_back({i, -30.0 / onePercent});
+        energyFunction.push_back({i, -60.0 / onePercent});
     }
 
     for (int i = onePercent * 15; i < onePercent * 50; i++) {
-        energyFunction.push_back({i, 18.0 / onePercent});
+        energyFunction.push_back({i, 300.0 / onePercent});
     }
 
-    for (int i = onePercent * 50; i < onePercent * 95; i++) {
-        energyFunction.push_back({i, -250.0 / onePercent});
+    for (int i = onePercent * 50; i < onePercent * 98; i++) {
+        energyFunction.push_back({i, -750.0 / onePercent});
     }
 
     return energyFunction;

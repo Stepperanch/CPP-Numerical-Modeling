@@ -4,9 +4,9 @@
 #SBATCH --error=slurm_out/slurm_%j.err        # stderr log
 #SBATCH --nodes=1                   # single node (OpenMP, not MPI)
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8          # number of OpenMP threads — adjust to node size
+#SBATCH --cpus-per-task=16          # number of OpenMP threads — adjust to node size
 #SBATCH --mem=20G
-#SBATCH --time=01:00:00             # wall time — increase if needed
+#SBATCH --time=02:00:00             # wall time — increase if needed
 #SBATCH --qos=standby
 ##SBATCH --partition=compute        # uncomment and set your partition name if required
 ##SBATCH --account=your_account     # uncomment and set your allocation if required

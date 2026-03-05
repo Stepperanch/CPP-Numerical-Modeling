@@ -29,7 +29,7 @@ plt.rcParams["animation.ffmpeg_path"] = FFMPEG
 FPS         = 60    # frames per second
 STEP_SKIP   = 1     # data timesteps skipped between frames
 FINAL_INDEX = None  # last data index to animate (None = use all)
-N_WORKERS   = min(16, max(1, mp.cpu_count() - 1))  # cap to avoid OOM
+N_WORKERS   = min(8, max(1, mp.cpu_count() - 1))  # cap to avoid OOM
 
 # ── Find most recent output directory ────────────────────────────────────────
 output_root = os.path.join(os.path.dirname(__file__), "output")
@@ -74,10 +74,11 @@ elif os.path.exists(npz_path):
 else:
     raise FileNotFoundError(f"No results found in {latest}")
 
-L            = float(metadata[0])
-numParticles = int(metadata[1])
-timeSteps    = int(metadata[2])
-finalTime    = float(metadata[3])
+width        = float(metadata[0])
+height       = float(metadata[1])  # square box
+numParticles = int(metadata[2])
+timeSteps    = int(metadata[3])
+finalTime    = float(metadata[4])
 
 numPosFrames = positions.shape[0]  # may be timeSteps / skip from the C++ side
 end = FINAL_INDEX if FINAL_INDEX is not None else numPosFrames - 1
@@ -90,12 +91,12 @@ def render_segment(args):
     """Render a contiguous slice of frames to a temp .mp4 file.
     Receives only pos_slice (the frames this worker needs) to avoid OOM.
     """
-    seg_frames, pos_slice, L, FPS, out_path = args
+    seg_frames, pos_slice, width, height, FPS, out_path = args
     # pos_slice shape: (len(seg_frames), numParticles, 2)
 
     fig, ax = plt.subplots(figsize=(8, 8), dpi = 200)
-    ax.set_xlim(0, L)
-    ax.set_ylim(0, L)
+    ax.set_xlim(0, width)
+    ax.set_ylim(0, height)
     ax.set_aspect("equal")
     ax.set_xlabel("x (σ)")
     ax.set_ylabel("y (σ)")
@@ -135,7 +136,7 @@ tmp_dir = tempfile.mkdtemp()
 seg_paths = [os.path.join(tmp_dir, f"seg_{i:04d}.mp4") for i in range(len(segments))]
 
 worker_args = [
-    (seg, positions[seg], L, FPS, path)   # pass only this segment's frames
+    (seg, positions[seg], width, height, FPS, path)   # pass only this segment's frames
     for seg, path in zip(segments, seg_paths)
 ]
 

@@ -27,6 +27,7 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 # --- Build -------------------------------------------------------------
 cd "$SLURM_SUBMIT_DIR"
 
+#
 echo "=== Building (release) on $(hostname) at $(date) ==="
 # Get data about processer and store it in a log for reference
 # lscpu > lscpu.log
@@ -41,7 +42,11 @@ fi
 
 # --- Run ---------------------------------------------------------------
 echo "=== Running with OMP_NUM_THREADS=$OMP_NUM_THREADS at $(date) ==="
-time ./bin/main
+time ./bin/main simulation.cfg
+if [ $? -ne 0 ]; then
+    echo "Execution failed — aborting." >&2
+    exit 1
+fi
 
 echo "== Ploting results at $(date) ==="
 time python plotting.py

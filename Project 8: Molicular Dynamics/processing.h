@@ -135,17 +135,9 @@ std::vector<double> buildEnergyFunction(std::string energyInstructions, int tota
                 energyChangePerStep;  // Add the energy change for this instruction to the energy function for each relevant time step
         }
     }
-    for ( int i = 1; i < totalTimeSteps; i++ ) {
-        std::cout << energyFunction[i];
-        if (i % 100 == 0) {
-            std::cout << "\n";
-        } else {
-            std::cout << ", ";
-        }
-    }
-
     return energyFunction;
 };
+
 
 /** @brief Builds a rectangular grid of particles.
  * @param centerX The x-coordinate of the center of the rectangle.

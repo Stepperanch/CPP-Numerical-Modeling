@@ -11,26 +11,32 @@ int main() {
     //     }
     // }
 
-    for (int n = 0; n < 3; n++) {
-        for (int m = 0; m < 3; m++) {
-            for (int i = 0; i < 25; i++) {
-                for (int j = 0; j < 25; j++) {
-                initialPositions.push_back({i * 1.1 + 30 * n + 5 + rand() / RAND_MAX * 0.7 , j * 1.1 + 30 * m + 5 + rand() / RAND_MAX * 0.7});  // Place particles in a grid with spacing of 1.5 sigma
-                }
-            }
+    // for (int n = 0; n < 3; n++) {
+    //     for (int m = 0; m < 3; m++) {
+    //         for (int i = 0; i < 20; i++) {
+    //             for (int j = 0; j < 20; j++) {
+    //             initialPositions.push_back({i * 1.1 + 30 * n + 5 + rand() / RAND_MAX * 0.7 , j * 1.1 + 30 * m + 5 + rand() / RAND_MAX * 0.7});  // Place particles in a grid with spacing of 1.5 sigma
+    //             }
+    //         }
+    //     }
+    // }
+
+    for (int i = 0; i < 40; i++) {
+        for (int j = 0; j < 80; j++) {
+        initialPositions.push_back({j * 1.1 + 10 + rand() / RAND_MAX * 0.7 , i * 1.1 + 2 + rand() / RAND_MAX * 0.7});  // Place particles in a grid with spacing of 1.5 sigma
         }
     }
 
-
-    unsigned int timeSteps = 100000;
+    unsigned int timeSteps = 50000;
     double finalTime = 400.0;
     float boxSize = 100.0;
 
     int numParticles = initialPositions.size();
 
+    float gravity = 0.02;  // Strength of the constant downward force to simulate gravity
 
 
-    MolucularSystem system(initialPositions, buildEnergyFunction(timeSteps, numParticles), timeSteps, finalTime, boxSize);
+    MolucularSystem system(initialPositions, buildEnergyFunction(timeSteps, numParticles), gravity, timeSteps, finalTime, boxSize);
     std::cout << "Running simulation with " << system.numParticles << " particles for " << system.timeSteps << " time steps on " << omp_get_num_threads() << " threads." << std::endl;
     system.runSimulation();
     std::cout << "Simulation complete. Saving results..." << std::endl;

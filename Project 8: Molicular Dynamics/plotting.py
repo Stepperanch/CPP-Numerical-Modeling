@@ -26,8 +26,8 @@ FFMPEG = "/apps/spack/root/opt/spack/linux-rhel9-haswell/gcc-13.2.0/ffmpeg-7.0.1
 plt.rcParams["animation.ffmpeg_path"] = FFMPEG
 
 # ── Animation controls ────────────────────────────────────────────────────────
-FPS         = 30    # frames per second
-STEP_SKIP   = 4     # data timesteps skipped between frames
+FPS         = 60    # frames per second
+STEP_SKIP   = 1     # data timesteps skipped between frames
 FINAL_INDEX = None  # last data index to animate (None = use all)
 N_WORKERS   = min(16, max(1, mp.cpu_count() - 1))  # cap to avoid OOM
 

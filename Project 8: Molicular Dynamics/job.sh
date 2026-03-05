@@ -2,10 +2,10 @@
 #SBATCH --job-name=molecular_dynamics  # Job name
 #SBATCH --output=slurm_out/slurm_%j.out       # stdout log (%j = job ID)
 #SBATCH --error=slurm_out/slurm_%j.err        # stderr log
-#SBATCH --nodes=1                   # single node (OpenMP, not MPI)
+#SBATCH --nodes=1                  # single node (OpenMP, not MPI)
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8          # number of OpenMP threads — adjust to node size
-#SBATCH --mem=100G
+#SBATCH --mem=16G
 #SBATCH --time=02:00:00             # wall time — increase if needed
 #SBATCH --qos=standby
 ##SBATCH --partition=compute        # uncomment and set your partition name if required

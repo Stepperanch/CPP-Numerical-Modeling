@@ -104,11 +104,11 @@ class MolucularSystem {
 #pragma omp for schedule(guided)
             for (int p1_ind = 0; p1_ind < numParticles; ++p1_ind) {
                 std::array<double, d>& p1_pos = getPosition(t, p1_ind);
-                // localPE += -gravity * p1_pos[1];  // Add potential energy contribution from the constant downward force to simulate gravity
+                localPE += gravity * p1_pos[1];  // Add potential energy contribution from the constant downward force to simulate gravity
+                localAccelerations[p1_ind][1] -= gravity;  // Add a small constant downward force to simulate gravity
 
                 for (int p2_ind = p1_ind + 1; p2_ind < numParticles; p2_ind++) {
                     std::array<double, d>& p2_pos = getPosition(t, p2_ind);
-                    //localPE += -gravity * p2_pos[1];  // Add potential energy contribution from the constant downward force to simulate gravity
 
                     double dx = p1_pos[0] - p2_pos[0];
                     double dy = p1_pos[1] - p2_pos[1];
@@ -116,7 +116,7 @@ class MolucularSystem {
 
                     // Apply minimum image convention for periodic boundary conditions
                     dx = dx - L * std::round(dx / L);
-                    dy = dy - L * std::round(dy / L);
+                    // dy = dy - L * std::round(dy / L);
 
                     double r2 = dx * dx + dy * dy;  // + dz*dz for 3D
 
@@ -135,11 +135,11 @@ class MolucularSystem {
                     // double fz = force_magnitude * dz / r; // For 3D
 
                     localAccelerations[p1_ind][0] += ax;  // Update acceleration for particle 1
-                    localAccelerations[p1_ind][1] += ay /*- gravity*/;  // Update acceleration for particle 1 and add a small constant downward force to simulate gravity
+                    localAccelerations[p1_ind][1] += ay;  // Update acceleration for particle 1 and add a small constant downward force to simulate gravity
                     // accelerations[p1_ind][2] += fz; // For 3D
 
                     localAccelerations[p2_ind][0] -= ax;  // Update acceleration for particle 2 (Newton's third law)
-                    localAccelerations[p2_ind][1] -= ay /*- gravity*/;  // Update acceleration for particle 2 and add a small constant downward force to simulate gravity
+                    localAccelerations[p2_ind][1] -= ay;  // Update acceleration for particle 2 and add a small constant downward force to simulate gravity
                     // accelerations[p2_ind][2] = -fz; // For 3D
                 }
             }
@@ -179,9 +179,16 @@ class MolucularSystem {
                 pos[1] = old_pos[1] + vel[1] * timeStep;
                 // pos[2] = old_pos[2] + vel[2] * timeStep; // For 3D
 
-                // Apply periodic boundary conditions
+                // Apply periodic boundary conditions in x direction
                 pos[0] -= L * std::floor(pos[0] / L);
-                pos[1] -= L * std::floor(pos[1] / L);
+                // Apply Reflective boundary conditions in y direction (simulate a floor at y=0 and a ceiling at y=L)
+                if (pos[1] < 0) {
+                    pos[1] = -pos[1];  // Reflect position
+                    vel[1] = -vel[1];  // Reverse velocity
+                } else if (pos[1] > L) {
+                    pos[1] = 2 * L - pos[1];  // Reflect position
+                    vel[1] = -vel[1];          // Reverse velocity
+                }
                 // pos[2] = fmod(pos[2] + L, L); // For 3D
             }
         }
@@ -262,7 +269,7 @@ class MolucularSystem {
         kineticEnergies_float.resize(timeSteps);
         totalEnergies_float.resize(timeSteps);
 
-        int skip = 5;
+        int skip = 10;
 
 #pragma omp parallel for collapse(3) schedule(static) if ((timeSteps / 5) * numParticles * d > 1000)
         for (int t = 0; t < timeSteps; t += skip) {
@@ -358,15 +365,15 @@ std::vector<std::pair<int, double>> buildEnergyFunction(int totalTimeSteps, int 
     }
 
     for (int i = onePercent * 2; i < onePercent * 7; i++) {
-        energyFunction.push_back({i, -60.0 / 5000.0 * nP / onePercent});
+        energyFunction.push_back({i, -90.0 / 5000.0 * nP / onePercent});
     }
 
-    for (int i = onePercent * 15; i < onePercent * 50; i++) {
-        energyFunction.push_back({i, 300.0 / 5000.0 * nP / onePercent});
+    for (int i = onePercent * 8; i < onePercent * 30; i++) {
+        energyFunction.push_back({i, 1900.0 / 5000.0 * nP / onePercent});
     }
 
-    for (int i = onePercent * 50; i < onePercent * 98; i++) {
-        energyFunction.push_back({i, -750.0 / 5000.0 * nP / onePercent});
+    for (int i = onePercent * 30; i < onePercent * 98; i++) {
+        energyFunction.push_back({i, -2000.0 / 5000.0 * nP / onePercent});
     }
 
     return energyFunction;

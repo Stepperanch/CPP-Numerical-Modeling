@@ -43,7 +43,7 @@ The **Fulton Supercomputer** (managed by the BYU Office of Research Computing) i
 <p align="center">
   <img src="assets/images/me-at-byuorc.jpeg" alt="Me At Fulton Supercomputer" width="45%"/>
   <br>
-  <em>Figure 1: Me at the BYU HPC cluster this winter.</em>
+  <em>Figure 1: Me at the BYU HPC cluster Febuary 2026.</em>
 </p>
 
 ---
@@ -71,7 +71,7 @@ I utilize **SLURM (Simple Linux Utility for Resource Management)** to orchestrat
 Development is performed on **RHEL 9.4** login nodes. I manage software dependencies via the `module load` system, typically involving:
 * **GCC/G++** for core simulation logic.
 * **OpenMPI** for distributed memory parallelism.
-* **CUDA/NVCC** for GPU-accelerated kernels.
+* **Python 3/ffmpeg** for visiulation
 
 ---
 
@@ -95,10 +95,10 @@ for (int i = 0; i < N; ++i) {
 **Simulation Deployment (This Portfolio):**
 | Project | Configuration | CPUs | Wall Time | Use Case |
 |---|---|---|---|---|
-| Project 4 (SOR) | CPU-only, `#threads=16` | 16 | 2–4 hrs | Weak-scaling study of iterative PDE solver |
-| Project 6 (Diffusion) | CPU-only, `#threads=32` | 32 | 3–6 hrs | Parallelizing independent particle trajectories |
-| Project 7 (Ising) | CPU-only, `#threads=128` | 128 | 6–12 hrs | Large parameter-space sweep with checkerboard MCMC |
-| Project 8 (Molecular Dynamics) | CPU-only, `#threads=8` | 8 | 1–2 hrs | Thread-local force accumulation (race condition mitigation) |
+| Project 4 (SOR) | CPU-only, `#threads=16` | 16 | 30–45 min | Weak-scaling study of iterative PDE solver |
+| Project 6 (Diffusion) | CPU-only, `#threads=32` | 32 | 2-3 min | Parallelizing independent particle trajectories |
+| Project 7 (Ising) | CPU-only, `#threads=128` | 128 | 10–45 min | Large parameter-space sweep with checkerboard MCMC |
+| Project 8 (Molecular Dynamics) | CPU-only, `#threads=8` | 8 | 10 min–2 hrs | Thread-local force accumulation (race condition mitigation) |
 
 **Key Advantages for This Work:**
 - **Scalability Testing:** Weak and strong scaling studies for OpenMP efficiency (Projects 4, 7)
@@ -152,7 +152,7 @@ The projects follow a deliberate arc of increasing computational sophistication:
 Project 7: Magnetization surface and contour map of the 3D Ising model, revealing the ferromagnetic phase transition at $T_c \approx 4.51\,J/k_B$.
 
 <p align="center">
-  <img src="Project%203%3A%20Celestial%20Dynamics/Output/celestial_analysis_5_3d.png" alt="Celestial Dynamics — 3D orbits" width="48%"/>
+  <img src="Project%203%3A%20Celestial%20Dynamics/Output/celestial_analysis_9_3d.png" alt="Celestial Dynamics — 3D orbits" width="48%"/>
   <img src="Project%205%3A%20Occilations%20on%20a%20string/mean_power_spectrum.png" alt="String oscillations — power spectrum" width="48%"/>
 </p>
 

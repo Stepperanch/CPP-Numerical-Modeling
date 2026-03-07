@@ -95,7 +95,7 @@ for (int i = 0; i < N; ++i) {
 **Simulation Deployment (This Portfolio):**
 | Project | Configuration | CPUs | Wall Time | Use Case |
 |---|---|---|---|---|
-| Project 4 (SOR) | CPU-only, `#threads=16` | 16 | 30–45 min | Weak-scaling study of iterative PDE solver |
+| Project 4 (SOR) | CPU-only, `#threads=16` | 16 | 30–45 min | Strong-scaling study of iterative PDE solver |
 | Project 6 (Diffusion) | CPU-only, `#threads=32` | 32 | 2-3 min | Parallelizing independent particle trajectories |
 | Project 7 (Ising) | CPU-only, `#threads=128` | 128 | 10–45 min | Large parameter-space sweep with checkerboard MCMC |
 | Project 8 (Molecular Dynamics) | CPU-only, `#threads=8` | 8 | 10 min–2 hrs | Thread-local force accumulation (race condition mitigation) |

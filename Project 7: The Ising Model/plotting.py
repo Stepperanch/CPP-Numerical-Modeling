@@ -22,13 +22,16 @@ SAVE_MULTIPLE_ANGLES = True
 # Angles to save if SAVE_MULTIPLE_ANGLES is True
 ROTATION_ANGLES = [(25, 45), (25, 135), (25, 225), (25, 315)]
 
+
+folder_path = 'output/Out_4/'
+
 # ===== Interactive HTML Export =====
 # Set to True to save an interactive HTML file (requires plotly)
 SAVE_INTERACTIVE_HTML = True
-INTERACTIVE_HTML_OUTPUT = 'output/Out_3/magnetization_3d_interactive.html'
+INTERACTIVE_HTML_OUTPUT = f'{folder_path}magnetization_3d_interactive.html'
 
 # Load the npz file
-data = np.load('output/Out_3/ising_results.npz')
+data = np.load(f'{folder_path}ising_results.npz')
 
 temperatures = data['temperatures']
 magnetic_fields = data['magnetic_fields']
@@ -65,7 +68,7 @@ def save_3d_plot(elev, azim, output_suffix=''):
 
     plt.show()
     # Save the 3D plot
-    filename = f'output/Out_3/magnetization_3d_surface{output_suffix}.png'
+    filename = f'{folder_path}magnetization_3d_surface{output_suffix}.png'
     plt.savefig(filename, dpi=600, bbox_inches='tight')
     print(f"3D surface plot saved to {filename} (elev={elev}°, azim={azim}°)")
     plt.close()
@@ -128,7 +131,7 @@ ax2.clabel(contour_lines, inline=True, fontsize=8)
 plt.tight_layout()
 
 # Save the contour plot
-plt.savefig('output/Out_3/magnetization_contour.png', dpi=300, bbox_inches='tight')
-print("Contour plot saved to output/Out_3/magnetization_contour.png")
+plt.savefig(f'{folder_path}magnetization_contour.png', dpi=300, bbox_inches='tight')
+print(f"Contour plot saved to {folder_path}magnetization_contour.png")
 
 plt.show()

@@ -328,7 +328,8 @@ class Simulation {
 #pragma omp parallel for collapse(2) schedule(dynamic)
         for (int i = 0; i < numTempSteps; i++) {
             for (int j = 0; j < numHSteps; j++) {
-                Material material(n, temperatures[i], magnetic_fields[j], iterations, 1, thread_seeds[j][i]);
+                Material material(n, temperatures[i], magnetic_fields[j], iterations, thread_seeds[j][i]); // Use for random initialization
+                // Material material(n, temperatures[i], magnetic_fields[j], iterations, thread_seeds[j][i]); // Use for uniform initialization
                 material.runSimulation();
                 avg_magnetizations[j][i] = material.averageMagnetization;
                 material.MagneticSusceptibility();

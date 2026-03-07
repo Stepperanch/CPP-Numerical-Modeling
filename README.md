@@ -9,6 +9,7 @@
 
 - [About](#about)
   - [Core Competencies](#core-competencies)
+  - [The Fulton Supercomputer at BYU](#the-fulton-supercomputer-at-byu)
 - [Academic Projects](#academic-projects)
   - [Progression](#progression)
 - [Personal Projects](#personal-projects)
@@ -34,6 +35,75 @@ This repository is a collection of **nine numerical simulation and computational
 | **High-Performance Computing** | BYU Supercomputer — SLURM batch scheduling with up to 128 CPU cores for intensive simulations (Projects 4, 6, 7) |
 | **I/O & Visualization** | CSV, NPZ (via cnpy/zlib), Matplotlib (3D surfaces, contour maps, animations, phase-space portraits) |
 | **Build Systems** | GNU Make with multi-target builds (debug, release, profile-guided optimization) |
+
+### The Fulton Supercomputer at BYU
+
+The **Fulton Supercomputer** (managed by the BYU Office of Research Computing) is a HPC cluster providing the processing backbone for my numerical modeling and simulation work. It manages over **35,000 CPU cores** and **360+ GPUs**, supported by a **6 PB** parallel filesystem.
+
+<p align="center">
+  <img src="/assets/images/fulton-cluster.png" alt="Fulton Supercomputer Cluster" width="75%"/>
+  <br>
+  <em>Figure 1: High-level visualization of the BYU ORC compute architecture.</em>
+</p>
+
+---
+
+## Architecture & Resources (2026 Specs)
+
+| Component | Specification |
+| :--- | :--- |
+| **Compute Nodes** | Heterogeneous: **AMD EPYC 7763** (128 cores/node) and **Intel Xeon Platinum 8568Y+** (96 cores/node) |
+| **High-Memory** | Specialized nodes providing up to **2 TB of DDR5 RAM** for memory-intensive simulations |
+| **GPU Acceleration** | **NVIDIA H200 (141GB)**, **L40S (48GB)**, and **A100 (80GB)** units |
+| **Interconnect** | **100 Gb/s InfiniBand** and RoCE v2 low-latency networking |
+| **Storage** | **6 PB** parallel filesystem via `/fslhome` and local **NVMe scratch** space |
+
+---
+
+## Workflow & Scheduling
+
+### Job Management
+I utilize **SLURM (Simple Linux Utility for Resource Management)** to orchestrate simulations. This involves writing batch scripts that request specific hardware constraints to optimize performance, such as:
+* `--constraint=avx512` for vector instructions.
+* `--qos=standby` for extended 7-day simulation windows.
+
+### Environment & Compilation
+Development is performed on **RHEL 9.4** login nodes. I manage software dependencies via the `module load` system, typically involving:
+* **GCC/G++** for core simulation logic.
+* **OpenMPI** for distributed memory parallelism.
+* **CUDA/NVCC** for GPU-accelerated kernels.
+
+---
+
+## Physics Implementation
+On this cluster, I implement numerical solvers for complex potentials where the computation scales as $O(N^2)$. For a system of $N$ particles, the potential $V$ is calculated as:
+
+$$V = \sum_{i < j} \frac{q_i q_j}{4\pi\epsilon_0 |\mathbf{r}_i - \mathbf{r}_j|}$$
+
+By utilizing **OpenMP** for multi-threading and **MPI** for node-to-node communication, I can distribute these calculations, significantly reducing the wall-time required for high-resolution datasets.
+
+```cpp
+// Example: Basic OpenMP Parallelization for Force Calculation
+#pragma omp parallel for reduction(+:total_energy)
+for (int i = 0; i < N; ++i) {
+    for (int j = i + 1; j < N; ++j) {
+        total_energy += calculate_interaction(particles[i], particles[j]);
+    }
+}
+
+**Simulation Deployment (This Portfolio):**
+| Project | Configuration | CPUs | Wall Time | Use Case |
+|---|---|---|---|---|
+| Project 4 (SOR) | CPU-only, `#threads=16` | 16 | 2–4 hrs | Weak-scaling study of iterative PDE solver |
+| Project 6 (Diffusion) | CPU-only, `#threads=32` | 32 | 3–6 hrs | Parallelizing independent particle trajectories |
+| Project 7 (Ising) | CPU-only, `#threads=128` | 128 | 6–12 hrs | Large parameter-space sweep with checkerboard MCMC |
+| Project 8 (Molecular Dynamics) | CPU-only, `#threads=8` | 8 | 1–2 hrs | Thread-local force accumulation (race condition mitigation) |
+
+**Key Advantages for This Work:**
+- **Scalability Testing:** Weak and strong scaling studies for OpenMP efficiency (Projects 4, 7)
+- **Parameter Sweeps:** Multi-dimensional search spaces (Project 7: 2D temperature × field grid)
+- **Long-Running Simulations:** Statistical ensembles (Project 6: millions of particle trajectories)
+- **Reproducibility:** Identical hardware across multiple runs for benchmarking and verification
 
 ---
 

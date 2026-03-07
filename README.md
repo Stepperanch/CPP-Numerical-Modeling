@@ -5,6 +5,21 @@
 
 ---
 
+## Table of Contents
+
+- [About](#about)
+  - [Core Competencies](#core-competencies)
+- [Academic Projects](#academic-projects)
+  - [Progression](#progression)
+- [Personal Projects](#personal-projects)
+- [Selected Results](#selected-results)
+- [Quick Start](#quick-start)
+  - [Build Toolchain](#build-toolchain)
+  - [Prerequisites](#prerequisites)
+- [Repository Structure](#repository-structure)
+
+---
+
 ## About
 
 This repository is a collection of **nine numerical simulation and computational mathematics projects** developed during my physics coursework and independent study. The work spans classical mechanics, electrostatics, statistical mechanics, and number theory — all implemented in **C++17** with **Python 3** visualization pipelines.
@@ -33,6 +48,7 @@ This repository is a collection of **nine numerical simulation and computational
 | 5 | [Oscillations on a String](Project%205%3A%20Occilations%20on%20a%20string/) | Damped stiff wave equation + spectral analysis | Finite differences (2nd + 4th order) + KissFFT | ✓ parallel spatial | — |
 | 6 | [Diffusion](Project%206%3A%20Diffusion/) | 3D Brownian random-walk ensemble | Monte Carlo with reflective BCs | ✓ parallel particles | ✓ |
 | 7 | [The Ising Model](Project%207%3A%20The%20Ising%20Model/) | 3D ferromagnetic phase transition | Metropolis MCMC, checkerboard sweep | ✓ multifactor parallel | ✓ 128 CPUs |
+| 8 | [Molecular Dynamics](Project%208%3A%20Molicular%20Dynamics/) | 2D Lennard-Jones fluid (400 particles) | Velocity Verlet, O(N²) pair forces | ✓ thread-local accumulators | ✓ 8 CPUs |
 
 ### Progression
 
@@ -42,6 +58,7 @@ The projects follow a deliberate arc of increasing computational sophistication:
 - **Project 4** introduces PDE solving, iterative methods, and OpenMP parallelism
 - **Projects 5–6** combine PDE/stochastic methods with spectral analysis and 3D particle tracking
 - **Project 7** synthesizes everything: statistical physics, Monte Carlo methods, precomputed lookup tables, multi-dimensional parameter sweeps, and full HPC deployment
+- **Project 8 (Capstone)** tackles the hardest parallelization challenge — an $O(N^2)$ N-body problem where Newton's third law optimizations create race conditions, resolved via thread-local accumulators and guided scheduling
 
 ---
 

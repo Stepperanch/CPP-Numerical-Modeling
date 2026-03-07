@@ -1,0 +1,56 @@
+# =============================================================================
+# GitHub Pages Configuration — Nels Buhrley's Computational Physics Portfolio
+# =============================================================================
+
+# Theme
+theme: jekyll-theme-cayman
+
+# Site Metadata
+title: "Computational Physics & HPC Portfolio"
+description: >-
+  A collection of C++17 numerical simulations spanning classical mechanics,
+  electrostatics, statistical mechanics, molecular dynamics, and number theory —
+  built with OpenMP parallelism and deployed on the BYU Supercomputer.
+author: "Nels Buhrley"
+baseurl: "/CPP-Numerical-Modeling"
+url: "https://nelsbuhrley.github.io"
+
+# Markdown & LaTeX Rendering
+markdown: kramdown
+kramdown:
+  math_engine: mathjax
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
+
+# MathJax v3 — injected into every page via custom <head> include
+# (GitHub Pages does not natively support MathJax; this block is read by the
+#  custom head include below.)
+mathjax:
+  enabled: true
+
+# Plugins
+plugins:
+  - jekyll-seo-tag
+
+# Exclude build artifacts and non-documentation files from the rendered site
+exclude:
+  - "*.cpp"
+  - "*.h"
+  - "*.c"
+  - "*.o"
+  - "*.dSYM"
+  - bin/
+  - obj/
+  - slurm_out/
+  - __pycache__/
+  - "Template Makefile"
+  - Makefile
+  - "*.npz"
+  - "*.csv"
+  - "*.cfg"
+  - "*.sh"
+  - src/
+  - include/
+  - reference/
+  - Testing/

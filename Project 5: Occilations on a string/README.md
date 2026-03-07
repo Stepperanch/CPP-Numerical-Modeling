@@ -1,8 +1,37 @@
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>
+
 # Project 5: Oscillations on a String
 
 **Author:** Nels Buhrley
 **Language:** C++17 with OpenMP · [KissFFT](https://github.com/mborgerding/kissfft) · Python 3 (visualization)
 **Build:** `make release` — see [Build & Run](#build--run)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Physics Background](#physics-background)
+  - [The Wave Equation](#the-wave-equation)
+  - [Bending Stiffness](#bending-stiffness)
+  - [Damping](#damping)
+  - [Power Spectrum and Normal Modes](#power-spectrum-and-normal-modes)
+- [Algorithmic Design](#algorithmic-design)
+  - [Finite Difference Discretization](#finite-difference-discretization)
+  - [CFL Stability Condition](#courantfriedrichslewy-cfl-stability-condition)
+  - [Initial Conditions: Superposition API](#initial-conditions-superposition-api)
+  - [Boundary Conditions](#boundary-conditions)
+  - [Spectral Analysis with KissFFT](#spectral-analysis-with-kissfft)
+- [Parallelization Strategy](#parallelization-strategy)
+- [Sources of Error and Limitations](#sources-of-error-and-limitations)
+- [Visualization](#visualization)
+- [Results](#results)
+- [Build & Run](#build--run)
+- [Simulation Parameters](#simulation-parameters)
+- [Key Techniques at a Glance](#key-techniques-at-a-glance)
+- [Project Structure](#project-structure)
 
 ---
 
@@ -363,3 +392,7 @@ Project 5: Occilations on a string/
 ---
 
 *Nels Buhrley — Computational Physics, 2026*
+
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>

@@ -1,8 +1,34 @@
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>
+
 # Project 1: Realistic 3D Projectile Motion
 
 **Author:** Nels Buhrley
 **Language:** C++17 · Python 3 (visualization)
 **Build:** `make` — see [Build & Run](#build--run)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Physics Background](#physics-background)
+  - [Equations of Motion](#equations-of-motion)
+  - [Net Acceleration](#net-acceleration)
+- [Code Structure](#code-structure)
+  - [Preset Projectiles](#preset-projectiles)
+  - [RK4 Integration](#rk4-integration)
+- [Results](#results)
+- [Sources of Error](#sources-of-error)
+- [Build & Run](#build--run)
+  - [Prerequisites](#prerequisites)
+  - [Build](#build)
+  - [Run](#run)
+  - [Visualize](#visualize)
+- [Simulation Parameters](#simulation-parameters)
+- [Key Techniques](#key-techniques)
+- [Project Structure](#project-structure)
 
 ---
 
@@ -201,3 +227,7 @@ Project 1: realistic projectile motion/
 ---
 
 *Nels Buhrley — Computational Physics, 2025*
+
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>

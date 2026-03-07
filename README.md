@@ -41,7 +41,7 @@ This repository is a collection of **nine numerical simulation and computational
 The **Fulton Supercomputer** (managed by the BYU Office of Research Computing) is a HPC cluster providing the processing backbone for my numerical modeling and simulation work. It manages over **35,000 CPU cores** and **360+ GPUs**, supported by a **6 PB** parallel filesystem.
 
 <p align="center">
-  <img src="/assets/images/Me_at_BYUORC.jpeg" alt="Fulton Supercomputer Cluster" width="45%"/>
+  <img src="/assets/images/Me_at_BYUORC.jpeg" alt="Me At Fulton Supercomputer" width="45%"/>
   <br>
   <em>Figure 1: Me at the BYU HPC cluster this winter.</em>
 </p>

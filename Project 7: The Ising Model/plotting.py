@@ -23,7 +23,7 @@ SAVE_MULTIPLE_ANGLES = True
 ROTATION_ANGLES = [(25, 45), (25, 135), (25, 225), (25, 315)]
 
 
-folder_path = 'output/Out_4/'
+folder_path = 'output/Out_5/'
 
 # ===== Interactive HTML Export =====
 # Set to True to save an interactive HTML file (requires plotly)

@@ -1,8 +1,42 @@
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>
+
 # Project 3: Celestial Dynamics — N-Body Gravitational Simulation
 
 **Author:** Nels Buhrley
 **Language:** C++17 · Python 3 (visualization)
 **Build:** `make` — see [Build & Run](#build--run)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Physics Background](#physics-background)
+  - [Newton's Law of Gravitation](#newtons-law-of-gravitation)
+  - [Conservation Laws](#conservation-laws)
+  - [Center-of-Mass Frame](#center-of-mass-frame)
+- [Numerical Methods](#numerical-methods)
+  - [4th-Order Runge-Kutta (RK4)](#4th-order-runge-kutta-rk4)
+  - [Euler-Cromer (Semi-Implicit Euler)](#euler-cromer-semi-implicit-euler)
+  - [Störmer-Verlet](#störmer-verlet)
+- [Code Structure](#code-structure)
+  - [Built-In Solar System Data](#built-in-solar-system-data)
+  - [Simulation Modes](#simulation-modes)
+- [Results](#results)
+  - [2D Orbit Plots](#2d-orbit-plots)
+  - [3D Orbit Plots](#3d-orbit-plots)
+- [Sources of Error](#sources-of-error)
+- [Build & Run](#build--run)
+  - [Prerequisites](#prerequisites)
+  - [Build](#build)
+  - [Run](#run)
+  - [Visualize](#visualize)
+- [Simulation Parameters](#simulation-parameters)
+  - [Recommended Settings](#recommended-settings)
+- [Key Techniques](#key-techniques)
+- [Project Structure](#project-structure)
 
 ---
 
@@ -259,3 +293,7 @@ Project 3: Celestial Dynamics/
 ---
 
 *Nels Buhrley — Computational Physics, 2025*
+
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>

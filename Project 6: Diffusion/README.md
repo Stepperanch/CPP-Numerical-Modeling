@@ -1,9 +1,33 @@
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>
+
 # Project 6: 3D Random-Walk Diffusion Simulation
 
 **Author:** Nels Buhrley
 **Language:** C++17 with OpenMP · Python 3 (visualization)
 **HPC:** Run on the BYU Supercomputer
 **Build:** `make release` — see [Build & Run](#build--run)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Physics Background](#physics-background)
+  - [Brownian Motion and the Random Walk](#brownian-motion-and-the-random-walk)
+  - [Root-Mean-Square Displacement](#root-mean-square-displacement)
+  - [Reflective Boundary Conditions](#reflective-boundary-conditions)
+  - [Uniform Sampling on the Unit Sphere](#uniform-sampling-on-the-unit-sphere)
+- [Algorithmic Design](#algorithmic-design)
+- [Parallelization Strategy](#parallelization-strategy)
+- [Sources of Error and Limitations](#sources-of-error-and-limitations)
+- [Visualization](#visualization)
+- [Results](#results)
+- [Build & Run](#build--run)
+- [Simulation Parameters](#simulation-parameters)
+- [Key Techniques at a Glance](#key-techniques-at-a-glance)
+- [Project Structure](#project-structure)
 
 ---
 
@@ -307,3 +331,7 @@ Project 6: Defusion/
 ---
 
 *Nels Buhrley — Computational Physics, 2026*
+
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>

@@ -1,9 +1,32 @@
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>
+
 # Project 7: The 3D Ising Model
 
 **Author:** Nels Buhrley
 **Language:** C++17 with OpenMP · Python 3 (visualization)
 **HPC:** Run on the BYU Supercomputer (128 CPUs via SLURM)
 **Build:** `make release` — see [Build & Run](#build--run)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Physics Background](#physics-background)
+  - [The Ising Hamiltonian](#the-ising-hamiltonian)
+  - [Phase Transition](#phase-transition)
+  - [Observable: Average Magnetization](#observable-average-magnetization)
+- [Code Structure](#code-structure)
+  - [`Material` Class](#material-class)
+  - [`Simulation` Class](#simulation-class)
+- [Results](#results)
+- [Sources of Error](#sources-of-error)
+- [Build & Run](#build--run)
+- [Simulation Parameters](#simulation-parameters)
+- [Key Techniques](#key-techniques)
+- [Project Structure](#project-structure)
 
 ---
 
@@ -413,3 +436,7 @@ Project 7: The Ising Model/
 ---
 
 *Nels Buhrley — Computational Physics, 2026*
+
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>

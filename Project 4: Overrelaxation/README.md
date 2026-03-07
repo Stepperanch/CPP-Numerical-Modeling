@@ -1,9 +1,32 @@
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>
+
 # Project 4: Overrelaxation — 3D Electrostatic Potential Solver
 
 **Author:** Nels Buhrley
 **Language:** C++17 with OpenMP · Python 3 (visualization)
 **HPC:** Run on the BYU Supercomputer
 **Build:** `make release` — see [Build & Run](#build--run)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Physics Background](#physics-background)
+  - [Laplace’s Equation](#laplaces-equation)
+  - [Finite Difference Discretization](#finite-difference-discretization)
+  - [Successive Over-Relaxation (SOR)](#successive-over-relaxation-sor)
+  - [Red-Black Ordering](#red-black-ordering)
+  - [Test Configuration](#test-configuration)
+- [Algorithm & Parallelism](#algorithm--parallelism)
+- [Results](#results)
+- [Sources of Error](#sources-of-error)
+- [Build & Run](#build--run)
+- [Simulation Parameters](#simulation-parameters)
+- [Key Techniques](#key-techniques)
+- [Project Structure](#project-structure)
 
 ---
 
@@ -202,3 +225,7 @@ Project 4: Overrelaxation/
 ---
 
 *Nels Buhrley — Computational Physics, 2025*
+
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>

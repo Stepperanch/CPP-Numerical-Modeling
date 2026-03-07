@@ -1,9 +1,39 @@
-# Project 8: Molecular Dynamics
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>
+
+# Project 8: Molecular Dynamics — Capstone
 
 **Author:** Nels Buhrley
 **Language:** C++17 with OpenMP · Python 3 (visualization)
-**HPC:** Run on the BYU Supercomputer (128 CPUs via SLURM)
+**HPC:** Run on the BYU Supercomputer (8 CPUs via SLURM)
 **Build:** `make release` — see [Build & Run](#build--run)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Physics Background](#physics-background)
+  - [The Lennard-Jones Potential](#the-lennard-jones-potential)
+  - [Equations of Motion](#equations-of-motion)
+  - [Velocity Verlet Integration](#velocity-verlet-integration)
+  - [Observables](#observables)
+- [Code Structure](#code-structure)
+  - [`MolucularSystem` Class](#molucularsystem-class)
+- [Parallelization Narrative](#parallelization-narrative)
+  - [The O(N²) Challenge](#the-on²-challenge)
+  - [Race Conditions in Force Accumulation](#race-conditions-in-force-accumulation)
+  - [The Thread-Local Accumulator Solution](#the-thread-local-accumulator-solution)
+  - [Guided Scheduling for Triangular Loops](#guided-scheduling-for-triangular-loops)
+  - [Lessons Learned](#lessons-learned)
+- [Visualization (`plotting.py`)](#visualization-plottingpy)
+- [Results](#results)
+- [Sources of Error](#sources-of-error)
+- [Build & Run](#build--run)
+- [Simulation Parameters](#simulation-parameters)
+- [Key Techniques](#key-techniques)
+- [Project Structure](#project-structure)
 
 ---
 
@@ -183,6 +213,88 @@ Progress is logged every 5% of the simulation.
 
 ---
 
+## Parallelization Narrative
+
+### The O(N²) Challenge
+
+Molecular dynamics with pairwise potentials is an inherently $O(N^2)$ problem: every particle interacts with every other particle. For $N = 400$ particles over 300,000 time steps, that amounts to roughly $4.8 \times 10^{10}$ pair evaluations — a workload that demands parallelism but resists it in subtle ways.
+
+The naive parallelization strategy — splitting the outer particle loop across threads — immediately encounters a fundamental correctness issue. When particle $i$ computes its force contribution from particle $j$, Newton's third law ($\mathbf{F}_{ij} = -\mathbf{F}_{ji}$) means we want to update *both* `acceleration[i]` and `acceleration[j]` simultaneously. But if two threads are running simultaneously, Thread A (computing forces on particle $i$) and Thread B (computing forces on particle $k$) might both try to update `acceleration[j]` at the same time — a classic **write-write race condition**.
+
+### Race Conditions in Force Accumulation
+
+The race condition arises specifically in the **triangular pair loop**:
+
+```cpp
+for (int p1 = 0; p1 < N; p1++)           // outer: parallelized
+    for (int p2 = p1 + 1; p2 < N; p2++)  // inner: sequential
+        F = compute_LJ_force(p1, p2);
+        acceleration[p1] += F;            // ← Thread writing to p1's slot
+        acceleration[p2] -= F;            // ← RACE: another thread may also write to p2
+```
+
+The `acceleration[p2] -= F` line is the culprit. When the outer loop is distributed across threads, *any* thread could be updating `acceleration[p2]` for the same `p2` at the same time. Standard approaches like `#pragma omp atomic` would be prohibitively expensive here — called $O(N^2/2)$ times per time step, the synchronization overhead would dwarf the computation.
+
+A `reduction` clause is also unsuitable because the reduction target is a *vector of arrays*, not a scalar, and the reduction would need to operate on the full $N \times d$ acceleration matrix.
+
+### The Thread-Local Accumulator Solution
+
+The solution implemented in `calculateAccelerations()` uses **thread-local accumulator arrays** merged via a single `#pragma omp critical` block at the end:
+
+```cpp
+#pragma omp parallel if (numParticles > 50)
+{
+    // Each thread gets its own private copy of the full acceleration array
+    std::vector<std::array<double, d>> localAccelerations(numParticles, {0.0, 0.0});
+    double localPE = 0.0;
+
+    #pragma omp for schedule(guided)
+    for (int p1 = 0; p1 < numParticles; p1++) {
+        for (int p2 = p1 + 1; p2 < numParticles; p2++) {
+            // ... force calculation ...
+            localAccelerations[p1][dim] += force_component;
+            localAccelerations[p2][dim] -= force_component;  // safe: thread-private
+        }
+    }
+
+    #pragma omp critical
+    {
+        // Merge all thread-local results into the shared array
+        for (int i = 0; i < numParticles; i++)
+            for (int dim = 0; dim < d; dim++)
+                accelerations[i][dim] += localAccelerations[i][dim];
+        currentPE += localPE;
+    }
+}
+```
+
+Each thread accumulates forces into its own private `localAccelerations` vector. The Newton's third law update `localAccelerations[p2] -= F` is now completely safe because no other thread touches this thread's copy. Only after all pair computations are finished does each thread merge its local result into the shared state — and the `critical` block serializes these merges.
+
+**Trade-off:** This approach uses $O(\text{threads} \times N \times d)$ extra memory. For 8 threads and 400 particles in 2D, that's only $\sim$50 KB — negligible. But for much larger particle counts or 3D systems, this memory overhead would grow and alternative strategies (cell lists, domain decomposition) would become necessary.
+
+### Guided Scheduling for Triangular Loops
+
+The pair loop is **triangular**: particle 0 has $N-1$ inner iterations, particle 1 has $N-2$, and so on. Static scheduling would assign equal ranges of outer indices to each thread, but the first threads would get far more work than the last. `schedule(guided)` addresses this by assigning large chunks initially and progressively smaller chunks as threads finish, adapting to the non-uniform workload:
+
+```cpp
+#pragma omp for schedule(guided)
+for (int p1 = 0; p1 < numParticles; p1++) { ... }
+```
+
+This keeps all threads busy until the very end of the sweep, maximizing parallel efficiency for the triangular iteration pattern.
+
+### Lessons Learned
+
+1. **Not all $O(N^2)$ problems parallelize cleanly.** The Newton's third law optimization (halving pair evaluations) introduces write dependencies that naively conflict with thread parallelism. Choosing to *duplicate* memory via thread-local accumulators was the pragmatic solution — trading space for correctness.
+
+2. **`omp critical` is acceptable when called $O(\text{threads})$ times, not $O(N^2)$ times.** The merge step runs once per thread per time step — negligible overhead. Putting synchronization *inside* the pair loop would have been catastrophic.
+
+3. **Dynamic/guided scheduling is essential for unbalanced loops.** The triangular pattern means static scheduling leaves threads idle; `guided` scheduling adapts automatically.
+
+4. **Threshold guards prevent small-problem overhead.** The `if (numParticles > 50)` guard on the parallel region ensures that the thread-spawning overhead doesn't dominate for small particle counts during testing.
+
+---
+
 ## Visualization (`plotting.py`)
 
 The Python pipeline performs two tasks:
@@ -210,6 +322,23 @@ Three-panel figure:
 ---
 
 ## Results
+
+### Particle Animation
+
+<p align="center">
+  <!-- Replace the src below with your actual animation file once rendered -->
+  <img src="output/out_0/md_animation.gif" alt="Molecular dynamics particle animation — heating/cooling cycle" width="70%"/>
+</p>
+
+*Particle trajectory animation showing the heating–cooling cycle. Particles evolve from a regular grid through a gas-like disordered phase during heating, then re-order as energy is extracted — illustrating the connection between kinetic energy and temperature at the microscopic level.*
+
+<!-- Uncomment below if you have an MP4 instead of GIF:
+<p align="center">
+  <video src="output/out_0/md_animation.mp4" width="70%" autoplay loop muted playsinline>
+    Your browser does not support the video tag.
+  </video>
+</p>
+-->
 
 ### Energy Analysis
 
@@ -357,3 +486,7 @@ Project 8: Molicular Dynamics/
 ---
 
 *Nels Buhrley — Computational Physics, 2026*
+
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>

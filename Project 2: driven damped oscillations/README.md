@@ -1,8 +1,42 @@
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>
+
 # Project 2: Driven Damped Pendulum — Route to Chaos
 
 **Author:** Nels Buhrley
 **Language:** C++17 · Python 3 (visualization)
 **Build:** `make release` — see [Build & Run](#build--run)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Physics Background](#physics-background)
+  - [Equation of Motion](#equation-of-motion)
+  - [Natural Frequency and Resonance](#natural-frequency-and-resonance)
+  - [Phase Space and Attractors](#phase-space-and-attractors)
+  - [Poincaré Sections](#poincaré-sections)
+- [Numerical Methods](#numerical-methods)
+  - [4th-Order Runge-Kutta (RK4)](#4th-order-runge-kutta-rk4)
+  - [Euler-Cromer (Semi-Implicit Euler)](#euler-cromer-semi-implicit-euler)
+  - [Derivative Computation](#derivative-computation)
+- [Code Structure](#code-structure)
+  - [Simulation Modes](#simulation-modes)
+- [Results](#results)
+- [Sources of Error](#sources-of-error)
+- [Build & Run](#build--run)
+  - [Prerequisites](#prerequisites)
+  - [Build](#build)
+  - [Run](#run)
+  - [Visualize](#visualize)
+- [Example Parameter Sets](#example-parameter-sets)
+  - [Periodic Regime](#periodic-regime)
+  - [Chaotic Regime (Period Doubling)](#chaotic-regime-period-doubling)
+  - [Deep Chaos](#deep-chaos)
+- [Key Techniques](#key-techniques)
+- [Project Structure](#project-structure)
 
 ---
 
@@ -217,3 +251,7 @@ Project 2: driven damped oscillations/
 ---
 
 *Nels Buhrley — Computational Physics, 2025*
+
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>

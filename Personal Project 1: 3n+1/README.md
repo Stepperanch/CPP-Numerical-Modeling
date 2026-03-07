@@ -1,7 +1,33 @@
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>
+
 # Personal Project 1: The Collatz Conjecture (3n+1)
 
 **Author:** Nels Buhrley
 **Language:** C++17 · Python 3 (visualization)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Technical Background](#technical-background)
+  - [The Collatz Conjecture](#the-collatz-conjecture)
+  - [Key Quantities](#key-quantities)
+  - [Growth and Decay](#growth-and-decay)
+- [Programs](#programs)
+  - [`3n+1.cpp` — Exhaustive Stopping-Time Survey](#3n1cpp--exhaustive-stopping-time-survey)
+  - [`3n+1#2.cpp` — Interactive Sequence Explorer](#3n12cpp--interactive-sequence-explorer)
+  - [`collatz_data_generator.cpp` — CSV Data Generation](#collatz_data_generatorcpp--csv-data-generation)
+  - [`plot_collatz.py` — Visualization](#plot_collatzpy--visualization)
+- [Building and Running](#building-and-running)
+  - [Prerequisites](#prerequisites)
+  - [Compile](#compile)
+  - [Run](#run)
+- [Sources of Error and Limitations](#sources-of-error-and-limitations)
+- [Key Techniques](#key-techniques)
+- [Project Structure](#project-structure)
 
 ---
 
@@ -159,3 +185,7 @@ Personal Project 1: 3n+1/
 ---
 
 *Nels Buhrley — Computational Mathematics, 2025*
+
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>

@@ -60,8 +60,8 @@ Thumbs.db
 
 # Plots
 *.png
-# *.jpg
-# *.jpeg
+*.jpg
+*.jpeg
 
 # Temporary files
 *~
@@ -117,3 +117,7 @@ vcpkg_installed/
 # Slurm output files
 slurm_*.out
 slurm_*.err
+
+# Negations — allow assets directory and all its contents
+!assets/
+!assets/**

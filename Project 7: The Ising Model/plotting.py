@@ -2,6 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import sys
+try:
+    import plotly.graph_objects as go
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+    print("Warning: plotly not installed. Interactive HTML export disabled.")
+    print("Install with: pip install plotly")
 
 # ===== 3D Plot Viewing Angle Parameters =====
 # Elevation angle (default: 25 degrees)
@@ -15,11 +22,13 @@ SAVE_MULTIPLE_ANGLES = True
 # Angles to save if SAVE_MULTIPLE_ANGLES is True
 ROTATION_ANGLES = [(25, 45), (25, 135), (25, 225), (25, 315)]
 
+# ===== Interactive HTML Export =====
+# Set to True to save an interactive HTML file (requires plotly)
+SAVE_INTERACTIVE_HTML = True
+INTERACTIVE_HTML_OUTPUT = 'output/Out_3/magnetization_3d_interactive.html'
+
 # Load the npz file
-folder_path = 'output/Out_4/'
-
-
-data = np.load(folder_path + 'ising_results.npz')
+data = np.load('output/Out_3/ising_results.npz')
 
 temperatures = data['temperatures']
 magnetic_fields = data['magnetic_fields']
@@ -56,10 +65,44 @@ def save_3d_plot(elev, azim, output_suffix=''):
 
     plt.show()
     # Save the 3D plot
-    filename = f'{folder_path}magnetization_3d_surface{output_suffix}.png'
+    filename = f'output/Out_3/magnetization_3d_surface{output_suffix}.png'
     plt.savefig(filename, dpi=600, bbox_inches='tight')
     print(f"3D surface plot saved to {filename} (elev={elev}°, azim={azim}°)")
     plt.close()
+
+# Save interactive HTML if enabled
+def save_interactive_html(output_path):
+    """Save an interactive 3D surface plot as an HTML file using Plotly."""
+    if not PLOTLY_AVAILABLE:
+        print("Skipping interactive HTML export: plotly is not installed.")
+        return
+
+    fig = go.Figure(data=[go.Surface(
+        x=T_mesh,
+        y=H_mesh,
+        z=magnetizations_2d,
+        colorscale='Viridis',
+        colorbar=dict(title='Magnetization'),
+        opacity=0.9,
+    )])
+
+    fig.update_layout(
+        title='3D Ising Model: Magnetization vs Temperature and Magnetic Field',
+        scene=dict(
+            xaxis_title='Temperature (T)',
+            yaxis_title='Magnetic Field (h)',
+            zaxis_title='Average Magnetization',
+            camera=dict(eye=dict(x=1.5, y=1.5, z=1.0)),
+        ),
+        width=1100,
+        height=800,
+    )
+
+    fig.write_html(output_path)
+    print(f"Interactive HTML plot saved to {output_path}")
+
+if SAVE_INTERACTIVE_HTML:
+    save_interactive_html(INTERACTIVE_HTML_OUTPUT)
 
 # Save 3D plot(s) based on configuration
 if SAVE_MULTIPLE_ANGLES:
@@ -85,7 +128,7 @@ ax2.clabel(contour_lines, inline=True, fontsize=8)
 plt.tight_layout()
 
 # Save the contour plot
-plt.savefig(folder_path + 'magnetization_contour.png', dpi=300, bbox_inches='tight')
-print("Contour plot saved to " + folder_path + "magnetization_contour.png")
+plt.savefig('output/Out_3/magnetization_contour.png', dpi=300, bbox_inches='tight')
+print("Contour plot saved to output/Out_3/magnetization_contour.png")
 
 plt.show()

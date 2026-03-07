@@ -1,8 +1,33 @@
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>
+
 # Personal Project 2: Euler's Idoneal Numbers — Parallel Sieve
 
 **Author:** Nels Buhrley
 **Language:** C++17 with OpenMP
 **Build:** `make release` — see [Build & Run](#build--run)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Technical Background](#technical-background)
+  - [Euler's Idoneal Numbers](#eulers-idoneal-numbers)
+  - [Known Idoneal Numbers](#known-idoneal-numbers)
+  - [The Sieve Approach](#the-sieve-approach)
+- [Algorithm & Parallelism](#algorithm--parallelism)
+  - [OpenMP Parallelization](#openmp-parallelization)
+  - [Performance](#performance)
+- [Sources of Error and Limitations](#sources-of-error-and-limitations)
+- [Build & Run](#build--run)
+  - [Prerequisites](#prerequisites)
+  - [Build](#build)
+  - [Run](#run)
+- [Simulation Parameters](#simulation-parameters)
+- [Key Techniques](#key-techniques)
+- [Project Structure](#project-structure)
 
 ---
 
@@ -166,3 +191,7 @@ Personal Project 2: Idelic Numbers/
 ---
 
 *Nels Buhrley — Computational Mathematics, 2025*
+
+<p align="center">
+  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+</p>

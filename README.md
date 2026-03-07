@@ -5,6 +5,22 @@
 
 ---
 
+## Table of Contents
+
+- [About](#about)
+  - [Core Competencies](#core-competencies)
+  - [The Fulton Supercomputer at BYU](#the-fulton-supercomputer-at-byu)
+- [Academic Projects](#academic-projects)
+  - [Progression](#progression)
+- [Personal Projects](#personal-projects)
+- [Selected Results](#selected-results)
+- [Quick Start](#quick-start)
+  - [Build Toolchain](#build-toolchain)
+  - [Prerequisites](#prerequisites)
+- [Repository Structure](#repository-structure)
+
+---
+
 ## About
 
 This repository is a collection of **nine numerical simulation and computational mathematics projects** developed during my physics coursework and independent study. The work spans classical mechanics, electrostatics, statistical mechanics, and number theory — all implemented in **C++17** with **Python 3** visualization pipelines.
@@ -20,6 +36,76 @@ This repository is a collection of **nine numerical simulation and computational
 | **I/O & Visualization** | CSV, NPZ (via cnpy/zlib), Matplotlib (3D surfaces, contour maps, animations, phase-space portraits) |
 | **Build Systems** | GNU Make with multi-target builds (debug, release, profile-guided optimization) |
 
+### The Fulton Supercomputer at BYU
+
+The **Fulton Supercomputer** (managed by the BYU Office of Research Computing) is a HPC cluster providing the processing backbone for my numerical modeling and simulation work. It manages over **35,000 CPU cores** and **360+ GPUs**, supported by a **6 PB** parallel filesystem.
+
+<p align="center">
+  <img src="assets/images/me-at-byuorc.jpeg" alt="Me At Fulton Supercomputer" width="45%"/>
+  <br>
+  <em>Figure 1: Me at the BYU HPC cluster Febuary 2026.</em>
+</p>
+
+---
+
+## Architecture & Resources (2026 Specs)
+
+| Component | Specification |
+| :--- | :--- |
+| **Compute Nodes** | Heterogeneous: **AMD EPYC 7763** (128 cores/node), **Intel Xeon Platinum 8568Y+** (96 cores/node)... |
+| **High-Memory** | Specialized nodes providing up to **2 TB of DDR5 RAM** for memory-intensive simulations |
+| **GPU Acceleration** | **NVIDIA H200 (141GB)**, **L40S (48GB)**, and **A100 (80GB)** units |
+| **Interconnect** | **100 Gb/s InfiniBand** and RoCE v2 low-latency networking |
+| **Storage** | **6 PB** parallel filesystem via `/fslhome` and local **NVMe scratch** space |
+
+---
+
+## Workflow & Scheduling
+
+### Job Management
+I utilize **SLURM (Simple Linux Utility for Resource Management)** to orchestrate simulations. This involves writing batch scripts that request specific hardware constraints to optimize performance, such as:
+* `--constraint=avx512` for vector instructions.
+* `--qos=standby` for extended 7-day simulation windows.
+
+### Environment & Compilation
+Development is performed on **RHEL 9.4** login nodes. I manage software dependencies via the `module load` system, typically involving:
+* **GCC/G++** for core simulation logic.
+* **OpenMPI** for distributed memory parallelism.
+* **Python 3/ffmpeg** for visiulation
+
+---
+
+## Physics Implementation
+On this cluster, I implement numerical solvers for complex potentials where the computation scales as $O(N^2)$. For a system of $N$ particles, the potential $V$ is calculated as:
+
+$$V = \sum_{i < j} \frac{q_i q_j}{4\pi\epsilon_0 |\mathbf{r}_i - \mathbf{r}_j|}$$
+
+By utilizing **OpenMP** for multi-threading and **MPI** for node-to-node communication, I can distribute these calculations, significantly reducing the wall-time required for high-resolution datasets.
+
+```cpp
+// Example: Basic OpenMP Parallelization for Force Calculation
+#pragma omp parallel for reduction(+:total_energy)
+for (int i = 0; i < N; ++i) {
+    for (int j = i + 1; j < N; ++j) {
+        total_energy += calculate_interaction(particles[i], particles[j]);
+    }
+}
+```
+
+**Simulation Deployment (This Portfolio):**
+| Project | Configuration | CPUs | Wall Time | Use Case |
+|---|---|---|---|---|
+| Project 4 (SOR) | CPU-only, `#threads=16` | 16 | 30–45 min | Strong-scaling study of iterative PDE solver |
+| Project 6 (Diffusion) | CPU-only, `#threads=32` | 32 | 2-3 min | Parallelizing independent particle trajectories |
+| Project 7 (Ising) | CPU-only, `#threads=128` | 128 | 10–45 min | Large parameter-space sweep with checkerboard MCMC |
+| Project 8 (Molecular Dynamics) | CPU-only, `#threads=8` | 8 | 10 min–2 hrs | Thread-local force accumulation (race condition mitigation) |
+
+**Key Advantages for This Work:**
+- **Scalability Testing:** Weak and strong scaling studies for OpenMP efficiency (Projects 4, 7)
+- **Parameter Sweeps:** Multi-dimensional search spaces (Project 7: 2D temperature × field grid)
+- **Long-Running Simulations:** Statistical ensembles (Project 6: millions of particle trajectories)
+- **Reproducibility:** Identical hardware across multiple runs for benchmarking and verification
+
 ---
 
 ## Academic Projects
@@ -33,6 +119,7 @@ This repository is a collection of **nine numerical simulation and computational
 | 5 | [Oscillations on a String](Project%205%3A%20Occilations%20on%20a%20string/) | Damped stiff wave equation + spectral analysis | Finite differences (2nd + 4th order) + KissFFT | ✓ parallel spatial | — |
 | 6 | [Diffusion](Project%206%3A%20Diffusion/) | 3D Brownian random-walk ensemble | Monte Carlo with reflective BCs | ✓ parallel particles | ✓ |
 | 7 | [The Ising Model](Project%207%3A%20The%20Ising%20Model/) | 3D ferromagnetic phase transition | Metropolis MCMC, checkerboard sweep | ✓ multifactor parallel | ✓ 128 CPUs |
+| 8 | [Molecular Dynamics](Project%208%3A%20Molicular%20Dynamics/) | 2D Lennard-Jones fluid (400 particles) | Velocity Verlet, O(N²) pair forces | ✓ thread-local accumulators | ✓ 8 CPUs |
 
 ### Progression
 
@@ -42,6 +129,7 @@ The projects follow a deliberate arc of increasing computational sophistication:
 - **Project 4** introduces PDE solving, iterative methods, and OpenMP parallelism
 - **Projects 5–6** combine PDE/stochastic methods with spectral analysis and 3D particle tracking
 - **Project 7** synthesizes everything: statistical physics, Monte Carlo methods, precomputed lookup tables, multi-dimensional parameter sweeps, and full HPC deployment
+- **Project 8 (Capstone)** tackles the hardest parallelization challenge — an $O(N^2)$ N-body problem where Newton's third law optimizations create race conditions, resolved via thread-local accumulators and guided scheduling
 
 ---
 
@@ -64,7 +152,7 @@ The projects follow a deliberate arc of increasing computational sophistication:
 Project 7: Magnetization surface and contour map of the 3D Ising model, revealing the ferromagnetic phase transition at $T_c \approx 4.51\,J/k_B$.
 
 <p align="center">
-  <img src="Project%203%3A%20Celestial%20Dynamics/Output/celestial_analysis_5_3d.png" alt="Celestial Dynamics — 3D orbits" width="48%"/>
+  <img src="Project%203%3A%20Celestial%20Dynamics/Output/celestial_analysis_9_3d.png" alt="Celestial Dynamics — 3D orbits" width="48%"/>
   <img src="Project%205%3A%20Occilations%20on%20a%20string/mean_power_spectrum.png" alt="String oscillations — power spectrum" width="48%"/>
 </p>
 

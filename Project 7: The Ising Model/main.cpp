@@ -5,18 +5,18 @@
 #include "processing.h"
 
 int main() {
-    int N = 100;
+    int N = 50;
     int iterations = 200;
 
     // 1. Define your temperatures
     float minTemp = 0.01;
-    float maxTemp = 6.0;
-    int tempSteps = 10;
+    float maxTemp = 10;
+    int tempSteps = 20;
 
     // 2. Define your magnetic field range
     float hmax = 10;
     float hmin = -hmax;
-    int numHSteps = 10;
+    int numHSteps = 20;
 
     // 2. Run the simulation across the temperature range
     // parameters: lattice size, iterations, hMin, hMax, numHSteps, tempMin, tempMax, numTempSteps

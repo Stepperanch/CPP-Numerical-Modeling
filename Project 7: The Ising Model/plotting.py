@@ -16,7 +16,10 @@ SAVE_MULTIPLE_ANGLES = True
 ROTATION_ANGLES = [(25, 45), (25, 135), (25, 225), (25, 315)]
 
 # Load the npz file
-data = np.load('output/Out 1/ising_results.npz')
+folder_path = 'output/Out_4/'
+
+
+data = np.load(folder_path + 'ising_results.npz')
 
 temperatures = data['temperatures']
 magnetic_fields = data['magnetic_fields']
@@ -53,7 +56,7 @@ def save_3d_plot(elev, azim, output_suffix=''):
 
     plt.show()
     # Save the 3D plot
-    filename = f'output/Out 1/magnetization_3d_surface{output_suffix}.png'
+    filename = f'{folder_path}magnetization_3d_surface{output_suffix}.png'
     plt.savefig(filename, dpi=600, bbox_inches='tight')
     print(f"3D surface plot saved to {filename} (elev={elev}°, azim={azim}°)")
     plt.close()
@@ -82,7 +85,7 @@ ax2.clabel(contour_lines, inline=True, fontsize=8)
 plt.tight_layout()
 
 # Save the contour plot
-plt.savefig('output/Out 1/magnetization_contour.png', dpi=300, bbox_inches='tight')
-print("Contour plot saved to output/magnetization_contour.png")
+plt.savefig(folder_path + 'magnetization_contour.png', dpi=300, bbox_inches='tight')
+print("Contour plot saved to " + folder_path + "magnetization_contour.png")
 
 plt.show()

@@ -41,9 +41,9 @@ This repository is a collection of **nine numerical simulation and computational
 The **Fulton Supercomputer** (managed by the BYU Office of Research Computing) is a HPC cluster providing the processing backbone for my numerical modeling and simulation work. It manages over **35,000 CPU cores** and **360+ GPUs**, supported by a **6 PB** parallel filesystem.
 
 <p align="center">
-  <img src="/assets/images/fulton-cluster.png" alt="Fulton Supercomputer Cluster" width="75%"/>
+  <img src="assets/images/Me_at_BYUORC.jpeg" alt="Fulton Supercomputer Cluster" width="45%"/>
   <br>
-  <em>Figure 1: High-level visualization of the BYU ORC compute architecture.</em>
+  <em>Figure 1: Me at the BYU HPC cluster this winter.</em>
 </p>
 
 ---
@@ -52,7 +52,7 @@ The **Fulton Supercomputer** (managed by the BYU Office of Research Computing) i
 
 | Component | Specification |
 | :--- | :--- |
-| **Compute Nodes** | Heterogeneous: **AMD EPYC 7763** (128 cores/node) and **Intel Xeon Platinum 8568Y+** (96 cores/node) |
+| **Compute Nodes** | Heterogeneous: **AMD EPYC 7763** (128 cores/node), **Intel Xeon Platinum 8568Y+** (96 cores/node)... |
 | **High-Memory** | Specialized nodes providing up to **2 TB of DDR5 RAM** for memory-intensive simulations |
 | **GPU Acceleration** | **NVIDIA H200 (141GB)**, **L40S (48GB)**, and **A100 (80GB)** units |
 | **Interconnect** | **100 Gb/s InfiniBand** and RoCE v2 low-latency networking |
@@ -90,6 +90,7 @@ for (int i = 0; i < N; ++i) {
         total_energy += calculate_interaction(particles[i], particles[j]);
     }
 }
+```
 
 **Simulation Deployment (This Portfolio):**
 | Project | Configuration | CPUs | Wall Time | Use Case |

@@ -493,7 +493,6 @@ class Simulation {
     }
 
     void saveResults() {
-        std::filesystem::create_directory("output");
         saveResultsToNPZ("output/ising_results.npz");
         saveResultsToCSV("output/ising_results.csv");
     }

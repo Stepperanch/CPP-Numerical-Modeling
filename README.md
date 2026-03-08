@@ -144,11 +144,13 @@ The projects follow a deliberate arc of increasing computational sophistication:
 
 ## Selected Results
 
-<iframe src="assets/html-assets/magnetization_3d_interactive.html"
+<iframe src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html"
         width="100%"
-        height="500px"
+        height=600px
         frameborder="0">
 </iframe>
+
+[View Simulation Fullscreen ↗️](https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html)
 
 <p align="center">
   <img src="Project%207%3A%20The%20Ising%20Model/output/Out_1/magnetization_3d_surface_angle3.png" alt="Ising Model — 3D magnetization surface" width="48%"/>

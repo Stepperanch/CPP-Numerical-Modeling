@@ -144,11 +144,14 @@ The projects follow a deliberate arc of increasing computational sophistication:
 
 ## Selected Results
 
-<iframe src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html"
+<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+    <iframe
+        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html"
         width="100%"
-        height=600px
-        frameborder="0">
-</iframe>
+        height="100%"
+        style="border: none; display: block;">
+    </iframe>
+</div>
 
 [View Simulation Fullscreen ↗️](https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html)
 

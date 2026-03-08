@@ -97,11 +97,14 @@ def save_interactive_html(output_path):
             zaxis_title='Average Magnetization',
             camera=dict(eye=dict(x=1.5, y=1.5, z=1.0)),
         ),
-        width=1100,
-        height=800,
+        autosize=True,      # Forces plot to fill the container
+        margin=dict(l=10, r=10, t=30, b=80), # 'b' (bottom) gives room for sliders
+        template="plotly_white"
     )
 
-    fig.write_html(output_path)
+    fig.show(config={'scrollZoom': False})
+
+    fig.write_html(output_path, include_plotlyjs='cdn', full_html=True)
     print(f"Interactive HTML plot saved to {output_path}")
 
 if SAVE_INTERACTIVE_HTML:

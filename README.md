@@ -93,6 +93,7 @@ for (int i = 0; i < N; ++i) {
 ```
 
 **Simulation Deployment (This Portfolio):**
+
 | Project | Configuration | CPUs | Wall Time | Use Case |
 |---|---|---|---|---|
 | Project 4 (SOR) | CPU-only, `#threads=16` | 16 | 30–45 min | Strong-scaling study of iterative PDE solver |

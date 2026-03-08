@@ -144,6 +144,12 @@ The projects follow a deliberate arc of increasing computational sophistication:
 
 ## Selected Results
 
+<iframe src="assets/html-assets/magnetization_3d_interactive.html"
+        width="100%"
+        height="500px"
+        frameborder="0">
+</iframe>
+
 <p align="center">
   <img src="Project%207%3A%20The%20Ising%20Model/output/Out_1/magnetization_3d_surface_angle3.png" alt="Ising Model — 3D magnetization surface" width="48%"/>
   <img src="Project%207%3A%20The%20Ising%20Model/output/Out_1/magnetization_contour.png" alt="Ising Model — contour map" width="48%"/>

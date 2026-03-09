@@ -177,6 +177,15 @@ Left: N-body orbital dynamics of the Solar System. <br> Right: Mean power spectr
 
 Left: 2D slice through a 3D electrostatic potential field (SOR solver, $N=1000^3$). <br> Right: Mean squared displacement confirming Einstein's diffusion law $\langle r^2 \rangle = 6Dt$.
 
+
+<p align="center">
+  <video width="70%" controls autoplay muted loop style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <source src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/videos/md_animation2.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <br>
+  <em>Molecular dynamics animation — heating/cooling cycle. Particle trajectories show transition from ordered grid to gas-like disorder during heating, then re-ordering during cooling.</em>
+</p>
 ---
 
 ## Quick Start

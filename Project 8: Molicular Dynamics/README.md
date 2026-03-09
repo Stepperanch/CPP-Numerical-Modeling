@@ -326,8 +326,12 @@ Three-panel figure:
 ### Particle Animation
 
 <p align="center">
-  <!-- Replace the src below with your actual animation file once rendered -->
-  <img src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/videos/md_animation.mp4" alt="Molecular dynamics particle animation — heating/cooling cycle" width="70%"/>
+  <video width="70%" controls autoplay muted loop style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <source src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/videos/md_animation.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <br>
+  <em>Molecular dynamics animation — heating/cooling cycle. Particle trajectories show transition from ordered grid to gas-like disorder during heating, then re-ordering during cooling.</em>
 </p>
 
 *Particle trajectory animation showing the heating–cooling cycle. Particles evolve from a regular grid through a gas-like disordered phase during heating, then re-order as energy is extracted — illustrating the connection between kinetic energy and temperature at the microscopic level.*

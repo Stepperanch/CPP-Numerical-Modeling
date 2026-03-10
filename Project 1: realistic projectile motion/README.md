@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/"><strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Project 1: Realistic 3D Projectile Motion
@@ -229,5 +229,5 @@ Project 1: realistic projectile motion/
 *Nels Buhrley — Computational Physics, 2025*
 
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/"><strong>← Back to Portfolio Hub</strong></a>
 </p>

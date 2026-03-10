@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a https://nelsbuhrley.github.io/CPP-Numerical-Modeling/<strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Project 8: Molecular Dynamics — Capstone
@@ -492,5 +492,5 @@ Project 8: Molicular Dynamics/
 *Nels Buhrley — Computational Physics, 2026*
 
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a https://nelsbuhrley.github.io/CPP-Numerical-Modeling/<strong>← Back to Portfolio Hub</strong></a>
 </p>

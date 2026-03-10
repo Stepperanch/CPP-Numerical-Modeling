@@ -10,10 +10,10 @@
 - [About](#about)
   - [Core Competencies](#core-competencies)
   - [The Fulton Supercomputer at BYU](#the-fulton-supercomputer-at-byu)
-- [Academic Projects](#academic-projects)
+- [**Academic Projects**](#academic-projects)
   - [Progression](#progression)
 - [Personal Projects](#personal-projects)
-- [Selected Results](#selected-results)
+- [**Selected Results**](#selected-results)
 - [Quick Start](#quick-start)
   - [Build Toolchain](#build-toolchain)
   - [Prerequisites](#prerequisites)
@@ -65,10 +65,10 @@ The **Fulton Supercomputer** (managed by the BYU Office of Research Computing) i
 ### Job Management
 I utilize **SLURM (Simple Linux Utility for Resource Management)** to orchestrate simulations. This involves writing batch scripts that request specific hardware constraints to optimize performance, such as:
 * `--constraint=avx512` for vector instructions.
-* `--qos=standby` for extended 7-day simulation windows.
+* `--qos=standby` for acess to unused priviate hardware.
 
 ### Environment & Compilation
-Development is performed on **RHEL 9.4** login nodes. I manage software dependencies via the `module load` system, typically involving:
+Development is performed on **RHEL 9.4** login nodes using *Remote - SSH* and the linux terminal to manage my development and computational resources. I manage software dependencies via the `module load` system, typically involving:
 * **GCC/G++** for core simulation logic.
 * **OpenMPI** for distributed memory parallelism.
 * **Python 3/ffmpeg** for visiulation
@@ -76,7 +76,7 @@ Development is performed on **RHEL 9.4** login nodes. I manage software dependen
 ---
 
 ## Physics Implementation
-On this cluster, I implement numerical solvers for complex potentials where the computation scales as $O(N^2)$. For a system of $N$ particles, the potential $V$ is calculated as:
+On this cluster, I implement numerical solvers for complex potentials where the computation scales as $O(N^{2+})$. For a system of $N$ particles, the potential $V$ is calculated as:
 
 $$V = \sum_{i < j} \frac{q_i q_j}{4\pi\epsilon_0 |\mathbf{r}_i - \mathbf{r}_j|}$$
 
@@ -102,7 +102,7 @@ for (int i = 0; i < N; ++i) {
 | Project 8 (Molecular Dynamics) | CPU-only, `#threads=8` | 8 | 10 min–2 hrs | Thread-local force accumulation (race condition mitigation) |
 
 **Key Advantages for This Work:**
-- **Scalability Testing:** Weak and strong scaling studies for OpenMP efficiency (Projects 4, 7)
+- **Scalability Testing:** Weak and strong scaling studies for OpenMP efficiency (Projects 4, 7, 8)
 - **Parameter Sweeps:** Multi-dimensional search spaces (Project 7: 2D temperature × field grid)
 - **Long-Running Simulations:** Statistical ensembles (Project 6: millions of particle trajectories)
 - **Reproducibility:** Identical hardware across multiple runs for benchmarking and verification
@@ -140,6 +140,7 @@ The projects follow a deliberate arc of increasing computational sophistication:
 |---|---|---|---|---|
 | 1 | [Collatz Conjecture (3n+1)](Personal%20Project%201%3A%203n%2B1/) | Number theory | Exhaustive sequence analysis for $n \leq 10^6$; recursive max-value chaining | — |
 | 2 | [Euler's Idoneal Numbers](Personal%20Project%202%3A%20Idelic%20Numbers/) | Number theory | Sieve over triple loop $a < b < c$ up to $5 \times 10^7$; thread-safe monotonic writes | ✓ OpenMP `dynamic` |
+| 3 | [Monty Hall Problem](Personal%20Project%203%3A%20Monty%20Hall%20Simulation%20%28Goat%20and%20Car%20Game%20Show%29/) | Probability & Statistics | Monte Carlo simulation to empirically verify counterintuitive theoretical predictions | — |
 
 ---
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a https://nelsbuhrley.github.io/CPP-Numerical-Modeling/<strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Project 3: Celestial Dynamics — N-Body Gravitational Simulation
@@ -295,5 +295,5 @@ Project 3: Celestial Dynamics/
 *Nels Buhrley — Computational Physics, 2025*
 
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a https://nelsbuhrley.github.io/CPP-Numerical-Modeling/<strong>← Back to Portfolio Hub</strong></a>
 </p>

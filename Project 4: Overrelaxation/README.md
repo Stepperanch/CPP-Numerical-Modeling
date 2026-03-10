@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a https://nelsbuhrley.github.io/CPP-Numerical-Modeling/<strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Project 4: Overrelaxation — 3D Electrostatic Potential Solver
@@ -227,5 +227,5 @@ Project 4: Overrelaxation/
 *Nels Buhrley — Computational Physics, 2025*
 
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a https://nelsbuhrley.github.io/CPP-Numerical-Modeling/<strong>← Back to Portfolio Hub</strong></a>
 </p>

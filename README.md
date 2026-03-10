@@ -146,6 +146,8 @@ The projects follow a deliberate arc of increasing computational sophistication:
 
 ## Selected Results
 
+### Project 7: The Ising Model
+
 <div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
     <iframe
         src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html"
@@ -162,14 +164,28 @@ The projects follow a deliberate arc of increasing computational sophistication:
   <img src="Project%207%3A%20The%20Ising%20Model/output/Out_1/magnetization_contour.png" alt="Ising Model — contour map" width="48%"/>
 </p>
 
-Project 7: Magnetization surface and contour map of the 3D Ising model, revealing the ferromagnetic phase transition at $T_c \approx 4.51\,J/k_B$.
+Magnetization surface and contour map of the 3D Ising model, revealing the ferromagnetic phase transition at $T_c \approx 4.51\,J/k_B$. Monte Carlo Metropolis algorithm with checkerboard sweep optimization across 2D temperature × magnetic field parameter space.
+
+[→ View detailed results](Project%207%3A%20The%20Ising%20Model/#results)
+
+---
+
+### Project 8: Molecular Dynamics
 
 <p align="center">
-  <img src="Project%203%3A%20Celestial%20Dynamics/Output/celestial_analysis_9_3d.png" alt="Celestial Dynamics — 3D orbits" width="48%"/>
-  <img src="Project%205%3A%20Occilations%20on%20a%20string/mean_power_spectrum.png" alt="String oscillations — power spectrum" width="48%"/>
+  <video width="70%" controls autoplay muted loop style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <source src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/videos/md_animation2.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <br>
+  <em>Heating/cooling cycle simulation of 400 particles under Lennard-Jones potential. Particle trajectories show transition from ordered grid to gas-like disorder during heating, then re-ordering during cooling. A shock wave propagates down from the top and reflects back up after the particles expand to the container boundary.</em>
 </p>
 
-Left: N-body orbital dynamics of the Solar System. <br> Right: Mean power spectrum of transverse string oscillations showing normal-mode peaks.
+[→ View detailed results](Project%208%3A%20Molicular%20Dynamics/#results)
+
+---
+
+### Project 4: Overrelaxation (Electrostatics)
 
 <div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
     <iframe
@@ -182,22 +198,46 @@ Left: N-body orbital dynamics of the Solar System. <br> Right: Mean power spectr
 
 <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic.html" target="_blank">View Simulation Fullscreen ↗️</a>
 
+Interactive 3D visualization of electrostatic potential field solved via Successive Over-Relaxation (SOR) with optimal relaxation parameter $\omega \approx 1.84$. Navigate through z-axis slices to explore the full 3D solution space ($N=1000^3$ grid points).
+
+[→ View detailed results](Project%204%3A%20Overrelaxation/#results)
+
+---
+
+### Project 3: Celestial Dynamics
+
 <p align="center">
-  <img src="Project%204%3A%20Overrelaxation/output/potential_3D_center_slice.png" alt="Electrostatic potential slice" width="48%"/>
-  <img src="Project%206%3A%20Diffusion/output/fixed_Mean_Squared_Distance_plot.png" alt="Diffusion MSD" width="48%"/>
+  <img src="Project%203%3A%20Celestial%20Dynamics/Output/celestial_analysis_9_3d.png" alt="Celestial Dynamics — 3D orbits" width="60%"/>
 </p>
 
-Left: 2D slice through a 3D electrostatic potential field (SOR solver, $N=1000^3$). <br> Right: Mean squared displacement confirming Einstein's diffusion law $\langle r^2 \rangle = 6Dt$.
+N-body orbital dynamics of the Solar System computed with 4th-order Runge-Kutta integration. Simulation tracks all major planets over multi-year timescales, demonstrating long-term orbital stability and resonance effects.
 
+[→ View detailed results](Project%203%3A%20Celestial%20Dynamics/#results)
+
+---
+
+### Project 5: Oscillations on a String
 
 <p align="center">
-  <video width="70%" controls autoplay muted loop style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-    <source src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/videos/md_animation2.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-  <br>
-  <em>Molecular dynamics animation — heating/cooling cycle. Particle trajectories show transition from ordered grid to gas-like disorder during heating, then re-ordering during cooling. In this simulation you can see a shokwave propagate down from the top, and then reflect back up after the particles expand to the top of the container.</em>
+  <img src="Project%205%3A%20Occilations%20on%20a%20string/mean_power_spectrum.png" alt="String oscillations — power spectrum" width="60%"/>
 </p>
+
+Mean power spectrum of transverse string oscillations showing discrete normal-mode peaks. FFT spectral analysis reveals harmonic structure and damping characteristics from finite-difference wave equation solver.
+
+[→ View detailed results](Project%205%3A%20Occilations%20on%20a%20string/#results)
+
+---
+
+### Project 6: Diffusion
+
+<p align="center">
+  <img src="Project%206%3A%20Diffusion/output/fixed_Mean_Squared_Distance_plot.png" alt="Diffusion MSD" width="60%"/>
+</p>
+
+Mean squared displacement from 3D random-walk Monte Carlo simulation, confirming Einstein's diffusion law $\langle r^2 \rangle = 6Dt$. Ensemble of $10^6$ particle trajectories with reflective boundary conditions.
+
+[→ View detailed results](Project%206%3A%20Diffusion/#results)
+
 ---
 
 ## Quick Start

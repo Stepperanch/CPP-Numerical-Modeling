@@ -191,3 +191,7 @@ Personal Project 3: Monty Hall Simulation (Goat and Car Game Show)/
 **References:**
 - vos Savant, Marilyn. "Ask Marilyn." *Parade Magazine*, September 1990.
 - Selvin, Steve. "A Problem in Probability." *American Statistician*, 1975.
+
+<p align="center">
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#personal-projects"><strong>← Back to Portfolio Hub</strong></a>
+</p>

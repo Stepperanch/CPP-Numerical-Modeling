@@ -42,24 +42,39 @@ This repository is a collection of **nine numerical simulation and computational
 <tr>
 <td width="60%" valign="top">
 
-The **Fulton Supercomputer** (managed by the BYU Office of Research Computing) is a HPC cluster providing the processing backbone for my numerical modeling and simulation work. It manages over **35,000 CPU cores** and **360+ GPUs**, supported by a **6 PB** parallel filesystem.
+The <strong>Fulton Supercomputer</strong> (managed by the BYU Office of Research Computing) is a HPC cluster providing the processing backbone for my numerical modeling and simulation work. It manages over <strong>35,000 CPU cores</strong> and <strong>360+ GPUs</strong>, supported by a <strong>6 PB</strong> parallel filesystem.
 
-**Architecture & Resources (2026 Specs):**
+<p><strong>Architecture & Resources (2026 Specs):</strong></p>
 
-| Component | Specification |
-| :--- | :--- |
-| **Compute Nodes** | **AMD EPYC 7763** (128 cores/node), **Intel Xeon Platinum 8568Y+** (96 cores/node) |
-| **High-Memory** | Up to **2 TB of DDR5 RAM** for memory-intensive simulations |
-| **GPU Acceleration** | **NVIDIA H200 (141GB)**, **L40S (48GB)**, **A100 (80GB)** |
-| **Interconnect** | **100 Gb/s InfiniBand** and RoCE v2 low-latency networking |
-| **Storage** | **6 PB** parallel filesystem via `/fslhome` and local **NVMe scratch** |
+<table>
+<tr>
+<td><strong>Compute Nodes</strong></td>
+<td><strong>AMD EPYC 7763</strong> (128 cores/node), <strong>Intel Xeon Platinum 8568Y+</strong> (96 cores/node)</td>
+</tr>
+<tr>
+<td><strong>High-Memory</strong></td>
+<td>Up to <strong>2 TB of DDR5 RAM</strong> for memory-intensive simulations</td>
+</tr>
+<tr>
+<td><strong>GPU Acceleration</strong></td>
+<td><strong>NVIDIA H200 (141GB)</strong>, <strong>L40S (48GB)</strong>, <strong>A100 (80GB)</strong></td>
+</tr>
+<tr>
+<td><strong>Interconnect</strong></td>
+<td><strong>100 Gb/s InfiniBand</strong> and RoCE v2 low-latency networking</td>
+</tr>
+<tr>
+<td><strong>Storage</strong></td>
+<td><strong>6 PB</strong> parallel filesystem via <code>/fslhome</code> and local <strong>NVMe scratch</strong></td>
+</tr>
+</table>
 
 </td>
 <td width="40%" valign="top">
 
 <img src="assets/images/me-at-byuorc.jpeg" alt="Me at Fulton Supercomputer" width="100%"/>
 
-*Me at the BYU HPC cluster, February 2026*
+<p><em>Me at the BYU HPC cluster, February 2026</em></p>
 
 </td>
 </tr>

@@ -185,7 +185,7 @@ Left: 2D slice through a 3D electrostatic potential field (SOR solver, $N=1000^3
     Your browser does not support the video tag.
   </video>
   <br>
-  <em>Molecular dynamics animation — heating/cooling cycle. Particle trajectories show transition from ordered grid to gas-like disorder during heating, then re-ordering during cooling.</em>
+  <em>Molecular dynamics animation — heating/cooling cycle. Particle trajectories show transition from ordered grid to gas-like disorder during heating, then re-ordering during cooling. In this simulation you can see a shokwave propagate down from the top, and then reflect back up after the particles expand to the top of the container.</em>
 </p>
 ---
 

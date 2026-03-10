@@ -331,10 +331,8 @@ Three-panel figure:
     Your browser does not support the video tag.
   </video>
   <br>
-  <em>Molecular dynamics animation — heating/cooling cycle. Particle trajectories show transition from ordered grid to gas-like disorder during heating, then re-ordering during cooling.</em>
+  <em>Particle trajectory animation showing the heating–cooling cycle. Particles evolve from a regular grid through a gas-like disordered phase during heating, then re-order as energy is extracted — illustrating the connection between kinetic energy and temperature at the microscopic level. In this simulation you can see a transition from kenetic energy to thermal energy as the blocks fall. </em>
 </p>
-
-*Particle trajectory animation showing the heating–cooling cycle. Particles evolve from a regular grid through a gas-like disordered phase during heating, then re-order as energy is extracted — illustrating the connection between kinetic energy and temperature at the microscopic level.*
 
 <!-- Uncomment below if you have an MP4 instead of GIF:
 <p align="center">

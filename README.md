@@ -38,25 +38,32 @@ This repository is a collection of **nine numerical simulation and computational
 
 ### The Fulton Supercomputer at BYU
 
+<table>
+<tr>
+<td width="60%" valign="top">
+
 The **Fulton Supercomputer** (managed by the BYU Office of Research Computing) is a HPC cluster providing the processing backbone for my numerical modeling and simulation work. It manages over **35,000 CPU cores** and **360+ GPUs**, supported by a **6 PB** parallel filesystem.
 
-<p align="center">
-  <img src="assets/images/me-at-byuorc.jpeg" alt="Me At Fulton Supercomputer" width="45%"/>
-  <br>
-  <em>Figure 1: Me at the BYU HPC cluster Febuary 2026.</em>
-</p>
-
----
-
-## Architecture & Resources (2026 Specs)
+**Architecture & Resources (2026 Specs):**
 
 | Component | Specification |
 | :--- | :--- |
-| **Compute Nodes** | Heterogeneous: **AMD EPYC 7763** (128 cores/node), **Intel Xeon Platinum 8568Y+** (96 cores/node)... |
-| **High-Memory** | Specialized nodes providing up to **2 TB of DDR5 RAM** for memory-intensive simulations |
-| **GPU Acceleration** | **NVIDIA H200 (141GB)**, **L40S (48GB)**, and **A100 (80GB)** units |
+| **Compute Nodes** | **AMD EPYC 7763** (128 cores/node), **Intel Xeon Platinum 8568Y+** (96 cores/node) |
+| **High-Memory** | Up to **2 TB of DDR5 RAM** for memory-intensive simulations |
+| **GPU Acceleration** | **NVIDIA H200 (141GB)**, **L40S (48GB)**, **A100 (80GB)** |
 | **Interconnect** | **100 Gb/s InfiniBand** and RoCE v2 low-latency networking |
-| **Storage** | **6 PB** parallel filesystem via `/fslhome` and local **NVMe scratch** space |
+| **Storage** | **6 PB** parallel filesystem via `/fslhome` and local **NVMe scratch** |
+
+</td>
+<td width="40%" valign="top">
+
+<img src="assets/images/me-at-byuorc.jpeg" alt="Me at Fulton Supercomputer" width="100%"/>
+
+*Me at the BYU HPC cluster, February 2026*
+
+</td>
+</tr>
+</table>
 
 ---
 

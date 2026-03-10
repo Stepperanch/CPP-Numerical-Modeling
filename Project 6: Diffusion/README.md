@@ -1,5 +1,5 @@
 <p align="center">
-  <a https://nelsbuhrley.github.io/CPP-Numerical-Modeling/<strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#academic-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Project 6: 3D Random-Walk Diffusion Simulation
@@ -333,5 +333,5 @@ Project 6: Defusion/
 *Nels Buhrley — Computational Physics, 2026*
 
 <p align="center">
-  <a https://nelsbuhrley.github.io/CPP-Numerical-Modeling/<strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#academic-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>

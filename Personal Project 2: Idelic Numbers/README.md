@@ -1,5 +1,5 @@
 <p align="center">
-  <a https://nelsbuhrley.github.io/CPP-Numerical-Modeling/<strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#personal-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Personal Project 2: Euler's Idoneal Numbers — Parallel Sieve
@@ -193,5 +193,5 @@ Personal Project 2: Idelic Numbers/
 *Nels Buhrley — Computational Mathematics, 2025*
 
 <p align="center">
-  <a https://nelsbuhrley.github.io/CPP-Numerical-Modeling/<strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#personal-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>

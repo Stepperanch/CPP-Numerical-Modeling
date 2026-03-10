@@ -1,5 +1,5 @@
 <p align="center">
-  <a https://nelsbuhrley.github.io/CPP-Numerical-Modeling/<strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#personal-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Personal Project 3: The Monty Hall Problem — A Probabilistic Paradox

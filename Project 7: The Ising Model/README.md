@@ -1,5 +1,5 @@
 <p align="center">
-  <a https://nelsbuhrley.github.io/CPP-Numerical-Modeling/<strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#academic-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Project 7: The 3D Ising Model
@@ -438,5 +438,5 @@ Project 7: The Ising Model/
 *Nels Buhrley — Computational Physics, 2026*
 
 <p align="center">
-  <a https://nelsbuhrley.github.io/CPP-Numerical-Modeling/<strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#academic-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>

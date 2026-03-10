@@ -199,13 +199,13 @@ averagemagnetization        = sum_magnetization          / numIterations;
 averageMagnetizationSquared = sum_magnetization_squared  / numIterations;
 ```
 
-After each sweep, the instantaneous magnetization per spin $m = M_\text{total}/N^3$ is read from `currentTotalMagnetization` (maintained incrementally by `flipSpin`) — no full-lattice sum is needed. Three accumulators are kept to compute $\langle m \rangle$, $\langle |m| \rangle$, and $\langle m^2 \rangle$.
+After each sweep, the instantaneous magnetization per spin $m = M_\text{total}/N^3$ is read from `currentTotalMagnetization` (maintained incrementally by `flipSpin`) — no full-lattice sum is needed. Three accumulators are kept to compute $\langle m \rangle$, $\langle \vert m \vert \rangle$, and $\langle m^2 \rangle$.
 
-`MagneticSusceptibility()` is called after the simulation completes and derives $\chi$ from the variance of $|m|$:
+`MagneticSusceptibility()` is called after the simulation completes and derives $\chi$ from the variance of $\ver m\vert $:
 
-$$\chi = \frac{N^3}{T}\left(\langle m^2 \rangle - \langle |m| \rangle^2\right)$$
+$$\chi = \frac{N^3}{T}\left(\langle m^2 \rangle - \langle \\vert m\\vert  \rangle^2\right)$$
 
-Using $\langle |m| \rangle$ rather than $\langle m \rangle^2$ avoids cancellation errors in symmetry-broken phases where positive and negative magnetization states are sampled equally, which would drive $\langle m \rangle \to 0$ even deep in the ferromagnetic phase.
+Using $\langle \vert m\vert  \rangle$ rather than $\langle m \rangle^2$ avoids cancellation errors in symmetry-broken phases where positive and negative magnetization states are sampled equally, which would drive $\langle m \rangle \to 0$ even deep in the ferromagnetic phase.
 
 ---
 
@@ -249,9 +249,9 @@ critical_temperatures[j] = temperatures[criticalTempIndex];
 This works because $\chi$ diverges (and in a finite system peaks sharply) at $T_c$.
 
 **Step 2 — Fit $\beta$:**
-Near $T_c$ the order parameter scales as $\langle |m| \rangle \sim (T_c - T)^\beta$. Taking logs gives:
-$$\ln \langle |m| \rangle = \beta \ln(T_c - T) + \text{const}$$
-The code selects up to 40 points just below $T_c$ (filtering out points where $|m| < 0.01$ or $T \geq T_c$ to avoid log-of-zero issues) and fits the slope via ordinary least squares in log-log space:
+Near $T_c$ the order parameter scales as $\langle \vert m\vert  \rangle \sim (T_c - T)^\beta$. Taking logs gives:
+$$\ln \langle \vert m\vert  \rangle = \beta \ln(T_c - T) + \text{const}$$
+The code selects up to 40 points just below $T_c$ (filtering out points where $\vert m\vert  < 0.01$ or $T \geq T_c$ to avoid log-of-zero issues) and fits the slope via ordinary least squares in log-log space:
 ```cpp
 slope = (n·ΣlogM·logT - ΣlogM·ΣlogT) / (n·ΣlogT² - (ΣlogT)²)
 beta_exponents[j] = slope;
@@ -394,7 +394,7 @@ Configured in [main.cpp](main.cpp):
 | `int8_t` + flat 1D array | $4\times$ smaller than `int`; cache-friendly $z$-loop |
 | Incremental magnetization tracking | $O(1)$ magnetization update per flip instead of $O(N^3)$ |
 | 100-sweep burn-in | Discards initial transient before measuring observables |
-| Running accumulators for $\langle m \rangle$, $\langle |m| \rangle$, $\langle m^2 \rangle$ | Enables susceptibility and critical-exponent analysis |
+| Running accumulators for $\langle m \rangle$, $\langle \vert m\vert  \rangle$, $\langle m^2 \rangle$ | Enables susceptibility and critical-exponent analysis |
 | Peak susceptibility $\to T_c$ | Locates the critical temperature per field row |
 | Log-log OLS regression $\to \beta$ | Extracts the critical exponent from magnetization scaling below $T_c$ |
 | `collapse(2)` + `dynamic` scheduling | Scalable multi-core parallelism across $(T, h)$ |

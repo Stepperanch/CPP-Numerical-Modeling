@@ -25,10 +25,10 @@ Date: 2024-06-01
 # ===== Interactive HTML Export =====
 # Set to True to save an interactive HTML file (requires plotly)
 SAVE_INTERACTIVE_HTML = True
-INTERACTIVE_HTML_OUTPUT = 'potential_3d_interactive.html'
+INTERACTIVE_HTML_OUTPUT = 'output/potential_3d_interactive.html'
 
 # Load data
-data = np.load("output.npz")
+data = np.load("output/output.npz")
 potential = data["potential"]
 center = potential.shape[0] // 2
 
@@ -51,47 +51,34 @@ def save_interactive_html(output_path):
         print("Skipping interactive HTML export: plotly is not installed.")
         return
 
-    # Create frames for each z-slice
     z_indices = range(potential.shape[0])
-    frames = []
 
-    # Create frames for each z-slice
+    # Initial figure with center slice
+    fig_plotly = go.Figure(data=[go.Surface(
+        x=X_mesh,
+        y=Y_mesh,
+        z=potential[center, :, :],
+        colorscale='Viridis',
+        colorbar=dict(title='Potential (V)'),
+        opacity=0.9,
+        cmin=potential.min(),
+        cmax=potential.max()
+    )])
+
+    # Create slider steps that directly update the data (no animation frames)
+    slider_steps = []
     for z_idx in z_indices:
         z_position = X[z_idx]  # Actual z position in meters
-        frames.append(go.Frame(
-            data=[go.Surface(
-                x=X_mesh,
-                y=Y_mesh,
-                z=potential[z_idx, :, :],
-                colorscale='Viridis',
-                colorbar=dict(title='Potential (V)'),
-                opacity=0.9,
-                cmin=potential.min(),
-                cmax=potential.max()
-            )],
-            name=str(z_idx),
-            layout=go.Layout(
-                title=f'3D Potential Field at Z = {z_position:.4f} m (slice {z_idx}/{len(z_indices)-1})'
-            )
-        ))
+        step = dict(
+            method="update",
+            args=[
+                {"z": [potential[z_idx, :, :]]},  # Update the surface z-data
+                {"title": f'3D Potential Field at Z = {z_position:.4f} m (slice {z_idx}/{len(z_indices)-1})'}
+            ],
+            label=str(z_idx)
+        )
+        slider_steps.append(step)
 
-    # Initial frame (center slice) - set up figure with center data
-    fig_plotly = go.Figure(
-        data=[go.Surface(
-            x=X_mesh,
-            y=Y_mesh,
-            z=potential[center, :, :],
-            colorscale='Viridis',
-            colorbar=dict(title='Potential (V)'),
-            opacity=0.9,
-            cmin=potential.min(),
-            cmax=potential.max(),
-            name='potential'
-        )],
-        frames=frames
-    )
-
-    # Create slider steps
     sliders = [dict(
         active=center,
         yanchor="top",
@@ -103,19 +90,9 @@ def save_interactive_html(output_path):
             visible=True,
             xanchor="right"
         ),
-        transition=dict(duration=0),
         pad=dict(b=10, t=50),
         len=0.8,
-        steps=[dict(
-            args=[[f.name], dict(
-                frame=dict(duration=0, redraw=True),
-                mode="immediate",
-                transition=dict(duration=0)
-            )],
-            label=str(i),
-            method="animate",
-            execute=False
-        ) for i, f in enumerate(frames)]
+        steps=slider_steps
     )]
 
     fig_plotly.update_layout(
@@ -126,29 +103,6 @@ def save_interactive_html(output_path):
             zaxis_title='Potential (V)',
             camera=dict(eye=dict(x=1.5, y=1.5, z=1.0)),
         ),
-        updatemenus=[dict(
-            type="buttons",
-            direction="left",
-            buttons=[
-                dict(args=[None, dict(frame=dict(duration=50, redraw=True),
-                                     mode="immediate",
-                                     fromcurrent=True,
-                                     transition=dict(duration=0))],
-                     label="▶ Play",
-                     method="animate"),
-                dict(args=[[None], dict(frame=dict(duration=0, redraw=False),
-                                       mode="immediate",
-                                       transition=dict(duration=0))],
-                     label="⏸ Pause",
-                     method="animate")
-            ],
-            pad=dict(r=10, t=87),
-            showactive=False,
-            x=0.1,
-            xanchor="left",
-            y=0,
-            yanchor="top"
-        )],
         sliders=sliders,
         autosize=True,
         margin=dict(l=10, r=10, t=30, b=80),
@@ -158,8 +112,8 @@ def save_interactive_html(output_path):
     fig_plotly.write_html(output_path, include_plotlyjs='cdn', full_html=True)
     print(f"Interactive HTML plot with Z-axis slider saved to {output_path}")
     print(f"  - {len(z_indices)} z-slices available")
-    print(f"  - Use slider to navigate through z-axis")
-    print(f"  - Use Play/Pause buttons to animate")
+    print(f"  - Starts at center slice (z={center})")
+    print(f"  - Use slider to manually navigate through z-axis")
 
 if SAVE_INTERACTIVE_HTML:
     save_interactive_html(INTERACTIVE_HTML_OUTPUT)
@@ -186,5 +140,5 @@ print("Rotate the plot to your desired angle, then close the window to save...")
 plt.show()
 
 # Save high-resolution image with the angle you chose
-fig.savefig('potential_3D_center_slice.png', dpi=300, bbox_inches='tight')
-print(f"Saved 3D plot at z={center} to 'potential_3D_center_slice.png'")
+fig.savefig('output/potential_3D_center_slice.png', dpi=300, bbox_inches='tight')
+print(f"Saved 3D plot at z={center} to 'output/potential_3D_center_slice.png'")

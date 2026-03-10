@@ -141,7 +141,7 @@ The `logic` class provides:
 ## Results
 
 <p align="center">
-  <img src="Output/oscillator_analysis_0.png" alt="Oscillator analysis — periodic regime" width="80%"/>
+  <img src="../assets/plots/oscillator_analysis_0.png" alt="Oscillator analysis — periodic regime" width="80%"/>
 </p>
 
 *Six-panel analysis of the driven damped pendulum. Top row: angle vs. time (unwrapped and wrapped to $[-\pi, \pi]$). Middle: full phase-space portrait. Bottom: Poincaré sections at the driving frequency reveal the attractor structure — periodic orbits appear as discrete points, chaotic dynamics as fractal dust.*

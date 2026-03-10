@@ -201,7 +201,7 @@ averageMagnetizationSquared = sum_magnetization_squared  / numIterations;
 
 After each sweep, the instantaneous magnetization per spin $m = M_\text{total}/N^3$ is read from `currentTotalMagnetization` (maintained incrementally by `flipSpin`) — no full-lattice sum is needed. Three accumulators are kept to compute $\langle m \rangle$, $\langle \vert m \vert \rangle$, and $\langle m^2 \rangle$.
 
-`MagneticSusceptibility()` is called after the simulation completes and derives $\chi$ from the variance of $\ver m\vert $:
+`MagneticSusceptibility()` is called after the simulation completes and derives $\chi$ from the variance of $\vert  m\vert $:
 
 $$\chi = \frac{N^3}{T}\left(\langle m^2 \rangle - \langle \\vert m\\vert  \rangle^2\right)$$
 

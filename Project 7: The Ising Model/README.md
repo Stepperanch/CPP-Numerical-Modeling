@@ -203,7 +203,7 @@ After each sweep, the instantaneous magnetization per spin $m = M_\text{total}/N
 
 `MagneticSusceptibility()` is called after the simulation completes and derives $\chi$ from the variance of $\vert  m\vert $:
 
-$$\chi = \frac{N^3}{T}\left(\langle m^2 \rangle - \langle \\vert m\\vert  \rangle^2\right)$$
+$$\chi = \frac{N^3}{T}\left(\langle m^2 \rangle - \langle \vert m\vert  \rangle^2\right)$$
 
 Using $\langle \vert m\vert  \rangle$ rather than $\langle m \rangle^2$ avoids cancellation errors in symmetry-broken phases where positive and negative magnetization states are sampled equally, which would drive $\langle m \rangle \to 0$ even deep in the ferromagnetic phase.
 

@@ -22,6 +22,7 @@
   - [Test Configuration](#test-configuration)
 - [Algorithm & Parallelism](#algorithm--parallelism)
 - [Results](#results)
+  - [Interactive Plot](#interactive-3d-visualization)
 - [Sources of Error](#sources-of-error)
 - [Build & Run](#build--run)
 - [Simulation Parameters](#simulation-parameters)
@@ -126,6 +127,29 @@ where $\nabla^2_h$ is the discrete Laplacian. The simulation converges when $R <
 </p>
 
 *2D slice through the 3D electrostatic potential field at different $z$-planes. The conducting disk (center) and dipole point charges (offset) create the characteristic equipotential structure. Color maps the potential magnitude.*
+
+### Interactive 3D Visualization
+
+The interactive plot above renders the same 3D electrostatic potential field as the static slice, but with full rotational control and a z-axis slider. You can:
+
+- **Rotate** the 3D volume by dragging your mouse to inspect the potential structure from any angle
+- **Zoom** using the scroll wheel to examine fine details
+- **Slide through z-planes** with the slider to reveal how the field evolves along the depth axis in real time
+
+This allows intuitive exploration of the dipole and disk geometry without generating dozens of static images.
+
+<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+    <iframe
+        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic.html"
+        width="100%"
+        height="100%"
+        style="border: none; display: block;">
+    </iframe>
+</div>
+
+<a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic.html" target="_blank">View Simulation Fullscreen ↗️</a>
+
+
 
 ---
 

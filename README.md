@@ -171,6 +171,17 @@ Project 7: Magnetization surface and contour map of the 3D Ising model, revealin
 
 Left: N-body orbital dynamics of the Solar System. <br> Right: Mean power spectrum of transverse string oscillations showing normal-mode peaks.
 
+<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+    <iframe
+        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic.html"
+        width="100%"
+        height="100%"
+        style="border: none; display: block;">
+    </iframe>
+</div>
+
+<a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic.html" target="_blank">View Simulation Fullscreen ↗️</a>
+
 <p align="center">
   <img src="Project%204%3A%20Overrelaxation/output/potential_3D_center_slice.png" alt="Electrostatic potential slice" width="48%"/>
   <img src="Project%206%3A%20Diffusion/output/fixed_Mean_Squared_Distance_plot.png" alt="Diffusion MSD" width="48%"/>

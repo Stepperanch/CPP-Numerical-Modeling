@@ -22,6 +22,10 @@
   - [`Material` Class](#material-class)
   - [`Simulation` Class](#simulation-class)
 - [Results](#results)
+  - [Magnetization Surface](#magnetization-surface)
+  - [Magnetization Contour Map](#magnetization-contour-map)
+  - [Magnetization vs. Temperature](#magnetization-vs-temperature)
+  - [Interactive 3D Visualization](#interactive-3d-visualization)
 - [Sources of Error](#sources-of-error)
 - [Build & Run](#build--run)
 - [Simulation Parameters](#simulation-parameters)
@@ -264,15 +268,6 @@ The extracted $\beta$ is saved alongside $T_c$ for each field row.
 
 ### Magnetization Surface
 
-<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
-    <iframe
-        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html"
-        width="100%"
-        height="100%"
-        style="border: none; display: block;">
-    </iframe>
-</div>
-
 <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html" target="_blank">View Simulation Fullscreen ↗️</a>
 
 <p align="center">
@@ -305,6 +300,24 @@ The extracted $\beta$ is saved alongside $T_c$ for each field row.
 </p>
 
 *Magnetization as a function of temperature at three field strengths. At weak field ($h = 0.1$), the transition is sharp. Increasing $h$ smooths the transition and shifts the effective crossover temperature — at strong field ($h = 10$), magnetization persists well above $T_c$.*
+
+### Interactive 3D Visualization
+
+The interactive plot above renders the same 3D field as the static slice, but with full rotational control. You can:
+
+- **Rotate** the 3D volume by dragging your mouse to inspect the potential structure from any angle
+- **Zoom** using the scroll wheel to examine fine details
+
+This allows intuitive exploration of the phase change geometry without generating dozens of static images.
+
+<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+    <iframe
+        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html"
+        width="100%"
+        height="100%"
+        style="border: none; display: block;">
+    </iframe>
+</div>
 
 ---
 

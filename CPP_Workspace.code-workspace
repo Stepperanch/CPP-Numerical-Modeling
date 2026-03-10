@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../assets"
+		}
+		{
+			"path": "../TeX"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.cpp": "cpp",
+			"*.h": "cpp",
+			"*.hpp": "cpp"
+		}
+	}
+}

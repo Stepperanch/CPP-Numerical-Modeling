@@ -118,6 +118,10 @@ vcpkg_installed/
 slurm_*.out
 slurm_*.err
 
+# Workspace-specific files
+CPP_Workspace.code-workspace
+
 # Negations — allow assets directory and all its contents
 !assets/
 !assets/**
+

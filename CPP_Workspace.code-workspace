@@ -9,6 +9,9 @@
 		{
 			"path": "../TeX"
 		}
+		{
+			"path": "../medical-physics"
+		}
 	],
 	"settings": {
 		"files.associations": {

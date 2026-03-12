@@ -268,8 +268,6 @@ The extracted $\beta$ is saved alongside $T_c$ for each field row.
 
 ### Magnetization Surface
 
-<a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html" target="_blank">View Simulation Fullscreen ↗️</a>
-
 <p align="center">
   <img src="output/Out_2/magnetization_3d_surface_angle3.png" alt="3D magnetization surface M(T,h)" width="70%"/>
 </p>
@@ -312,12 +310,14 @@ This allows intuitive exploration of the phase change geometry without generatin
 
 <div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
     <iframe
-        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html"
+        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive_embeded.html"
         width="100%"
         height="100%"
         style="border: none; display: block;">
     </iframe>
 </div>
+
+<a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html" target="_blank">View Simulation Fullscreen ↗️</a>
 
 ---
 

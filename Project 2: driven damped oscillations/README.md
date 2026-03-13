@@ -10,8 +10,20 @@
 
 ---
 
+## Snapshot
+
+- Built a nonlinear dynamics simulator for the driven damped pendulum, capturing transitions from periodic motion to deterministic chaos.
+- Implemented and compared RK4 and Euler-Cromer integrators to evaluate stability, accuracy, and qualitative phase-space behavior.
+- Generated phase portraits and Poincare sections to identify attractors, bifurcations, and chaotic regimes.
+- Demonstrates depth in numerical ODE methods, dynamical systems analysis, and scientific visualization.
+
+For a fast technical check, jump to [Numerical Methods](#numerical-methods) and [Results](#results).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Physics Background](#physics-background)
   - [Equation of Motion](#equation-of-motion)

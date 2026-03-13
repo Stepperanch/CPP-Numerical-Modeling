@@ -10,8 +10,20 @@
 
 ---
 
+## Snapshot
+
+- Implemented an N-body gravitational simulator in C++17 with multiple integrators (RK4, Euler-Cromer, Stormer-Verlet) for accuracy/energy-conservation tradeoff studies.
+- Modeled realistic multi-body systems including full Solar System datasets in astronomical units.
+- Built a Python rendering pipeline for 2D/3D orbit plots and animations to evaluate long-horizon trajectory behavior.
+- Demonstrates competency in numerical integration, multi-body simulation, and validation through comparative methods.
+
+For a fast technical check, jump to [Numerical Methods](#numerical-methods) and [Build & Run](#build--run).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Physics Background](#physics-background)
   - [Newton's Law of Gravitation](#newtons-law-of-gravitation)

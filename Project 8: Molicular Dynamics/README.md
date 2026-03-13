@@ -11,8 +11,21 @@
 
 ---
 
+## Snapshot
+
+- Built a full 2D molecular dynamics engine in C++17 from scratch (Lennard-Jones physics, velocity Verlet integrator, configurable boundary conditions, gravity, and scripted heating/cooling).
+- Solved a non-trivial parallelization problem in an $O(N^2)$ force kernel using OpenMP thread-local accumulators plus guided scheduling to keep updates race-free and scalable.
+- Shipped production-style outputs for analysis and demos: structured NumPy/CSV artifacts, automated energy diagnostics, and parallel-rendered MP4 animations.
+- Designed for reproducible compute workflows: config-driven runs (`simulation.cfg`), release/debug/PGO build modes, and SLURM execution via `job.sh`.
+- Demonstrates end-to-end engineering: numerical methods, performance optimization, HPC deployment, and polished communication of results.
+
+For fast verification, jump to [Results](#results), [Build & Run](#build--run), and [Simulation Parameters](#simulation-parameters).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Physics Background](#physics-background)
   - [The Lennard-Jones Potential](#the-lennard-jones-potential)
@@ -20,7 +33,6 @@
   - [Velocity Verlet Integration](#velocity-verlet-integration)
   - [Observables](#observables)
 - [Code Structure](#code-structure)
-  - [`MolucularSystem` Class](#molucularsystem-class)
 - [Parallelization Narrative](#parallelization-narrative)
   - [The O(N²) Challenge](#the-on²-challenge)
   - [Race Conditions in Force Accumulation](#race-conditions-in-force-accumulation)
@@ -382,35 +394,63 @@ The animation shows particles evolving from a regular grid through a gas-like di
 make release   # Optimized build (-O3, LTO, vectorization, march=native)
 make unsafe    # Adds -ffast-math (may introduce minor FP drift)
 make debug     # -O0, full warnings, OpenMP disabled
-make profile-gen && ./bin/main && make profile-use  # Profile-guided optimization
+make profile-gen && ./bin/main simulation.cfg && make profile-use  # Profile-guided optimization
 ```
 
 ### Run
 
 ```bash
-./bin/main
+./bin/main simulation.cfg
 ```
 
 Output is auto-saved to `output/out_N/` (incrementing index):
 
 | File | Description |
 |---|---|
-| `results.npz` | Compressed NumPy archive with all simulation data |
-| `energy_data.csv` | Time series of temperature and energies |
-| `positions_data.csv` | Full particle trajectories |
+| `positions.npy` | Position history as `(sampledSteps, N, 2)` (sampled every 10 solver steps) |
+| `temperatures.npy` | Temperature time series |
+| `potentialEnergies.npy` | Potential energy time series |
+| `kineticEnergies.npy` | Kinetic energy time series |
+| `totalEnergies.npy` | Total energy time series |
+| `metadata.npy` | `[width, height, numParticles, timeSteps, finalTime]` |
+| `energy_data_N.csv` | Full-resolution energy/temperature CSV |
+| `positions_data_N.csv` | Full-resolution per-particle trajectory CSV |
 
-#### NPZ Contents
+### Configuration (simulation.cfg)
 
-| Array | Shape | Description |
+The simulation is fully configured through `simulation.cfg` using `key=value` pairs.
+
+Required keys currently parsed by `main.cpp`/`processing.h`:
+
+| Key | Type | Meaning |
 |---|---|---|
-| `positions` | `(timeSteps, N, 2)` | Particle positions at every time step |
-| `velocities` | `(N, 2)` | Final velocities |
-| `accelerations` | `(N, 2)` | Final accelerations |
-| `temperatures` | `(timeSteps,)` | Instantaneous temperature |
-| `potentialEnergies` | `(timeSteps,)` | Potential energy time series |
-| `kineticEnergies` | `(timeSteps,)` | Kinetic energy time series |
-| `totalEnergies` | `(timeSteps,)` | Total energy time series |
-| `metadata` | `(4,)` | `[L, numParticles, timeSteps, finalTime]` |
+| `timeSteps` | int | Number of integration steps |
+| `finalTime` | float | Physical end time; `dt = finalTime / timeSteps` |
+| `width` | float | Box width |
+| `height` | float | Box height |
+| `xBoundaryCondition` | string | `periodic` or `reflective` |
+| `yBoundaryCondition` | string | `periodic` or `reflective` |
+| `gravity` | float | Constant acceleration in `-y` |
+| `initialPositionsInstructions` | string | Shape instructions for initial particle set |
+| `EnergyInstructions` | string | Time-segmented heating/cooling schedule |
+
+`initialPositionsInstructions` format:
+
+```text
+Shape,cx,cy,rotation,spacing,size[,...];Shape,cx,cy,rotation,spacing,size[,...]
+```
+
+- Supported shapes: `Rectangle`, `Hexagon`, `Rhombus`, `Triangle`, `Circle`
+- Rectangle uses 7 fields: `Rectangle,cx,cy,rotation,spacing,numX,numY`
+- Other shapes use 6 fields: `Shape,cx,cy,rotation,spacing,size`
+
+`EnergyInstructions` format:
+
+```text
+startPercent,endPercent,totalEnergyChangePer100Particles;...
+```
+
+Each segment distributes its total energy change uniformly over that percent range.
 
 ### Visualize
 
@@ -418,7 +458,12 @@ Output is auto-saved to `output/out_N/` (incrementing index):
 python3 plotting.py
 ```
 
-Produces `md_animation.mp4` and `energy_plot.png` in the latest `output/out_N/` directory.
+`plotting.py` automatically loads the newest `output/out_N/` directory, then writes:
+
+- `md_animation_N.mp4`
+- `energy_plot_N.png`
+
+Note: `plotting.py` currently points to a cluster-specific ffmpeg path. If running locally, update the `FFMPEG` variable or replace it with your system ffmpeg path.
 
 ### HPC (SLURM)
 
@@ -426,21 +471,23 @@ Produces `md_animation.mp4` and `energy_plot.png` in the latest `output/out_N/` 
 sbatch job.sh
 ```
 
-The batch script builds in release mode, runs the simulation with 128 OpenMP threads, and generates visualizations automatically.
+The batch script builds in release mode (only when needed), runs `./bin/main simulation.cfg`, and then executes `python plotting.py`. Default allocation is 1 task with 8 OpenMP threads (`--cpus-per-task=8`).
 
 ---
 
 ## Simulation Parameters
 
-Configured in [main.cpp](main.cpp):
+Configured in `simulation.cfg` (not hardcoded in `main.cpp`).
 
 | Parameter | Default | Description |
 |---|---|---|
-| Grid | 20 × 20 | Initial particle grid (400 particles) |
-| Spacing | 1.1 σ | Grid spacing with random jitter up to 0.7 σ |
-| `timeSteps` | 300,000 | Number of integration steps |
-| `finalTime` | 150.0 | Total simulation time (reduced units) |
-| `boxSize` | 50.0 σ | Side length of periodic box |
+| `initialPositionsInstructions` | `Hexagon,50.0,50.0,0.0,1.1,25` | Initial particle layout (shape-composed) |
+| `timeSteps` | `100000` | Number of integration steps |
+| `finalTime` | `150.0` | Total simulation time (reduced units) |
+| `width`,`height` | `100.0`,`100.0` | 2D box dimensions |
+| `xBoundaryCondition`,`yBoundaryCondition` | `reflective`,`reflective` | Boundary handling by axis |
+| `gravity` | `0.01` | Constant downward acceleration |
+| `EnergyInstructions` | `2,8,-300;8,15,1000.0;30,40,1000.0;45,80,-2000.0;80,95,-400.0` | Multi-stage heating/cooling schedule |
 | `rc` | 2.5 σ | Lennard-Jones cutoff radius |
 
 ---
@@ -467,21 +514,27 @@ Configured in [main.cpp](main.cpp):
 
 ```
 Project 8: Molicular Dynamics/
-├── main.cpp        # Entry point: configures and launches the simulation
+├── main.cpp        # Entry point: reads config path and launches simulation
 ├── processing.h    # MolucularSystem class: integration, forces, energy, I/O
 ├── Makefile        # Multi-target build: debug, release, unsafe, profile-guided
+├── simulation.cfg  # Primary runtime configuration file
 ├── plotting.py     # Python visualization: parallel animation + energy plots
-├── job.sh          # SLURM batch script (BYU Supercomputer — 128 CPUs, 1 hr)
+├── job.sh          # SLURM batch script (default: 8 OpenMP CPUs)
 ├── bin/            # Compiled executable
 ├── slurm_out/      # SLURM output logs from HPC runs
 └── output/
     ├── Test Out/           # Early test run
     ├── out_0/ – out_9/     # Simulation runs (auto-incrementing)
-    │   ├── results.npz            # Compressed simulation data (NumPy)
-    │   ├── energy_data.csv        # Energy & temperature time series (CSV)
-    │   ├── positions_data.csv     # Full particle trajectories (CSV)
-    │   ├── md_animation.mp4       # Particle trajectory animation
-    │   └── energy_plot.png        # Energy analysis figure
+  │   ├── positions.npy          # Sampled positions
+  │   ├── temperatures.npy       # Temperature time series
+  │   ├── potentialEnergies.npy  # Potential energy time series
+  │   ├── kineticEnergies.npy    # Kinetic energy time series
+  │   ├── totalEnergies.npy      # Total energy time series
+  │   ├── metadata.npy           # width, height, particle count, timeSteps, finalTime
+  │   ├── energy_data_N.csv      # Energy & temperature time series (CSV)
+  │   ├── positions_data_N.csv   # Full particle trajectories (CSV)
+  │   ├── md_animation_N.mp4     # Particle trajectory animation
+  │   └── energy_plot_N.png      # Energy analysis figure
     └── ...
 ```
 

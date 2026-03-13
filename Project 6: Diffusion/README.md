@@ -11,8 +11,20 @@
 
 ---
 
+## Snapshot
+
+- Implemented a 3D Monte Carlo diffusion simulator that tracks large particle ensembles under reflective boundary constraints.
+- Used OpenMP to parallelize independent random-walk trajectories and scale ensemble statistics efficiently on multicore/HPC resources.
+- Validated outputs against diffusion theory by measuring RMS displacement and linear mean-squared-displacement trends.
+- Demonstrates stochastic simulation design, statistical validation, and high-throughput scientific computation.
+
+For a fast technical check, jump to [Algorithmic Design](#algorithmic-design) and [Results](#results).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Physics Background](#physics-background)
   - [Brownian Motion and the Random Walk](#brownian-motion-and-the-random-walk)

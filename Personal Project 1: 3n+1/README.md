@@ -9,8 +9,20 @@
 
 ---
 
+## Snapshot
+
+- Built a high-throughput C++ pipeline to analyze Collatz dynamics over very large integer ranges and extract stopping-time and peak-value statistics.
+- Implemented multiple tools for different workloads: exhaustive batch analysis, interactive sequence exploration, and CSV data generation for downstream analytics.
+- Produced publication-ready Python visualizations that reveal nontrivial structure in stopping times and maximum excursions.
+- Demonstrates strong fundamentals in algorithm design, performance-minded implementation, and data-driven mathematical investigation.
+
+For a fast technical check, jump to [Programs](#programs) and [Building and Running](#building-and-running).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Technical Background](#technical-background)
   - [The Collatz Conjecture](#the-collatz-conjecture)

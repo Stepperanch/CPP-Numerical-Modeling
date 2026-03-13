@@ -10,8 +10,20 @@
 
 ---
 
+## Snapshot
+
+- Built a Monte Carlo simulation in Python to validate a counterintuitive probability result with empirical convergence to theory.
+- Implemented side-by-side strategy evaluation (stay vs switch) and tracked win-rate behavior over repeated trials.
+- Delivered clear statistical visualizations that communicate uncertainty reduction and asymptotic convergence.
+- Demonstrates practical statistical computing, experiment design, and technical communication for non-intuitive results.
+
+For a fast technical check, jump to [Simulation Design](#simulation-design) and [Results & Visualization](#results--visualization).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [The Monty Hall Problem](#the-monty-hall-problem)
   - [Problem Statement](#problem-statement)

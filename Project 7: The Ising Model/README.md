@@ -11,8 +11,20 @@
 
 ---
 
+## Snapshot
+
+- Built a full 3D Ising-model Monte Carlo engine with checkerboard updates and precomputed energy tables for high-throughput spin-flip evaluation.
+- Executed large temperature-field parameter sweeps with OpenMP plus SLURM, scaling runs to 128 CPU cores on BYU HPC infrastructure.
+- Generated magnetization surfaces and contour analyses that recover expected critical behavior near the Curie transition.
+- Demonstrates strong capability in statistical-physics simulation, performance optimization, and HPC production workflows.
+
+For a fast technical check, jump to [Code Structure](#code-structure), [Results](#results), and [Build & Run](#build--run).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Physics Background](#physics-background)
   - [The Ising Hamiltonian](#the-ising-hamiltonian)
@@ -31,6 +43,7 @@
 - [Simulation Parameters](#simulation-parameters)
 - [Key Techniques](#key-techniques)
 - [Project Structure](#project-structure)
+
 
 ---
 

@@ -11,8 +11,20 @@
 
 ---
 
+## Snapshot
+
+- Developed a 3D electrostatic potential solver for Laplace equations using red-black Successive Over-Relaxation in C++17/OpenMP.
+- Tuned relaxation strategy and parallel update ordering to accelerate convergence on large grids (up to billion-scale unknown counts).
+- Supported realistic Dirichlet configurations (fixed-potential surfaces and embedded charge features) with quantitative convergence tracking.
+- Demonstrates strong PDE numerics, parallel iterative solver design, and scalable scientific computing.
+
+For a fast technical check, jump to [Algorithm & Parallelism](#algorithm--parallelism) and [Results](#results).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Physics Background](#physics-background)
   - [Laplace’s Equation](#laplaces-equation)

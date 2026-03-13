@@ -10,8 +10,20 @@
 
 ---
 
+## Snapshot
+
+- Implemented a full 3D projectile simulator in C++17 with drag, Magnus force, and wind rather than idealized no-resistance kinematics.
+- Used a 4th-order Runge-Kutta integrator to accurately evolve nonlinear coupled equations of motion.
+- Built a Python visualization pipeline for trajectory analysis and comparison across projectile classes and launch parameters.
+- Demonstrates core strengths in numerical modeling, physically grounded simulation, and reproducible analysis tooling.
+
+For a fast technical check, jump to [Code Structure](#code-structure) and [Build & Run](#build--run).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Physics Background](#physics-background)
   - [Equations of Motion](#equations-of-motion)

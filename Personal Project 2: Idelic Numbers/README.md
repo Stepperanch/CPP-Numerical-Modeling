@@ -10,8 +10,20 @@
 
 ---
 
+## Snapshot
+
+- Designed and implemented a parallel number-theory sieve in C++17/OpenMP to test idoneal-number candidates up to 50,000,000.
+- Optimized a triple-loop marking algorithm for large search spaces with thread-safe updates and scalable CPU utilization.
+- Produced computational verification against Euler's known idoneal list and explored the frontier for undiscovered candidates.
+- Demonstrates capability in parallel algorithm engineering, mathematical modeling, and large-range integer computation.
+
+For a fast technical check, jump to [Algorithm & Parallelism](#algorithm--parallelism)
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Technical Background](#technical-background)
   - [Euler's Idoneal Numbers](#eulers-idoneal-numbers)

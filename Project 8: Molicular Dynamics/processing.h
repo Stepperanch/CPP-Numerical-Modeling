@@ -138,7 +138,6 @@ std::vector<double> buildEnergyFunction(std::string energyInstructions, int tota
     return energyFunction;
 };
 
-
 /** @brief Builds a rectangular grid of particles.
  * @param centerX The x-coordinate of the center of the rectangle.
  * @param centerY The y-coordinate of the center of the rectangle.
@@ -381,13 +380,13 @@ class MolucularSystem {
     std::string yBCType;  // Boundary condition in the y direction ("periodic" or "reflective")
 
     // Function pointer types for boundary conditions — set once at construction, called in the hot loop with zero branching on BC type
-    using PosBCFn  = void (*)(double& pos, double& vel, double dim);
-    using MinImFn  = void (*)(double& delta,              double dim);
+    using PosBCFn = void (*)(double& pos, double& vel, double dim);
+    using MinImFn = void (*)(double& delta, double dim);
 
-    PosBCFn xPosBCFn;   // position+velocity BC for x
-    PosBCFn yPosBCFn;   // position+velocity BC for y
-    MinImFn xMinImFn;   // minimum-image displacement correction for x
-    MinImFn yMinImFn;   // minimum-image displacement correction for y
+    PosBCFn xPosBCFn;  // position+velocity BC for x
+    PosBCFn yPosBCFn;  // position+velocity BC for y
+    MinImFn xMinImFn;  // minimum-image displacement correction for x
+    MinImFn yMinImFn;  // minimum-image displacement correction for y
 
     float gravity;  // Strength of the constant downward force to simulate gravity
 
@@ -457,8 +456,8 @@ class MolucularSystem {
         // Assign function pointers once — the if/else runs only at construction, never in the hot loop
         xPosBCFn = (xBCType == "periodic") ? &periodicPositionBC : &reflectivePositionBC;
         yPosBCFn = (yBCType == "periodic") ? &periodicPositionBC : &reflectivePositionBC;
-        xMinImFn = (xBCType == "periodic") ? &periodicMinImage   : &noOpMinImage;
-        yMinImFn = (yBCType == "periodic") ? &periodicMinImage   : &noOpMinImage;
+        xMinImFn = (xBCType == "periodic") ? &periodicMinImage : &noOpMinImage;
+        yMinImFn = (yBCType == "periodic") ? &periodicMinImage : &noOpMinImage;
     }
 
     // =========================================================================
@@ -490,8 +489,8 @@ class MolucularSystem {
      * @param dim The dimension of the box in this direction (width or height).
      */
     static void reflectivePositionBC(double& pos, double& vel, double dim) {
-        double n      = std::floor(pos / dim);
-        double p      = pos - dim * n;
+        double n = std::floor(pos / dim);
+        double p = pos - dim * n;
         double parity = std::fmod(std::abs(n), 2.0);  // 0.0 or 1.0
         pos = p + parity * (dim - 2.0 * p);
         vel *= 1.0 - 2.0 * parity;
@@ -523,16 +522,24 @@ class MolucularSystem {
      * @param pos The x position of the particle (modified in place).
      * @param vel The x velocity of the particle (modified in place).
      */
-    inline void applyPositionBC_x(double& pos, double& vel) { xPosBCFn(pos, vel, width);  }
+    inline void applyPositionBC_x(double& pos, double& vel) {
+        xPosBCFn(pos, vel, width);
+    }
 
     /** @brief Apply position+velocity BC to y. Dispatches to periodic or reflective via function pointer. */
-    inline void applyPositionBC_y(double& pos, double& vel) { yPosBCFn(pos, vel, height); }
+    inline void applyPositionBC_y(double& pos, double& vel) {
+        yPosBCFn(pos, vel, height);
+    }
 
     /** @brief Apply minimum-image displacement correction to dx for force calculation. */
-    inline void applyMinImageBC_x(double& dx)               { xMinImFn(dx, width);        }
+    inline void applyMinImageBC_x(double& dx) {
+        xMinImFn(dx, width);
+    }
 
     /** @brief Apply minimum-image displacement correction to dy for force calculation. */
-    inline void applyMinImageBC_y(double& dy)               { yMinImFn(dy, height);       }
+    inline void applyMinImageBC_y(double& dy) {
+        yMinImFn(dy, height);
+    }
 
     /** @brief Get the position of a particle at a specific time step.
      * @param timeStep The time step for which to retrieve the position.
@@ -729,19 +736,20 @@ class MolucularSystem {
         // Save each array as a separate .npy file to avoid the 4 GB ZIP/NPZ size limit.
         // Only save one in 5 positions to reduce file size; all data saved as float.
         std::vector<float> positions_float, temperatures_float, potentialEnergies_float, kineticEnergies_float, totalEnergies_float;
-        positions_float.resize((timeSteps / 5) * numParticles * d);
+        const int position_skip = 5;
+        const int sampled_steps = (timeSteps + position_skip - 1) / position_skip;
+
+        positions_float.resize(sampled_steps * numParticles * d);
         temperatures_float.resize(timeSteps);
         potentialEnergies_float.resize(timeSteps);
         kineticEnergies_float.resize(timeSteps);
         totalEnergies_float.resize(timeSteps);
 
-        int skip = 10;
-
-#pragma omp parallel for collapse(3) schedule(static) if ((timeSteps / 5) * numParticles * d > 1000)
-        for (int t = 0; t < timeSteps; t += skip) {
+#pragma omp parallel for collapse(3) schedule(static) if (sampled_steps * numParticles * d > 1000)
+        for (int t = 0; t < timeSteps; t += position_skip) {
             for (int i = 0; i < numParticles; i++) {
                 for (int j = 0; j < d; j++) {
-                    int idx = ((t / skip) * numParticles + i) * d + j;
+                    int idx = ((t / position_skip) * numParticles + i) * d + j;
                     positions_float[idx] = static_cast<float>(positions[(t * numParticles + i)][j]);
                 }
             }
@@ -756,7 +764,7 @@ class MolucularSystem {
             totalEnergies_float[t] = static_cast<float>(totalEnergies[t]);
         }
 
-        cnpy::npy_save(directory + "/positions.npy", positions_float.data(), {(size_t)(timeSteps / 5), (size_t)numParticles, (size_t)d}, "w");
+        cnpy::npy_save(directory + "/positions.npy", positions_float.data(), {(size_t)sampled_steps, (size_t)numParticles, (size_t)d}, "w");
         cnpy::npy_save(directory + "/temperatures.npy", temperatures_float.data(), {timeSteps}, "w");
         cnpy::npy_save(directory + "/potentialEnergies.npy", potentialEnergies_float.data(), {timeSteps}, "w");
         cnpy::npy_save(directory + "/kineticEnergies.npy", kineticEnergies_float.data(), {timeSteps}, "w");

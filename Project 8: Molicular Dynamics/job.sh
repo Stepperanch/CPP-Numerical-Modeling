@@ -100,13 +100,16 @@ fi
 
 # --- Run ---------------------------------------------------------------
 echo "=== Running with OMP_NUM_THREADS=$OMP_NUM_THREADS at $(date) ==="
-time ./bin/main simulation.cfg
+time ./bin/main simulation_2.cfg
 if [ $? -ne 0 ]; then
     echo "Execution failed — aborting." >&2
     exit 1
 fi
 
-echo "== Ploting results at $(date) ==="
-time python plotting.py
+echo "== Creating Animation results at $(date) ==="
+time python plotting.py -w $OMP_NUM_THREADS
+
+echo "== Ploting Energy dadta at $(date) ==="
+time python plot_energy.py
 
 echo "=== Done at $(date) ==="

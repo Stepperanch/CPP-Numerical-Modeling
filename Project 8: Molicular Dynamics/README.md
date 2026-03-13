@@ -358,10 +358,6 @@ Three-panel figure:
 
 The energy plot shows the heating/cooling cycle: kinetic energy rises during the injection phase, plateaus, and falls during extraction. Total energy drift remains bounded, validating the Verlet integrator's symplectic properties.
 
-### Particle Animation
-
-The animation shows particles evolving from a regular grid through a gas-like disordered phase during heating, then re-ordering as energy is extracted — illustrating the connection between kinetic energy and temperature at the microscopic level.
-
 ---
 
 ## Sources of Error

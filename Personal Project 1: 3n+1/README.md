@@ -121,6 +121,8 @@ index,max_value
 
 Reads `collatz_data.csv` and plots the maximum value reached vs. iteration index. Automatically switches to logarithmic scale when the range spans multiple orders of magnitude. Prints summary statistics (min, max, mean, median) to the console.
 
+Plots can optionally be **saved to disk** in any format supported by Matplotlib (PNG, PDF, SVG, …) via the `-o` / `--output` flag. The `--no-show` flag suppresses the interactive window, which is useful in headless or CI environments.
+
 ---
 
 ## Building and Running
@@ -155,8 +157,17 @@ g++ -std=c++17 -O2 collatz_data_generator.cpp -o collatz_data_gen
 # Generate CSV data for plotting
 ./collatz_data_gen
 
-# Visualize
+# Visualize (interactive)
 python3 plot_collatz.py
+
+# Visualize and save plot to PNG
+python3 plot_collatz.py -o collatz_plot.png
+
+# Save to PNG without opening an interactive window (headless / CI)
+python3 plot_collatz.py collatz_data.csv -o collatz_plot.png --no-show
+
+# Save as PDF
+python3 plot_collatz.py -o collatz_plot.pdf
 ```
 
 ---

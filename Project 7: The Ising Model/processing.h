@@ -334,9 +334,9 @@ class Simulation {
                 avg_magnetizations[j][i] = material.averageMagnetization;
                 material.MagneticSusceptibility();
                 magnetic_susceptibilities[j][i] = material.magneticSusceptibility;
-                // if (j == 0) {
-                //     std::cout << temperatures[i] << " " << magnetic_fields[j] << std::endl;
-                // }
+                if (j == 0) {
+                    std::cout << temperatures[i] << " " << magnetic_fields[j] << std::endl;
+                }
             }
         }
     }

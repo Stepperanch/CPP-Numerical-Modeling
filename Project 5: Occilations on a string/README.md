@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#academic-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Project 5: Oscillations on a String
@@ -10,8 +10,20 @@
 
 ---
 
+## Snapshot
+
+- Built a finite-difference wave solver for damped, stiff-string dynamics with configurable initial-condition composition.
+- Integrated spectral diagnostics using KissFFT to extract mode content and mean power spectra from spatiotemporal simulation output.
+- Parallelized core updates with OpenMP and shipped compressed output workflows for efficient post-processing.
+- Demonstrates combined strengths in PDE simulation, frequency-domain analysis, and performance-oriented implementation.
+
+For a fast technical check, jump to [Algorithmic Design](#algorithmic-design) and [Visualization](#visualization).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Physics Background](#physics-background)
   - [The Wave Equation](#the-wave-equation)
@@ -394,5 +406,5 @@ Project 5: Occilations on a string/
 *Nels Buhrley — Computational Physics, 2026*
 
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#academic-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>

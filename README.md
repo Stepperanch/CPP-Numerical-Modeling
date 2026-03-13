@@ -10,10 +10,10 @@
 - [About](#about)
   - [Core Competencies](#core-competencies)
   - [The Fulton Supercomputer at BYU](#the-fulton-supercomputer-at-byu)
-- [Academic Projects](#academic-projects)
+- [**Academic Projects**](#academic-projects)
   - [Progression](#progression)
 - [Personal Projects](#personal-projects)
-- [Selected Results](#selected-results)
+- [**Selected Results**](#selected-results)
 - [Quick Start](#quick-start)
   - [Build Toolchain](#build-toolchain)
   - [Prerequisites](#prerequisites)
@@ -38,25 +38,47 @@ This repository is a collection of **nine numerical simulation and computational
 
 ### The Fulton Supercomputer at BYU
 
-The **Fulton Supercomputer** (managed by the BYU Office of Research Computing) is a HPC cluster providing the processing backbone for my numerical modeling and simulation work. It manages over **35,000 CPU cores** and **360+ GPUs**, supported by a **6 PB** parallel filesystem.
+<table>
+<tr>
+<td width="60%" valign="top">
 
-<p align="center">
-  <img src="assets/images/me-at-byuorc.jpeg" alt="Me At Fulton Supercomputer" width="45%"/>
-  <br>
-  <em>Figure 1: Me at the BYU HPC cluster Febuary 2026.</em>
-</p>
+The <strong>Fulton Supercomputer</strong> (managed by the BYU Office of Research Computing) is a HPC cluster providing the processing backbone for my numerical modeling and simulation work. It manages over <strong>35,000 CPU cores</strong> and <strong>360+ GPUs</strong>, supported by a <strong>6 PB</strong> parallel filesystem.
 
----
+<p><strong>Architecture & Resources (2026 Specs):</strong></p>
 
-## Architecture & Resources (2026 Specs)
+<table>
+<tr>
+<td><strong>Compute Nodes</strong></td>
+<td><strong>AMD EPYC 7763</strong> (128 cores/node), <strong>Intel Xeon Platinum 8568Y+</strong> (96 cores/node)</td>
+</tr>
+<tr>
+<td><strong>High-Memory</strong></td>
+<td>Up to <strong>2 TB of DDR5 RAM</strong> for memory-intensive simulations</td>
+</tr>
+<tr>
+<td><strong>GPU Acceleration</strong></td>
+<td><strong>NVIDIA H200 (141GB)</strong>, <strong>L40S (48GB)</strong>, <strong>A100 (80GB)</strong></td>
+</tr>
+<tr>
+<td><strong>Interconnect</strong></td>
+<td><strong>100 Gb/s InfiniBand</strong> and RoCE v2 low-latency networking</td>
+</tr>
+<tr>
+<td><strong>Storage</strong></td>
+<td><strong>6 PB</strong> parallel filesystem via <code>/fslhome</code> and local <strong>NVMe scratch</strong></td>
+</tr>
+</table>
 
-| Component | Specification |
-| :--- | :--- |
-| **Compute Nodes** | Heterogeneous: **AMD EPYC 7763** (128 cores/node), **Intel Xeon Platinum 8568Y+** (96 cores/node)... |
-| **High-Memory** | Specialized nodes providing up to **2 TB of DDR5 RAM** for memory-intensive simulations |
-| **GPU Acceleration** | **NVIDIA H200 (141GB)**, **L40S (48GB)**, and **A100 (80GB)** units |
-| **Interconnect** | **100 Gb/s InfiniBand** and RoCE v2 low-latency networking |
-| **Storage** | **6 PB** parallel filesystem via `/fslhome` and local **NVMe scratch** space |
+</td>
+<td width="40%" valign="top">
+
+<img src="assets/images/me-at-byuorc.jpeg" alt="Me at Fulton Supercomputer" width="100%"/>
+
+<p><em>Me at the BYU HPC cluster, February 2026</em></p>
+
+</td>
+</tr>
+</table>
 
 ---
 
@@ -65,10 +87,10 @@ The **Fulton Supercomputer** (managed by the BYU Office of Research Computing) i
 ### Job Management
 I utilize **SLURM (Simple Linux Utility for Resource Management)** to orchestrate simulations. This involves writing batch scripts that request specific hardware constraints to optimize performance, such as:
 * `--constraint=avx512` for vector instructions.
-* `--qos=standby` for extended 7-day simulation windows.
+* `--qos=standby` for acess to unused priviate hardware.
 
 ### Environment & Compilation
-Development is performed on **RHEL 9.4** login nodes. I manage software dependencies via the `module load` system, typically involving:
+Development is performed on **RHEL 9.4** login nodes using *Remote - SSH* and the linux terminal to manage my development and computational resources. I manage software dependencies via the `module load` system, typically involving:
 * **GCC/G++** for core simulation logic.
 * **OpenMPI** for distributed memory parallelism.
 * **Python 3/ffmpeg** for visiulation
@@ -76,7 +98,7 @@ Development is performed on **RHEL 9.4** login nodes. I manage software dependen
 ---
 
 ## Physics Implementation
-On this cluster, I implement numerical solvers for complex potentials where the computation scales as $O(N^2)$. For a system of $N$ particles, the potential $V$ is calculated as:
+On this cluster, I implement numerical solvers for complex potentials where the computation scales as $O(N^{2+})$. For a system of $N$ particles, the potential $V$ is calculated as:
 
 $$V = \sum_{i < j} \frac{q_i q_j}{4\pi\epsilon_0 |\mathbf{r}_i - \mathbf{r}_j|}$$
 
@@ -93,6 +115,7 @@ for (int i = 0; i < N; ++i) {
 ```
 
 **Simulation Deployment (This Portfolio):**
+
 | Project | Configuration | CPUs | Wall Time | Use Case |
 |---|---|---|---|---|
 | Project 4 (SOR) | CPU-only, `#threads=16` | 16 | 30–45 min | Strong-scaling study of iterative PDE solver |
@@ -101,7 +124,7 @@ for (int i = 0; i < N; ++i) {
 | Project 8 (Molecular Dynamics) | CPU-only, `#threads=8` | 8 | 10 min–2 hrs | Thread-local force accumulation (race condition mitigation) |
 
 **Key Advantages for This Work:**
-- **Scalability Testing:** Weak and strong scaling studies for OpenMP efficiency (Projects 4, 7)
+- **Scalability Testing:** Weak and strong scaling studies for OpenMP efficiency (Projects 4, 7, 8)
 - **Parameter Sweeps:** Multi-dimensional search spaces (Project 7: 2D temperature × field grid)
 - **Long-Running Simulations:** Statistical ensembles (Project 6: millions of particle trajectories)
 - **Reproducibility:** Identical hardware across multiple runs for benchmarking and verification
@@ -139,31 +162,103 @@ The projects follow a deliberate arc of increasing computational sophistication:
 |---|---|---|---|---|
 | 1 | [Collatz Conjecture (3n+1)](Personal%20Project%201%3A%203n%2B1/) | Number theory | Exhaustive sequence analysis for $n \leq 10^6$; recursive max-value chaining | — |
 | 2 | [Euler's Idoneal Numbers](Personal%20Project%202%3A%20Idelic%20Numbers/) | Number theory | Sieve over triple loop $a < b < c$ up to $5 \times 10^7$; thread-safe monotonic writes | ✓ OpenMP `dynamic` |
+| 3 | [Monty Hall Problem](Personal%20Project%203%3A%20Monty%20Hall%20Simulation%20%28Goat%20and%20Car%20Game%20Show%29/) | Probability & Statistics | Monte Carlo simulation to empirically verify counterintuitive theoretical predictions | — |
 
 ---
 
 ## Selected Results
+
+### Project 7: The Ising Model
+
+<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+    <iframe
+        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive_embedded.html"
+        width="100%"
+        height="100%"
+        style="border: none; display: block;">
+    </iframe>
+</div>
+
+<a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html" target="_blank">View Simulation Fullscreen ↗️</a>
 
 <p align="center">
   <img src="Project%207%3A%20The%20Ising%20Model/output/Out_1/magnetization_3d_surface_angle3.png" alt="Ising Model — 3D magnetization surface" width="48%"/>
   <img src="Project%207%3A%20The%20Ising%20Model/output/Out_1/magnetization_contour.png" alt="Ising Model — contour map" width="48%"/>
 </p>
 
-Project 7: Magnetization surface and contour map of the 3D Ising model, revealing the ferromagnetic phase transition at $T_c \approx 4.51\,J/k_B$.
+Magnetization surface and contour map of the 3D Ising model, revealing the ferromagnetic phase transition at $T_c \approx 4.51\,J/k_B$. Monte Carlo Metropolis algorithm with checkerboard sweep optimization across 2D temperature × magnetic field parameter space.
+
+[→ View detailed results](Project%207%3A%20The%20Ising%20Model/#results)
+
+---
+
+### Project 8: Molecular Dynamics
 
 <p align="center">
-  <img src="Project%203%3A%20Celestial%20Dynamics/Output/celestial_analysis_9_3d.png" alt="Celestial Dynamics — 3D orbits" width="48%"/>
-  <img src="Project%205%3A%20Occilations%20on%20a%20string/mean_power_spectrum.png" alt="String oscillations — power spectrum" width="48%"/>
+  <video width="70%" controls autoplay muted loop style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <source src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/videos/md_animation2.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <br>
+  <em>Heating/cooling cycle simulation of 400 particles under Lennard-Jones potential. Particle trajectories show transition from ordered grid to gas-like disorder during heating, then re-ordering during cooling. A shock wave propagates down from the top and reflects back up after the particles expand to the container boundary.</em>
 </p>
 
-Left: N-body orbital dynamics of the Solar System. <br> Right: Mean power spectrum of transverse string oscillations showing normal-mode peaks.
+[→ View detailed results](Project%208%3A%20Molicular%20Dynamics/#results)
+
+---
+
+### Project 4: Overrelaxation (Electrostatics)
+
+<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+    <iframe
+        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic_embedded.html"
+        width="100%"
+        height="100%"
+        style="border: none; display: block;">
+    </iframe>
+</div>
+
+<a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic.html" target="_blank">View Simulation Fullscreen ↗️</a>
+
+Interactive 3D visualization of electrostatic potential field solved via Successive Over-Relaxation (SOR) with optimal relaxation parameter $\omega \approx 1.84$. Navigate through z-axis slices to explore the full 3D solution space ($N=1000^3$ grid points).
+
+[→ View detailed results](Project%204%3A%20Overrelaxation/#results)
+
+---
+
+### Project 3: Celestial Dynamics
 
 <p align="center">
-  <img src="Project%204%3A%20Overrelaxation/output/potential_3D_center_slice.png" alt="Electrostatic potential slice" width="48%"/>
-  <img src="Project%206%3A%20Diffusion/output/fixed_Mean_Squared_Distance_plot.png" alt="Diffusion MSD" width="48%"/>
+  <img src="Project%203%3A%20Celestial%20Dynamics/Output/celestial_analysis_9_3d.png" alt="Celestial Dynamics — 3D orbits" width="60%"/>
 </p>
 
-Left: 2D slice through a 3D electrostatic potential field (SOR solver, $N=1000^3$). <br> Right: Mean squared displacement confirming Einstein's diffusion law $\langle r^2 \rangle = 6Dt$.
+N-body orbital dynamics of the Solar System computed with 4th-order Runge-Kutta integration. Simulation tracks all major planets over multi-year timescales, demonstrating long-term orbital stability and resonance effects.
+
+[→ View detailed results](Project%203%3A%20Celestial%20Dynamics/#results)
+
+---
+
+### Project 5: Oscillations on a String
+
+<p align="center">
+  <img src="Project%205%3A%20Occilations%20on%20a%20string/mean_power_spectrum.png" alt="String oscillations — power spectrum" width="60%"/>
+</p>
+
+Mean power spectrum of transverse string oscillations showing discrete normal-mode peaks. FFT spectral analysis reveals harmonic structure and damping characteristics from finite-difference wave equation solver.
+
+[→ View detailed results](Project%205%3A%20Occilations%20on%20a%20string/#results)
+
+---
+
+### Project 6: Diffusion
+
+<p align="center">
+  <img src="Project%206%3A%20Diffusion/output/fixed_Mean_Squared_Distance_plot.png" alt="Diffusion MSD" width="60%"/>
+</p>
+
+Mean squared displacement from 3D random-walk Monte Carlo simulation, confirming Einstein's diffusion law $\langle r^2 \rangle = 6Dt$. Ensemble of $10^6$ particle trajectories with reflective boundary conditions.
+
+[→ View detailed results](Project%206%3A%20Diffusion/#results)
 
 ---
 

@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#academic-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Project 7: The 3D Ising Model
@@ -11,8 +11,20 @@
 
 ---
 
+## Snapshot
+
+- Built a full 3D Ising-model Monte Carlo engine with checkerboard updates and precomputed energy tables for high-throughput spin-flip evaluation.
+- Executed large temperature-field parameter sweeps with OpenMP plus SLURM, scaling runs to 128 CPU cores on BYU HPC infrastructure.
+- Generated magnetization surfaces and contour analyses that recover expected critical behavior near the Curie transition.
+- Demonstrates strong capability in statistical-physics simulation, performance optimization, and HPC production workflows.
+
+For a fast technical check, jump to [Code Structure](#code-structure), [Results](#results), and [Build & Run](#build--run).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Physics Background](#physics-background)
   - [The Ising Hamiltonian](#the-ising-hamiltonian)
@@ -22,11 +34,16 @@
   - [`Material` Class](#material-class)
   - [`Simulation` Class](#simulation-class)
 - [Results](#results)
+  - [Magnetization Surface](#magnetization-surface)
+  - [Magnetization Contour Map](#magnetization-contour-map)
+  - [Magnetization vs. Temperature](#magnetization-vs-temperature)
+  - [Interactive 3D Visualization](#interactive-3d-visualization)
 - [Sources of Error](#sources-of-error)
 - [Build & Run](#build--run)
 - [Simulation Parameters](#simulation-parameters)
 - [Key Techniques](#key-techniques)
 - [Project Structure](#project-structure)
+
 
 ---
 
@@ -199,13 +216,13 @@ averagemagnetization        = sum_magnetization          / numIterations;
 averageMagnetizationSquared = sum_magnetization_squared  / numIterations;
 ```
 
-After each sweep, the instantaneous magnetization per spin $m = M_\text{total}/N^3$ is read from `currentTotalMagnetization` (maintained incrementally by `flipSpin`) — no full-lattice sum is needed. Three accumulators are kept to compute $\langle m \rangle$, $\langle |m| \rangle$, and $\langle m^2 \rangle$.
+After each sweep, the instantaneous magnetization per spin $m = M_\text{total}/N^3$ is read from `currentTotalMagnetization` (maintained incrementally by `flipSpin`) — no full-lattice sum is needed. Three accumulators are kept to compute $\langle m \rangle$, $\langle \vert m \vert \rangle$, and $\langle m^2 \rangle$.
 
-`MagneticSusceptibility()` is called after the simulation completes and derives $\chi$ from the variance of $|m|$:
+`MagneticSusceptibility()` is called after the simulation completes and derives $\chi$ from the variance of $\vert  m\vert $:
 
-$$\chi = \frac{N^3}{T}\left(\langle m^2 \rangle - \langle |m| \rangle^2\right)$$
+$$\chi = \frac{N^3}{T}\left(\langle m^2 \rangle - \langle \vert m\vert  \rangle^2\right)$$
 
-Using $\langle |m| \rangle$ rather than $\langle m \rangle^2$ avoids cancellation errors in symmetry-broken phases where positive and negative magnetization states are sampled equally, which would drive $\langle m \rangle \to 0$ even deep in the ferromagnetic phase.
+Using $\langle \vert m\vert  \rangle$ rather than $\langle m \rangle^2$ avoids cancellation errors in symmetry-broken phases where positive and negative magnetization states are sampled equally, which would drive $\langle m \rangle \to 0$ even deep in the ferromagnetic phase.
 
 ---
 
@@ -249,9 +266,9 @@ critical_temperatures[j] = temperatures[criticalTempIndex];
 This works because $\chi$ diverges (and in a finite system peaks sharply) at $T_c$.
 
 **Step 2 — Fit $\beta$:**
-Near $T_c$ the order parameter scales as $\langle |m| \rangle \sim (T_c - T)^\beta$. Taking logs gives:
-$$\ln \langle |m| \rangle = \beta \ln(T_c - T) + \text{const}$$
-The code selects up to 40 points just below $T_c$ (filtering out points where $|m| < 0.01$ or $T \geq T_c$ to avoid log-of-zero issues) and fits the slope via ordinary least squares in log-log space:
+Near $T_c$ the order parameter scales as $\langle \vert m\vert  \rangle \sim (T_c - T)^\beta$. Taking logs gives:
+$$\ln \langle \vert m\vert  \rangle = \beta \ln(T_c - T) + \text{const}$$
+The code selects up to 40 points just below $T_c$ (filtering out points where $\vert m\vert  < 0.01$ or $T \geq T_c$ to avoid log-of-zero issues) and fits the slope via ordinary least squares in log-log space:
 ```cpp
 slope = (n·ΣlogM·logT - ΣlogM·ΣlogT) / (n·ΣlogT² - (ΣlogT)²)
 beta_exponents[j] = slope;
@@ -265,14 +282,14 @@ The extracted $\beta$ is saved alongside $T_c$ for each field row.
 ### Magnetization Surface
 
 <p align="center">
-  <img src="output/Out_3/magnetization_3d_surface_angle3.png" alt="3D magnetization surface M(T,h)" width="70%"/>
+  <img src="output/Out_2/magnetization_3d_surface_angle3.png" alt="3D magnetization surface M(T,h)" width="70%"/>
 </p>
 
 *3D surface plot of the average magnetization $\langle m \rangle(T, h)$. The sharp cliff at $T_c \approx 4.51\,J/k_B$ (at $h = 0$) marks the ferromagnetic phase transition — the system transitions from ordered (magnetized) to disordered (paramagnetic) as temperature rises.*
 
 <p align="center">
-  <img src="output/Out_3/magnetization_3d_surface_angle4.png" alt="Surface rotation 1" width="48%"/>
-  <img src="output/Out_3/magnetization_3d_surface_angle2.png" alt="Surface rotation 2" width="48%"/>
+  <img src="output/Out_2/magnetization_3d_surface_angle4.png" alt="Surface rotation 1" width="48%"/>
+  <img src="output/Out_2/magnetization_3d_surface_angle2.png" alt="Surface rotation 2" width="48%"/>
 </p>
 
 *Alternative viewing angles of the magnetization surface, showing the symmetry-breaking structure: for $h > 0$ the system prefers $+m$, for $h < 0$ it prefers $-m$, and the transition sharpens as $h \to 0$.*
@@ -280,7 +297,7 @@ The extracted $\beta$ is saved alongside $T_c$ for each field row.
 ### Magnetization Contour Map
 
 <p align="center">
-  <img src="output/Out_3/magnetization_contour.png" alt="2D contour map of magnetization" width="60%"/>
+  <img src="output/Out_2/magnetization_contour.png" alt="2D contour map of magnetization" width="60%"/>
 </p>
 
 *Contour plot of $\langle m \rangle$ in the $(T, h)$ plane. The critical temperature is visible as the boundary between the ordered (yellow/purple) and disordered (color gradiant) phases.*
@@ -294,6 +311,26 @@ The extracted $\beta$ is saved alongside $T_c$ for each field row.
 </p>
 
 *Magnetization as a function of temperature at three field strengths. At weak field ($h = 0.1$), the transition is sharp. Increasing $h$ smooths the transition and shifts the effective crossover temperature — at strong field ($h = 10$), magnetization persists well above $T_c$.*
+
+### Interactive 3D Visualization
+
+The interactive plot above renders the same 3D field as the static slice, but with full rotational control. You can:
+
+- **Rotate** the 3D volume by dragging your mouse to inspect the potential structure from any angle
+- **Zoom** using the scroll wheel to examine fine details
+
+This allows intuitive exploration of the phase change geometry without generating dozens of static images.
+
+<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+    <iframe
+        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive_embeded.html"
+        width="100%"
+        height="100%"
+        style="border: none; display: block;">
+    </iframe>
+</div>
+
+<a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html" target="_blank">View Simulation Fullscreen ↗️</a>
 
 ---
 
@@ -383,7 +420,7 @@ Configured in [main.cpp](main.cpp):
 | `int8_t` + flat 1D array | $4\times$ smaller than `int`; cache-friendly $z$-loop |
 | Incremental magnetization tracking | $O(1)$ magnetization update per flip instead of $O(N^3)$ |
 | 100-sweep burn-in | Discards initial transient before measuring observables |
-| Running accumulators for $\langle m \rangle$, $\langle |m| \rangle$, $\langle m^2 \rangle$ | Enables susceptibility and critical-exponent analysis |
+| Running accumulators for $\langle m \rangle$, $\langle \vert m\vert  \rangle$, $\langle m^2 \rangle$ | Enables susceptibility and critical-exponent analysis |
 | Peak susceptibility $\to T_c$ | Locates the critical temperature per field row |
 | Log-log OLS regression $\to \beta$ | Extracts the critical exponent from magnetization scaling below $T_c$ |
 | `collapse(2)` + `dynamic` scheduling | Scalable multi-core parallelism across $(T, h)$ |
@@ -438,5 +475,5 @@ Project 7: The Ising Model/
 *Nels Buhrley — Computational Physics, 2026*
 
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#academic-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>

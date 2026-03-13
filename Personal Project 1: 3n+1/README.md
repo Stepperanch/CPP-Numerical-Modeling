@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#personal-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Personal Project 1: The Collatz Conjecture (3n+1)
@@ -9,8 +9,20 @@
 
 ---
 
+## Snapshot
+
+- Built a high-throughput C++ pipeline to analyze Collatz dynamics over very large integer ranges and extract stopping-time and peak-value statistics.
+- Implemented multiple tools for different workloads: exhaustive batch analysis, interactive sequence exploration, and CSV data generation for downstream analytics.
+- Produced publication-ready Python visualizations that reveal nontrivial structure in stopping times and maximum excursions.
+- Demonstrates strong fundamentals in algorithm design, performance-minded implementation, and data-driven mathematical investigation.
+
+For a fast technical check, jump to [Programs](#programs) and [Building and Running](#building-and-running).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Technical Background](#technical-background)
   - [The Collatz Conjecture](#the-collatz-conjecture)
@@ -109,6 +121,8 @@ index,max_value
 
 Reads `collatz_data.csv` and plots the maximum value reached vs. iteration index. Automatically switches to logarithmic scale when the range spans multiple orders of magnitude. Prints summary statistics (min, max, mean, median) to the console.
 
+Plots can optionally be **saved to disk** in any format supported by Matplotlib (PNG, PDF, SVG, …) via the `-o` / `--output` flag. The `--no-show` flag suppresses the interactive window, which is useful in headless or CI environments.
+
 ---
 
 ## Building and Running
@@ -143,8 +157,17 @@ g++ -std=c++17 -O2 collatz_data_generator.cpp -o collatz_data_gen
 # Generate CSV data for plotting
 ./collatz_data_gen
 
-# Visualize
+# Visualize (interactive)
 python3 plot_collatz.py
+
+# Visualize and save plot to PNG
+python3 plot_collatz.py -o collatz_plot.png
+
+# Save to PNG without opening an interactive window (headless / CI)
+python3 plot_collatz.py collatz_data.csv -o collatz_plot.png --no-show
+
+# Save as PDF
+python3 plot_collatz.py -o collatz_plot.pdf
 ```
 
 ---
@@ -187,5 +210,5 @@ Personal Project 1: 3n+1/
 *Nels Buhrley — Computational Mathematics, 2025*
 
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#personal-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>

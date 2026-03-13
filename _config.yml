@@ -15,6 +15,9 @@ author: "Nels Buhrley"
 baseurl: "/CPP-Numerical-Modeling"
 url: "https://nelsbuhrley.github.io"
 
+# Google Analytics
+google_analytics: "G-V5N2Q8MP3T"  # Replace with your GA4 Measurement ID
+
 # Markdown & LaTeX Rendering
 markdown: kramdown
 kramdown:

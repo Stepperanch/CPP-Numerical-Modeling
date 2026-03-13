@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#academic-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Project 2: Driven Damped Pendulum — Route to Chaos
@@ -10,8 +10,20 @@
 
 ---
 
+## Snapshot
+
+- Built a nonlinear dynamics simulator for the driven damped pendulum, capturing transitions from periodic motion to deterministic chaos.
+- Implemented and compared RK4 and Euler-Cromer integrators to evaluate stability, accuracy, and qualitative phase-space behavior.
+- Generated phase portraits and Poincare sections to identify attractors, bifurcations, and chaotic regimes.
+- Demonstrates depth in numerical ODE methods, dynamical systems analysis, and scientific visualization.
+
+For a fast technical check, jump to [Numerical Methods](#numerical-methods) and [Results](#results).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Physics Background](#physics-background)
   - [Equation of Motion](#equation-of-motion)
@@ -141,7 +153,7 @@ The `logic` class provides:
 ## Results
 
 <p align="center">
-  <img src="Output/oscillator_analysis_0.png" alt="Oscillator analysis — periodic regime" width="80%"/>
+  <img src="../assets/plots/oscillator_analysis_0.png" alt="Oscillator analysis — periodic regime" width="80%"/>
 </p>
 
 *Six-panel analysis of the driven damped pendulum. Top row: angle vs. time (unwrapped and wrapped to $[-\pi, \pi]$). Middle: full phase-space portrait. Bottom: Poincaré sections at the driving frequency reveal the attractor structure — periodic orbits appear as discrete points, chaotic dynamics as fractal dust.*
@@ -253,5 +265,5 @@ Project 2: driven damped oscillations/
 *Nels Buhrley — Computational Physics, 2025*
 
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#academic-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>

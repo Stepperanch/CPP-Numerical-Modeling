@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#personal-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Personal Project 2: Euler's Idoneal Numbers — Parallel Sieve
@@ -10,8 +10,20 @@
 
 ---
 
+## Snapshot
+
+- Designed and implemented a parallel number-theory sieve in C++17/OpenMP to test idoneal-number candidates up to 50,000,000.
+- Optimized a triple-loop marking algorithm for large search spaces with thread-safe updates and scalable CPU utilization.
+- Produced computational verification against Euler's known idoneal list and explored the frontier for undiscovered candidates.
+- Demonstrates capability in parallel algorithm engineering, mathematical modeling, and large-range integer computation.
+
+For a fast technical check, jump to [Algorithm & Parallelism](#algorithm--parallelism)
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Technical Background](#technical-background)
   - [Euler's Idoneal Numbers](#eulers-idoneal-numbers)
@@ -53,7 +65,7 @@ Equivalently, $n$ is idoneal if every integer that can be represented in the for
 
 Euler discovered 65 idoneal numbers. The complete known list is:
 
-$$1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 16, 18, 21, 22, 24, 25, 28, \\30, 33, 37, 40, 42, 45, 48, 57, 58, 60, 70, 72, 78, 85, 88, 93, 102, 105, \\112, 120, 130, 133, 165, 168, 177, 190, 210, 232, 240, 253, 273, 280, \\312, 330, 345, 357, 385, 408, 462, 520, 760, 840, 1320, 1365, 1848$$
+> 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 13, 15, 16, 18, 21, 22, 24, 25, 28, 30, 33, 37, 40, 42, 45, 48, 57, 58, 60, 70, 72, 78, 85, 88, 93, 102, 105, 112, 120, 130, 133, 165, 168, 177, 190, 210, 232, 240, 253, 273, 280, 312, 330, 345, 357, 385, 408, 462, 520, 760, 840, 1320, 1365, 1848
 
 It is conjectured (and proved under the Generalized Riemann Hypothesis) that these are the **only** idoneal numbers — there are no others. Unconditionally, at most one additional idoneal number could exist, and if it does, it would be extremely large.
 
@@ -193,5 +205,5 @@ Personal Project 2: Idelic Numbers/
 *Nels Buhrley — Computational Mathematics, 2025*
 
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#personal-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>

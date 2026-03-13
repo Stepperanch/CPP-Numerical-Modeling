@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#academic-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>
 
 # Project 4: Overrelaxation — 3D Electrostatic Potential Solver
@@ -11,8 +11,20 @@
 
 ---
 
+## Snapshot
+
+- Developed a 3D electrostatic potential solver for Laplace equations using red-black Successive Over-Relaxation in C++17/OpenMP.
+- Tuned relaxation strategy and parallel update ordering to accelerate convergence on large grids (up to billion-scale unknown counts).
+- Supported realistic Dirichlet configurations (fixed-potential surfaces and embedded charge features) with quantitative convergence tracking.
+- Demonstrates strong PDE numerics, parallel iterative solver design, and scalable scientific computing.
+
+For a fast technical check, jump to [Algorithm & Parallelism](#algorithm--parallelism) and [Results](#results).
+
+---
+
 ## Table of Contents
 
+- [Snapshot](#snapshot)
 - [Overview](#overview)
 - [Physics Background](#physics-background)
   - [Laplace’s Equation](#laplaces-equation)
@@ -22,6 +34,7 @@
   - [Test Configuration](#test-configuration)
 - [Algorithm & Parallelism](#algorithm--parallelism)
 - [Results](#results)
+  - [Interactive Plot](#interactive-3d-visualization)
 - [Sources of Error](#sources-of-error)
 - [Build & Run](#build--run)
 - [Simulation Parameters](#simulation-parameters)
@@ -127,6 +140,29 @@ where $\nabla^2_h$ is the discrete Laplacian. The simulation converges when $R <
 
 *2D slice through the 3D electrostatic potential field at different $z$-planes. The conducting disk (center) and dipole point charges (offset) create the characteristic equipotential structure. Color maps the potential magnitude.*
 
+### Interactive 3D Visualization
+
+The interactive plot above renders the same 3D electrostatic potential field as the static slice, but with full rotational control and a z-axis slider. You can:
+
+- **Rotate** the 3D volume by dragging your mouse to inspect the potential structure from any angle
+- **Zoom** using the scroll wheel to examine fine details
+- **Slide through z-planes** with the slider to reveal how the field evolves along the depth axis in real time
+
+This allows intuitive exploration of the dipole and disk geometry without generating dozens of static images.
+
+<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+    <iframe
+        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic_embedded.html"
+        width="100%"
+        height="100%"
+        style="border: none; display: block;">
+    </iframe>
+</div>
+
+<a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic.html" target="_blank">View Simulation Fullscreen ↗️</a>
+
+
+
 ---
 
 ## Sources of Error
@@ -227,5 +263,5 @@ Project 4: Overrelaxation/
 *Nels Buhrley — Computational Physics, 2025*
 
 <p align="center">
-  <a href="../README.md"><strong>← Back to Portfolio Hub</strong></a>
+  <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/#academic-projects"><strong>← Back to Portfolio Hub</strong></a>
 </p>

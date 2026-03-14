@@ -1,11 +1,11 @@
 #!/bin/bash
-#SBATCH --job-name=molecular_dynamics_plotting  # Job name
+#SBATCH --job-name=molecular_dynamics_anamation  # Job name
 #SBATCH --output=slurm_out/slurm_%j.out       # stdout log (%j = job ID)
 #SBATCH --error=slurm_out/slurm_%j.err        # stderr log
 #SBATCH --nodes=1                  # single node (OpenMP, not MPI)
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1          # number of OpenMP threads — adjust to node size
-#SBATCH --mem=16G
+#SBATCH --cpus-per-task=32          # number of OpenMP threads — adjust to node size
+#SBATCH --mem=32G
 #SBATCH --time=02:00:00             # wall time — increase if needed
 #SBATCH --qos=standby
 ##SBATCH --partition=compute        # uncomment and set your partition name if required
@@ -39,7 +39,7 @@ cd "$SLURM_SUBMIT_DIR"
 # --- Run ---------------------------------------------------------------
 echo "=== Running with OMP_NUM_THREADS=$OMP_NUM_THREADS at $(date) ==="
 
-echo "== Plotting Energy data at $(date) ==="
-time python plot_energy.py
+echo "== Creating Animation results at $(date) ==="
+time python plotting.py -w $OMP_NUM_THREADS
 
 echo "=== Done at $(date) ==="

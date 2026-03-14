@@ -413,11 +413,15 @@ class MolucularSystem {
     double finalTime;
     double timeStep;
 
+    int stepSkip;
+
     // Assume sigma, epsilon, and mass are all 1 for simplicity in reduced units
 
     MolucularSystem(std::map<std::string, std::string> config) {
         this->timeSteps = std::stoul(config["timeSteps"]);
         this->finalTime = std::stof(config["finalTime"]);
+
+        this->stepSkip = std::stoul(config["stepSkip"]);
 
         this->width = std::stof(config["width"]);
         this->height = std::stof(config["height"]);
@@ -698,12 +702,20 @@ class MolucularSystem {
 
             double scaleingFactor =
                 std::sqrt(1.0 + 2 * desiredEnergyChange / currentKE_times2);  // Calculate scaling factor based on the desired energy change
+
+            if (scaleingFactor < 0.0) {
+                std::cerr << "Warning: Desired energy change of " << desiredEnergyChange
+                          << " is too large and would result in negative kinetic energy. No scaling applied for this time step.\n";
+                return;  // Skip scaling if it would result in negative kinetic energy
+            }
+
 #pragma omp parallel for schedule(static) if (numParticles > 200)  // Only parallelize if there are enough particles to justify the overhead
             for (int i = 0; i < numParticles; i++) {
-                if (std::abs(velocities[i][0]) > 1.0 ||
+                if (std::abs(velocities[i][0]) > 0.01 ||
                     scaleingFactor > 1)  // Only scale if the velocity is above a certain threshold or if we are adding energy to the system
                     velocities[i][0] *= scaleingFactor;
-                if (std::abs(velocities[i][1]) > 1.0 ||
+
+                if (std::abs(velocities[i][1]) > 0.01 ||
                     scaleingFactor > 1)  // Only scale if the velocity is above a certain threshold or if we are adding energy to the system
                     velocities[i][1] *= scaleingFactor;
             }
@@ -720,11 +732,16 @@ class MolucularSystem {
     void runSimulation() {
         calculateAccelerations(0);  // Calculate initial accelerations based on the initial positions
         energyCalculations(0);      // Perform initial energy calculations
-        int five_percent_of_time_steps = static_cast<int>(timeSteps / 20);
+        int one_percent_of_time_steps = static_cast<int>(timeSteps / 100);
         for (int t = 1; t < timeSteps; t++) {
             verletStep(t);  // Perform subsequent Verlet steps
-            if (t % five_percent_of_time_steps == 0) {
+            if (t % one_percent_of_time_steps == 0) {
                 std::cout << "Completed " << (t * 100) / timeSteps << "% of simulation." << std::endl;
+            }
+            if (getPosition(t, 0)[0] != getPosition(t, 0)[0] || getPosition(t, 0)[1] != getPosition(t, 0)[1])
+            {
+                std::cerr << "Error: NaN detected in positions at time step " << t << ". Aborting simulation.\n";
+                return;
             }
         }
     }
@@ -736,8 +753,8 @@ class MolucularSystem {
         // Save each array as a separate .npy file to avoid the 4 GB ZIP/NPZ size limit.
         // Only save one in 5 positions to reduce file size; all data saved as float.
         std::vector<float> positions_float, temperatures_float, potentialEnergies_float, kineticEnergies_float, totalEnergies_float;
-        const int position_skip = 5;
-        const int sampled_steps = (timeSteps + position_skip - 1) / position_skip;
+
+        const int sampled_steps = (timeSteps + stepSkip - 1) / stepSkip;
 
         positions_float.resize(sampled_steps * numParticles * d);
         temperatures_float.resize(timeSteps);
@@ -746,10 +763,10 @@ class MolucularSystem {
         totalEnergies_float.resize(timeSteps);
 
 #pragma omp parallel for collapse(3) schedule(static) if (sampled_steps * numParticles * d > 1000)
-        for (int t = 0; t < timeSteps; t += position_skip) {
+        for (int t = 0; t < timeSteps; t += stepSkip) {
             for (int i = 0; i < numParticles; i++) {
                 for (int j = 0; j < d; j++) {
-                    int idx = ((t / position_skip) * numParticles + i) * d + j;
+                    int idx = ((t / stepSkip) * numParticles + i) * d + j;
                     positions_float[idx] = static_cast<float>(positions[(t * numParticles + i)][j]);
                 }
             }
@@ -787,7 +804,7 @@ class MolucularSystem {
         // Write header
         file << "TimeStep,Temperature,PotentialEnergy,KineticEnergy,TotalEnergy\n";
         // Write data
-        for (int t = 0; t < timeSteps; t++) {
+        for (int t = 0; t < timeSteps; t += stepSkip) {
             file << t << "," << temperatures[t] << "," << potentialEnergies[t] << "," << kineticEnergies[t] << "," << totalEnergies[t] << "\n";
         }
         file.close();
@@ -805,7 +822,7 @@ class MolucularSystem {
         // Write header
         file << "TimeStep,ParticleIndex,X,Y\n";
         // Write data
-        for (int t = 0; t < timeSteps; t++) {
+        for (int t = 0; t < timeSteps; t += stepSkip) {
             for (int i = 0; i < numParticles; i++) {
                 std::array<double, d>& pos = getPosition(t, i);
                 file << t << "," << i << "," << pos[0] << "," << pos[1] << "\n";
@@ -820,16 +837,32 @@ class MolucularSystem {
         // Implement the logic to save the results (positions, energies, etc.) to a file
         // create a directory within the ./output dir titled
         // "out_{i}" where i is the next available integer (i.e. if there are already 3 directories in output, the next one will be out_4)
+
+        std::string outputDir = getOutputDir();
+
+        saveResultsToNpy(outputDir);
+        saveEnergyToCSV(outputDir + "/energy_data" + ".csv");
+        savePositionsToCSV(outputDir + "/positions_data" + ".csv");
+    }
+
+    void binSave() {
+            // Implement the logic to save the results (positions, energies, etc.) to a file
+            // create a directory within the ./output dir titled
+            // "out_{i}" where i is the next available integer (i.e. if there are already 3 directories in output, the next one will be out_4)
+
+            std::string outputDir =  getOutputDir();
+
+            std::filesystem::create_directories(outputDir);
+            saveResultsToNpy(outputDir);
+    }
+
+    inline std::string getOutputDir() {
         std::string outputDir = "./output/";
         int i = 0;
         while (std::filesystem::exists(outputDir + "out_" + std::to_string(i))) {
             i++;
         }
-        outputDir += "out_" + std::to_string(i);
-        std::filesystem::create_directories(outputDir);
-        saveResultsToNpy(outputDir);
-        saveEnergyToCSV(outputDir + "/energy_data_" + std::to_string(i) + ".csv");
-        savePositionsToCSV(outputDir + "/positions_data_" + std::to_string(i) + ".csv");
+        return outputDir + "out_" + std::to_string(i);
     }
 };
 

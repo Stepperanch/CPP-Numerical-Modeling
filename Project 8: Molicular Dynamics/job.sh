@@ -4,10 +4,10 @@
 #SBATCH --error=slurm_out/slurm_%j.err        # stderr log
 #SBATCH --nodes=1                  # single node (OpenMP, not MPI)
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=8          # number of OpenMP threads — adjust to node size
-#SBATCH --mem=16G
+#SBATCH --cpus-per-task=32          # number of OpenMP threads — adjust to node size
+#SBATCH --mem=64G
 #SBATCH --time=02:00:00             # wall time — increase if needed
-#SBATCH --qos=standby
+#SBATCH --qos=normal
 ##SBATCH --partition=compute        # uncomment and set your partition name if required
 ##SBATCH --account=your_account     # uncomment and set your allocation if required
 
@@ -107,9 +107,17 @@ if [ $? -ne 0 ]; then
 fi
 
 echo "== Creating Animation results at $(date) ==="
-time python plotting.py -w $OMP_NUM_THREADS
+sbatch anamation.sh
+if [ $? -ne 0 ]; then
+    echo "Failed to submit animation job — aborting." >&2
+    exit 1
+fi
 
-echo "== Ploting Energy dadta at $(date) ==="
-time python plot_energy.py
+echo "== Plotting Energy data at $(date) ==="
+sbatch plotting.sh
+if [ $? -ne 0 ]; then
+    echo "Failed to submit plotting job — aborting." >&2
+    exit 1
+fi
 
 echo "=== Done at $(date) ==="

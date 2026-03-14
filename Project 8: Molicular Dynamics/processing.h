@@ -698,12 +698,20 @@ class MolucularSystem {
 
             double scaleingFactor =
                 std::sqrt(1.0 + 2 * desiredEnergyChange / currentKE_times2);  // Calculate scaling factor based on the desired energy change
+
+            if (scaleingFactor < 0.0) {
+                std::cerr << "Warning: Desired energy change of " << desiredEnergyChange
+                          << " is too large and would result in negative kinetic energy. No scaling applied for this time step.\n";
+                return;  // Skip scaling if it would result in negative kinetic energy
+            }
+
 #pragma omp parallel for schedule(static) if (numParticles > 200)  // Only parallelize if there are enough particles to justify the overhead
             for (int i = 0; i < numParticles; i++) {
-                if (std::abs(velocities[i][0]) > 1.0 ||
+                if (std::abs(velocities[i][0]) > 0.01 ||
                     scaleingFactor > 1)  // Only scale if the velocity is above a certain threshold or if we are adding energy to the system
                     velocities[i][0] *= scaleingFactor;
-                if (std::abs(velocities[i][1]) > 1.0 ||
+
+                if (std::abs(velocities[i][1]) > 0.01 ||
                     scaleingFactor > 1)  // Only scale if the velocity is above a certain threshold or if we are adding energy to the system
                     velocities[i][1] *= scaleingFactor;
             }

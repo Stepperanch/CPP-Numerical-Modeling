@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=1          # number of OpenMP threads — adjust to node size
 #SBATCH --mem=16G
 #SBATCH --time=02:00:00             # wall time — increase if needed
-#SBATCH --qos=standby
+##SBATCH --qos=standby
 ##SBATCH --partition=compute        # uncomment and set your partition name if required
 ##SBATCH --account=your_account     # uncomment and set your allocation if required
 

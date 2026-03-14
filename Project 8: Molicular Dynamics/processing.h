@@ -412,6 +412,7 @@ class MolucularSystem {
     unsigned int timeSteps;
     double finalTime;
     double timeStep;
+    unsigned int onePercentOfTimeSteps;
 
     int stepSkip;
 
@@ -420,6 +421,7 @@ class MolucularSystem {
     MolucularSystem(std::map<std::string, std::string> config) {
         this->timeSteps = std::stoul(config["timeSteps"]);
         this->finalTime = std::stof(config["finalTime"]);
+
 
         this->stepSkip = std::stoul(config["stepSkip"]);
 
@@ -454,7 +456,7 @@ class MolucularSystem {
             accelerations[i] = {0.0, 0.0};       // Initialize accelerations to zero
         }
         timeStep = finalTime / timeSteps;
-
+        onePercentOfTimeSteps = static_cast<unsigned int>(timeSteps / 100);
         velocities[0] = {0.001, 0.001};  // Small initial velocity for particle 0
 
         // Assign function pointers once — the if/else runs only at construction, never in the hot loop
@@ -727,22 +729,25 @@ class MolucularSystem {
         temperatures[t] = currentKE_times2 / (numParticles * d);  // Calculate temperature using the kinetic energy and degrees of freedom
     }
 
+    inline void monitoringLogic(int t) {
+        if (t % onePercentOfTimeSteps == 0) {
+                std::cout << "Completed " << (t * 100) / timeSteps << "% of simulation." << std::endl;
+            }
+            if (getPosition(t, 0)[0] != getPosition(t, 0)[0] || getPosition(t, 0)[1] != getPosition(t, 0)[1])
+            {
+                std::cout << "Error: NaN detected in positions at time step " << t << ". Aborting simulation.\n";
+                return;
+            }
+    }
+
     /** @brief Run the simulation for the specified number of time steps.
      */
     void runSimulation() {
         calculateAccelerations(0);  // Calculate initial accelerations based on the initial positions
         energyCalculations(0);      // Perform initial energy calculations
-        int one_percent_of_time_steps = static_cast<int>(timeSteps / 100);
         for (int t = 1; t < timeSteps; t++) {
             verletStep(t);  // Perform subsequent Verlet steps
-            if (t % one_percent_of_time_steps == 0) {
-                std::cout << "Completed " << (t * 100) / timeSteps << "% of simulation." << std::endl;
-            }
-            if (getPosition(t, 0)[0] != getPosition(t, 0)[0] || getPosition(t, 0)[1] != getPosition(t, 0)[1])
-            {
-                std::cerr << "Error: NaN detected in positions at time step " << t << ". Aborting simulation.\n";
-                return;
-            }
+            monitoringLogic(t);  // Check for errors and report progress
         }
     }
 

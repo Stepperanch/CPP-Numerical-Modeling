@@ -413,11 +413,15 @@ class MolucularSystem {
     double finalTime;
     double timeStep;
 
+    int stepSkip;
+
     // Assume sigma, epsilon, and mass are all 1 for simplicity in reduced units
 
     MolucularSystem(std::map<std::string, std::string> config) {
         this->timeSteps = std::stoul(config["timeSteps"]);
         this->finalTime = std::stof(config["finalTime"]);
+
+        this->stepSkip = std::stoul(config["stepSkip"]);
 
         this->width = std::stof(config["width"]);
         this->height = std::stof(config["height"]);
@@ -744,8 +748,8 @@ class MolucularSystem {
         // Save each array as a separate .npy file to avoid the 4 GB ZIP/NPZ size limit.
         // Only save one in 5 positions to reduce file size; all data saved as float.
         std::vector<float> positions_float, temperatures_float, potentialEnergies_float, kineticEnergies_float, totalEnergies_float;
-        const int position_skip = 5;
-        const int sampled_steps = (timeSteps + position_skip - 1) / position_skip;
+
+        const int sampled_steps = (timeSteps + stepSkip - 1) / stepSkip;
 
         positions_float.resize(sampled_steps * numParticles * d);
         temperatures_float.resize(timeSteps);
@@ -754,10 +758,10 @@ class MolucularSystem {
         totalEnergies_float.resize(timeSteps);
 
 #pragma omp parallel for collapse(3) schedule(static) if (sampled_steps * numParticles * d > 1000)
-        for (int t = 0; t < timeSteps; t += position_skip) {
+        for (int t = 0; t < timeSteps; t += stepSkip) {
             for (int i = 0; i < numParticles; i++) {
                 for (int j = 0; j < d; j++) {
-                    int idx = ((t / position_skip) * numParticles + i) * d + j;
+                    int idx = ((t / stepSkip) * numParticles + i) * d + j;
                     positions_float[idx] = static_cast<float>(positions[(t * numParticles + i)][j]);
                 }
             }
@@ -795,7 +799,7 @@ class MolucularSystem {
         // Write header
         file << "TimeStep,Temperature,PotentialEnergy,KineticEnergy,TotalEnergy\n";
         // Write data
-        for (int t = 0; t < timeSteps; t++) {
+        for (int t = 0; t < timeSteps; t += stepSkip) {
             file << t << "," << temperatures[t] << "," << potentialEnergies[t] << "," << kineticEnergies[t] << "," << totalEnergies[t] << "\n";
         }
         file.close();
@@ -813,7 +817,7 @@ class MolucularSystem {
         // Write header
         file << "TimeStep,ParticleIndex,X,Y\n";
         // Write data
-        for (int t = 0; t < timeSteps; t++) {
+        for (int t = 0; t < timeSteps; t += stepSkip) {
             for (int i = 0; i < numParticles; i++) {
                 std::array<double, d>& pos = getPosition(t, i);
                 file << t << "," << i << "," << pos[0] << "," << pos[1] << "\n";
@@ -828,16 +832,32 @@ class MolucularSystem {
         // Implement the logic to save the results (positions, energies, etc.) to a file
         // create a directory within the ./output dir titled
         // "out_{i}" where i is the next available integer (i.e. if there are already 3 directories in output, the next one will be out_4)
+
+        std::string outputDir = getOutputDir();
+
+        saveResultsToNpy(outputDir);
+        saveEnergyToCSV(outputDir + "/energy_data" + ".csv");
+        savePositionsToCSV(outputDir + "/positions_data" + ".csv");
+    }
+
+    void binSave() {
+            // Implement the logic to save the results (positions, energies, etc.) to a file
+            // create a directory within the ./output dir titled
+            // "out_{i}" where i is the next available integer (i.e. if there are already 3 directories in output, the next one will be out_4)
+
+            std::string outputDir =  getOutputDir();
+
+            std::filesystem::create_directories(outputDir);
+            saveResultsToNpy(outputDir);
+    }
+
+    inline std::string getOutputDir() {
         std::string outputDir = "./output/";
         int i = 0;
         while (std::filesystem::exists(outputDir + "out_" + std::to_string(i))) {
             i++;
         }
-        outputDir += "out_" + std::to_string(i);
-        std::filesystem::create_directories(outputDir);
-        saveResultsToNpy(outputDir);
-        saveEnergyToCSV(outputDir + "/energy_data_" + std::to_string(i) + ".csv");
-        savePositionsToCSV(outputDir + "/positions_data_" + std::to_string(i) + ".csv");
+        return outputDir + "out_" + std::to_string(i);
     }
 };
 

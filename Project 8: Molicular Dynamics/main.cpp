@@ -15,7 +15,10 @@ int main(int argc, char* argv[]) {
     system.runSimulation();
     std::cout << "Simulation complete. Saving results..." << std::endl;
 
-    system.save();
+    //system.save();
+
+    system.binSave();  // Save results in binary format for efficient loading in Python
+
     std::cout << "Results saved to NPZ file." << std::endl;
 
     return 0;

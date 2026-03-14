@@ -126,7 +126,7 @@ def render_segment(args):
 
         scat = ax.scatter(
             pos_slice[0, :, 0], pos_slice[0, :, 1],
-            s=5, c="steelblue", edgecolors="k", linewidths=0.4
+            s=3, c="steelblue", edgecolors="k", linewidths=0.4
         )
 
         def update(local_idx):
@@ -254,32 +254,3 @@ os.rmdir(tmp_dir)
 
 print(f"Animation saved to: {anim_path}")
 
-# ── Energy plots ──────────────────────────────────────────────────────────────
-fig2, axes = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
-t = np.arange(timeSteps)
-
-axes[0].plot(t, potentialEnergies, color="royalblue",   label="Potential Energy")
-axes[0].plot(t, kineticEnergies,   color="tomato",      label="Kinetic Energy")
-axes[0].plot(t, totalEnergies,     color="forestgreen", label="Total Energy", linestyle="--")
-axes[0].set_ylabel("Energy (ε)")
-axes[0].legend()
-axes[0].grid(True)
-
-axes[1].plot(t, temperatures, color="darkorange")
-axes[1].set_ylabel("Temperature (reduced)")
-axes[1].grid(True)
-
-axes[2].plot(t, totalEnergies - totalEnergies[0], color="purple")
-axes[2].axhline(0, color="k", linewidth=0.5, linestyle="--")
-axes[2].set_ylabel("ΔE (energy drift)")
-axes[2].set_xlabel("Timestep")
-axes[2].grid(True)
-
-fig2.suptitle("Molecular Dynamics — Energy Analysis")
-fig2.tight_layout()
-
-energy_plot_path = os.path.join(latest, f"energy_plot_{i}.png")
-fig2.savefig(energy_plot_path, dpi=150)
-print(f"Energy plot saved to: {energy_plot_path}")
-
-# __END__

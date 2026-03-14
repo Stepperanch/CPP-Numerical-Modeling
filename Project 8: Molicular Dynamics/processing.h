@@ -732,11 +732,16 @@ class MolucularSystem {
     void runSimulation() {
         calculateAccelerations(0);  // Calculate initial accelerations based on the initial positions
         energyCalculations(0);      // Perform initial energy calculations
-        int five_percent_of_time_steps = static_cast<int>(timeSteps / 20);
+        int one_percent_of_time_steps = static_cast<int>(timeSteps / 100);
         for (int t = 1; t < timeSteps; t++) {
             verletStep(t);  // Perform subsequent Verlet steps
-            if (t % five_percent_of_time_steps == 0) {
+            if (t % one_percent_of_time_steps == 0) {
                 std::cout << "Completed " << (t * 100) / timeSteps << "% of simulation." << std::endl;
+            }
+            if (getPosition(t, 0)[0] != getPosition(t, 0)[0] || getPosition(t, 0)[1] != getPosition(t, 0)[1])
+            {
+                std::cerr << "Error: NaN detected in positions at time step " << t << ". Aborting simulation.\n";
+                return;
             }
         }
     }

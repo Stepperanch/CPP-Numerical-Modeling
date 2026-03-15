@@ -428,6 +428,29 @@ class MolucularSystem {
 
     int stepSkip;
 
+    // Neighbor-list parameters and storage for accelerating force computation.
+    double neighborSkin;
+    double neighborCutoff;
+    double neighborCutoff2;
+    double halfNeighborSkin2;
+    bool neighborListInitialized;
+    bool xPeriodic;
+    bool yPeriodic;
+    bool showProgress;
+    std::vector<int> neighborOffsets;
+    std::vector<int> neighborIndices;
+    std::vector<int> cellHead;
+    std::vector<int> cellNext;
+    std::vector<int> particleCell;
+    int cellCountX;
+    int cellCountY;
+    int cellCountTotal;
+    size_t neighborPairCount;
+    std::vector<std::array<double, d>> neighborRefPositions;
+    std::vector<std::vector<std::array<double, d>>> threadAccelerations;
+    std::vector<double> threadPotentialEnergies;
+    int threadBufferCount;
+
     // Assume sigma, epsilon, and mass are all 1 for simplicity in reduced units
 
     static size_t checkedMul(size_t a, size_t b, const std::string& context) {
@@ -454,6 +477,23 @@ class MolucularSystem {
 
         this->gravity = std::stof(config["gravity"]);
 
+        auto neighborSkinIt = config.find("neighborSkin");
+        this->neighborSkin = (neighborSkinIt != config.end()) ? std::stod(neighborSkinIt->second) : 0.4;
+        if (neighborSkin <= 0.0) {
+            throw std::runtime_error("neighborSkin must be > 0.");
+        }
+        this->neighborCutoff = static_cast<double>(rc) + neighborSkin;
+        this->neighborCutoff2 = neighborCutoff * neighborCutoff;
+        this->halfNeighborSkin2 = 0.25 * neighborSkin * neighborSkin;
+        this->neighborListInitialized = false;
+        auto showProgressIt = config.find("showProgress");
+        this->showProgress = (showProgressIt == config.end()) ? true : (std::stoi(showProgressIt->second) != 0);
+        this->cellCountX = 0;
+        this->cellCountY = 0;
+        this->cellCountTotal = 0;
+        this->neighborPairCount = 0;
+        this->threadBufferCount = 0;
+
         this->initialPositions = buildInnitialPositions(config["initialPositionsInstructions"], width, height);
 
         this->numParticles = initialPositions.size();
@@ -471,6 +511,10 @@ class MolucularSystem {
         sampledPositions.resize(totalSampledEntries);
         accelerations.resize(numParticles);
         velocities.resize(numParticles);
+        neighborOffsets.resize(numParticles + 1, 0);
+        cellNext.resize(numParticles, -1);
+        particleCell.resize(numParticles, 0);
+        neighborRefPositions.resize(numParticles);
         temperatures.resize(timeSteps);
         potentialEnergies.resize(timeSteps);
         kineticEnergies.resize(timeSteps);
@@ -493,6 +537,9 @@ class MolucularSystem {
         yPosBCFn = (yBCType == "periodic") ? &periodicPositionBC : &reflectivePositionBC;
         xMinImFn = (xBCType == "periodic") ? &periodicMinImage : &noOpMinImage;
         yMinImFn = (yBCType == "periodic") ? &periodicMinImage : &noOpMinImage;
+
+        xPeriodic = (xBCType == "periodic");
+        yPeriodic = (yBCType == "periodic");
     }
 
     // =========================================================================
@@ -527,9 +574,10 @@ class MolucularSystem {
         // Use integer division and bitwise ops for efficiency (avoids fmod and abs)
         double n = std::floor(pos / dim);
         double p = pos - dim * n;
-        int parity = static_cast<int>(n) & 1; // 0 if even, 1 if odd
+        int parity = static_cast<int>(n) & 1;  // 0 if even, 1 if odd
         pos = parity ? (dim - p) : p;
-        if (parity) vel = -vel;
+        if (parity)
+            vel = -vel;
     }
 
     /** @brief Periodic minimum-image: folds displacement into [-dim/2, dim/2) using round.
@@ -577,6 +625,211 @@ class MolucularSystem {
         yMinImFn(dy, height);
     }
 
+    inline bool shouldRebuildNeighborList(const std::vector<std::array<double, d>>& activePositions) {
+        if (!neighborListInitialized) {
+            return true;
+        }
+
+        for (size_t i = 0; i < numParticles; i++) {
+            double dx = activePositions[i][0] - neighborRefPositions[i][0];
+            double dy = activePositions[i][1] - neighborRefPositions[i][1];
+            applyMinImageBC_x(dx);
+            applyMinImageBC_y(dy);
+            if (dx * dx + dy * dy > halfNeighborSkin2) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    inline int wrapCellIndex(int idx, int nCells) const {
+        int wrapped = idx % nCells;
+        return (wrapped < 0) ? (wrapped + nCells) : wrapped;
+    }
+
+    inline void ensureThreadBuffers() {
+        int wantedThreads = omp_get_max_threads();
+        if (wantedThreads <= 0) {
+            wantedThreads = 1;
+        }
+        if (threadBufferCount == wantedThreads && static_cast<int>(threadAccelerations.size()) == wantedThreads) {
+            return;
+        }
+
+        threadBufferCount = wantedThreads;
+        threadAccelerations.assign(static_cast<size_t>(threadBufferCount), std::vector<std::array<double, d>>(numParticles, {0.0, 0.0}));
+        threadPotentialEnergies.assign(static_cast<size_t>(threadBufferCount), 0.0);
+    }
+
+    void rebuildNeighborList(const std::vector<std::array<double, d>>& activePositions) {
+        const double cellSize = neighborCutoff;
+        cellCountX = std::max(1, static_cast<int>(width / cellSize));
+        cellCountY = std::max(1, static_cast<int>(height / cellSize));
+        cellCountTotal = cellCountX * cellCountY;
+
+        cellHead.assign(static_cast<size_t>(cellCountTotal), -1);
+
+        for (int i = 0; i < static_cast<int>(numParticles); i++) {
+            int cx = static_cast<int>(activePositions[static_cast<size_t>(i)][0] / cellSize);
+            int cy = static_cast<int>(activePositions[static_cast<size_t>(i)][1] / cellSize);
+
+            cx = std::max(0, std::min(cellCountX - 1, cx));
+            cy = std::max(0, std::min(cellCountY - 1, cy));
+
+            int cellId = cy * cellCountX + cx;
+            particleCell[static_cast<size_t>(i)] = cellId;
+            cellNext[static_cast<size_t>(i)] = cellHead[static_cast<size_t>(cellId)];
+            cellHead[static_cast<size_t>(cellId)] = i;
+        }
+
+        std::vector<int> localNeighborCounts(numParticles, 0);
+        size_t totalForwardNeighbors = 0;
+
+#pragma omp parallel for schedule(guided) reduction(+ : totalForwardNeighbors) if (numParticles > 200)
+        for (int i = 0; i < static_cast<int>(numParticles); i++) {
+            int cellId = particleCell[static_cast<size_t>(i)];
+            int cx = cellId % cellCountX;
+            int cy = cellId / cellCountX;
+
+            std::array<int, 9> uniqueNeighborCellIds{};
+            int uniqueCount = 0;
+
+            for (int oy = -1; oy <= 1; oy++) {
+                for (int ox = -1; ox <= 1; ox++) {
+                    int nx = cx + ox;
+                    int ny = cy + oy;
+
+                    if (xPeriodic) {
+                        nx = wrapCellIndex(nx, cellCountX);
+                    } else if (nx < 0 || nx >= cellCountX) {
+                        continue;
+                    }
+
+                    if (yPeriodic) {
+                        ny = wrapCellIndex(ny, cellCountY);
+                    } else if (ny < 0 || ny >= cellCountY) {
+                        continue;
+                    }
+
+                    int neighborCellId = ny * cellCountX + nx;
+                    bool seen = false;
+                    for (int k = 0; k < uniqueCount; k++) {
+                        if (uniqueNeighborCellIds[static_cast<size_t>(k)] == neighborCellId) {
+                            seen = true;
+                            break;
+                        }
+                    }
+                    if (!seen) {
+                        uniqueNeighborCellIds[static_cast<size_t>(uniqueCount)] = neighborCellId;
+                        uniqueCount++;
+                    }
+                }
+            }
+
+            int count = 0;
+            for (int c = 0; c < uniqueCount; c++) {
+                int head = cellHead[static_cast<size_t>(uniqueNeighborCellIds[static_cast<size_t>(c)])];
+                for (int j = head; j != -1; j = cellNext[static_cast<size_t>(j)]) {
+                    if (j <= i) {
+                        continue;
+                    }
+
+                    double dx = activePositions[static_cast<size_t>(i)][0] - activePositions[static_cast<size_t>(j)][0];
+                    double dy = activePositions[static_cast<size_t>(i)][1] - activePositions[static_cast<size_t>(j)][1];
+                    applyMinImageBC_x(dx);
+                    applyMinImageBC_y(dy);
+                    const double r2 = dx * dx + dy * dy;
+
+                    if (r2 <= neighborCutoff2) {
+                        count++;
+                    }
+                }
+            }
+
+            localNeighborCounts[static_cast<size_t>(i)] = count;
+            totalForwardNeighbors += static_cast<size_t>(count);
+        }
+
+        neighborOffsets[0] = 0;
+        for (size_t i = 0; i < numParticles; i++) {
+            neighborOffsets[i + 1] = neighborOffsets[i] + localNeighborCounts[i];
+        }
+
+        neighborIndices.assign(totalForwardNeighbors, -1);
+
+#pragma omp parallel for schedule(guided) if (numParticles > 200)
+        for (int i = 0; i < static_cast<int>(numParticles); i++) {
+            int cellId = particleCell[static_cast<size_t>(i)];
+            int cx = cellId % cellCountX;
+            int cy = cellId / cellCountX;
+
+            std::array<int, 9> uniqueNeighborCellIds{};
+            int uniqueCount = 0;
+
+            for (int oy = -1; oy <= 1; oy++) {
+                for (int ox = -1; ox <= 1; ox++) {
+                    int nx = cx + ox;
+                    int ny = cy + oy;
+
+                    if (xPeriodic) {
+                        nx = wrapCellIndex(nx, cellCountX);
+                    } else if (nx < 0 || nx >= cellCountX) {
+                        continue;
+                    }
+
+                    if (yPeriodic) {
+                        ny = wrapCellIndex(ny, cellCountY);
+                    } else if (ny < 0 || ny >= cellCountY) {
+                        continue;
+                    }
+
+                    int neighborCellId = ny * cellCountX + nx;
+                    bool seen = false;
+                    for (int k = 0; k < uniqueCount; k++) {
+                        if (uniqueNeighborCellIds[static_cast<size_t>(k)] == neighborCellId) {
+                            seen = true;
+                            break;
+                        }
+                    }
+                    if (!seen) {
+                        uniqueNeighborCellIds[static_cast<size_t>(uniqueCount)] = neighborCellId;
+                        uniqueCount++;
+                    }
+                }
+            }
+
+            int writeIndex = neighborOffsets[static_cast<size_t>(i)];
+            for (int c = 0; c < uniqueCount; c++) {
+                int head = cellHead[static_cast<size_t>(uniqueNeighborCellIds[static_cast<size_t>(c)])];
+                for (int j = head; j != -1; j = cellNext[static_cast<size_t>(j)]) {
+                    if (j <= i) {
+                        continue;
+                    }
+
+                    double dx = activePositions[static_cast<size_t>(i)][0] - activePositions[static_cast<size_t>(j)][0];
+                    double dy = activePositions[static_cast<size_t>(i)][1] - activePositions[static_cast<size_t>(j)][1];
+                    applyMinImageBC_x(dx);
+                    applyMinImageBC_y(dy);
+                    const double r2 = dx * dx + dy * dy;
+
+                    if (r2 <= neighborCutoff2) {
+                        neighborIndices[static_cast<size_t>(writeIndex)] = j;
+                        writeIndex++;
+                    }
+                }
+            }
+        }
+
+        neighborPairCount = totalForwardNeighbors;
+
+#pragma omp parallel for schedule(static) if (numParticles > 1000)
+        for (int i = 0; i < static_cast<int>(numParticles); i++) {
+            neighborRefPositions[static_cast<size_t>(i)] = activePositions[static_cast<size_t>(i)];
+        }
+
+        neighborListInitialized = true;
+    }
+
     /** @brief Get a sampled trajectory position.
      * @param sampleIndex The sampled frame index (not the raw timestep).
      * @param particleIndex The particle index.
@@ -610,24 +863,37 @@ class MolucularSystem {
      */
     void calculateAccelerations(const std::vector<std::array<double, d>>& activePositions) {
         // Implement the logic to calculate accelerations based on the current positions using the leanord jonse potential
+        if (shouldRebuildNeighborList(activePositions)) {
+            rebuildNeighborList(activePositions);
+        }
+
+        ensureThreadBuffers();
+        std::fill(threadPotentialEnergies.begin(), threadPotentialEnergies.end(), 0.0);
+
         currentPE = 0.0;  // Reset potential energy before calculation
 
-        // #pragma omp parallel for schedule(static)
-        for (size_t i = 0; i < numParticles; i++) {
+#pragma omp parallel for schedule(static) if (numParticles > 1000)
+        for (int i = 0; i < static_cast<int>(numParticles); i++) {
             accelerations[i] = {0.0, 0.0};  // Reset accelerations before calculation
         }
 
 #pragma omp parallel if (numParticles > 50)  // Only parallelize if there are enough particles to justify the overhead
         {
-            std::vector<std::array<double, d>> localAccelerations(numParticles, {0.0, 0.0});  // Thread-local storage for accelerations
-            double localPE = 0.0;                                                             // Thread-local storage for potential energy
+            const int tid = omp_get_thread_num();
+            std::vector<std::array<double, d>>& localAccelerations = threadAccelerations[static_cast<size_t>(tid)];
+            std::fill(localAccelerations.begin(), localAccelerations.end(), std::array<double, d>{0.0, 0.0});
+            double localPE = 0.0;
 #pragma omp for schedule(guided)
             for (int p1_ind = 0; p1_ind < static_cast<int>(numParticles); ++p1_ind) {
                 const std::array<double, d>& p1_pos = activePositions[static_cast<size_t>(p1_ind)];
                 localPE += gravity * p1_pos[1];            // Add potential energy contribution from the constant downward force to simulate gravity
                 localAccelerations[p1_ind][1] -= gravity;  // Add a small constant downward force to simulate gravity
 
-                for (int p2_ind = p1_ind + 1; p2_ind < static_cast<int>(numParticles); p2_ind++) {
+                const int begin = neighborOffsets[static_cast<size_t>(p1_ind)];
+                const int end = neighborOffsets[static_cast<size_t>(p1_ind + 1)];
+                for (int idx = begin; idx < end; idx++) {
+                    const int p2_ind = neighborIndices[static_cast<size_t>(idx)];
+
                     const std::array<double, d>& p2_pos = activePositions[static_cast<size_t>(p2_ind)];
 
                     double dx = p1_pos[0] - p2_pos[0];
@@ -640,7 +906,7 @@ class MolucularSystem {
 
                     double r2 = dx * dx + dy * dy;  // + dz*dz for 3D
 
-                    if (r2 > rc2)
+                    if (r2 > rc2 || r2 < 1e-12)
                         continue;  // Skip if beyond cutoff distance
 
                     double one_over_r2 = 1.0 / r2;
@@ -665,17 +931,23 @@ class MolucularSystem {
                     // accelerations[p2_ind][2] = -fz; // For 3D
                 }
             }
-            // Reduce local accelerations to global accelerations
-#pragma omp critical
-            {
-                currentPE += localPE;  // Accumulate potential energy from all threads
-                for (int i = 0; i < static_cast<int>(numParticles); i++) {
-                    accelerations[i][0] += localAccelerations[i][0];
-                    accelerations[i][1] += localAccelerations[i][1];
+            threadPotentialEnergies[static_cast<size_t>(tid)] = localPE;
+        }
 
-                    // accelerations[i][2] += localAccelerations[i][2]; // For 3D
-                }
+        for (int t = 0; t < threadBufferCount; t++) {
+            currentPE += threadPotentialEnergies[static_cast<size_t>(t)];
+        }
+
+#pragma omp parallel for schedule(static) if (numParticles > 1000)
+        for (int i = 0; i < static_cast<int>(numParticles); i++) {
+            double ax = 0.0;
+            double ay = 0.0;
+            for (int t = 0; t < threadBufferCount; t++) {
+                ax += threadAccelerations[static_cast<size_t>(t)][static_cast<size_t>(i)][0];
+                ay += threadAccelerations[static_cast<size_t>(t)][static_cast<size_t>(i)][1];
             }
+            accelerations[static_cast<size_t>(i)][0] = ax;
+            accelerations[static_cast<size_t>(i)][1] = ay;
         }
     }
 
@@ -712,23 +984,15 @@ class MolucularSystem {
 
         calculateAccelerations(currPositions);  // Recalculate accelerations based on the new positions
                                                 // Update velocities again using the new accelerations
-#pragma omp parallel if (numParticles > 100)    // Only parallelize if there are enough particles to justify the overhead
-        {
-            double localKE_times2 = 0.0;  // Thread-local storage for kinetic energy
-#pragma omp for schedule(static)
-            for (int i = 0; i < static_cast<int>(numParticles); i++) {
-                std::array<double, d>& vel = velocities[i];
-                std::array<double, d>& accel = accelerations[i];
-                vel[0] += accel[0] * timeStep * 0.5;
-                vel[1] += accel[1] * timeStep * 0.5;
-                // vel[2] += accel[2] * timeStep * 0.5; // For 3D
+#pragma omp parallel for schedule(static) reduction(+ : currentKE_times2) if (numParticles > 100)
+        for (int i = 0; i < static_cast<int>(numParticles); i++) {
+            std::array<double, d>& vel = velocities[i];
+            std::array<double, d>& accel = accelerations[i];
+            vel[0] += accel[0] * timeStep * 0.5;
+            vel[1] += accel[1] * timeStep * 0.5;
+            // vel[2] += accel[2] * timeStep * 0.5; // For 3D
 
-                localKE_times2 += (vel[0] * vel[0] + vel[1] * vel[1]);  // For 3D
-            }
-#pragma omp critical
-            {
-                currentKE_times2 += localKE_times2;  // Accumulate kinetic energy from all threads (multiply by 2 to convert from KE to 2*KE)
-            }
+            currentKE_times2 += (vel[0] * vel[0] + vel[1] * vel[1]);  // For 3D
         }
 
         energyCalculations(t);  // Perform energy calculations and apply any energy changes based on the energyFunction vector
@@ -769,7 +1033,7 @@ class MolucularSystem {
     }
 
     inline bool monitoringLogic(size_t t) {
-        if (t % onePercentOfTimeSteps == 0) {
+        if (showProgress && t % onePercentOfTimeSteps == 0) {
             std::cout << "Completed " << (t * 100) / timeSteps << "% of simulation." << std::endl;
         }
         if (currPositions[0][0] != currPositions[0][0] || currPositions[0][1] != currPositions[0][1]) {
@@ -786,7 +1050,7 @@ class MolucularSystem {
         energyCalculations(0);                  // Perform initial energy calculations
         saveSampledStep(0);
         for (size_t t = 1; t < timeSteps; t++) {
-            verletStep(t);       // Perform subsequent Verlet steps
+            verletStep(t);             // Perform subsequent Verlet steps
             if (monitoringLogic(t)) {  // Check for errors and report progress
                 break;
             }

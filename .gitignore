@@ -128,3 +128,6 @@ CPP_Workspace.code-workspace
 # Core dumps
 core.*
 
+# Tuneing Files
+*autotune_*
+*tuned_*

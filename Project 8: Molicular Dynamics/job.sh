@@ -5,8 +5,8 @@
 #SBATCH --nodes=1                  # single node (OpenMP, not MPI)
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=40          # number of OpenMP threads — adjust to node size
-#SBATCH --mem=64G
-#SBATCH --time=10:00:00             # wall time — increase if needed
+#SBATCH --mem=32G
+#SBATCH --time=20:00:00             # wall time — increase if needed
 ##SBATCH --qos=normal
 ##SBATCH --partition=compute        # uncomment and set your partition name if required
 ##SBATCH --account=your_account     # uncomment and set your allocation if required

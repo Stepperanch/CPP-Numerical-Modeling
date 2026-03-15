@@ -6,9 +6,11 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <random>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -103,7 +105,7 @@ std::vector<std::string> splitToVector(const std::string& input, char delimiter 
  * @param numParticles The number of particles.
  * @return A vector of doubles representing the energy function.
  */
-std::vector<double> buildEnergyFunction(std::string energyInstructions, int totalTimeSteps, int numParticles) {
+std::vector<double> buildEnergyFunction(std::string energyInstructions, size_t totalTimeSteps, size_t numParticles) {
     std::vector<std::string> instructions_string = splitToVector(energyInstructions, ';');
     std::vector<std::array<double, 3>> instructions;
 
@@ -120,17 +122,25 @@ std::vector<double> buildEnergyFunction(std::string energyInstructions, int tota
     // Per 100 particles; ..." Declare a vector to hold the energy change for each time step, initialized to zero with size equal to totalTimeSteps
     std::vector<double> energyFunction(totalTimeSteps, 0.0);  // Initialize with zeros
 
-    int onePercent = totalTimeSteps / 100;
-    float nP = static_cast<float>(numParticles);
+    size_t onePercent = std::max<size_t>(1, totalTimeSteps / 100);
+    double nP = static_cast<double>(numParticles);
 
     for (const auto& instr : instructions) {
-        int startStep = static_cast<int>(instr[0] * onePercent);
-        int endStep = static_cast<int>(instr[1] * onePercent);
-        double energyChangePer100Particles = instr[2];
-        double energyChangePerStep = energyChangePer100Particles / 100.0 * nP /
-                                     (endStep - startStep);  // Distribute the total energy change evenly across the specified time steps
+        size_t startStep = static_cast<size_t>(instr[0] * onePercent);
+        size_t endStep = static_cast<size_t>(instr[1] * onePercent);
 
-        for (int i = startStep; i < endStep; i++) {
+        startStep = std::min(startStep, totalTimeSteps);
+        endStep = std::min(endStep, totalTimeSteps);
+        if (endStep <= startStep) {
+            continue;
+        }
+
+        double energyChangePer100Particles = instr[2];
+        double energyChangePerStep =
+            energyChangePer100Particles / 100.0 * nP /
+            static_cast<double>(endStep - startStep);  // Distribute the total energy change evenly across the specified time steps
+
+        for (size_t i = startStep; i < endStep; i++) {
             energyFunction[i] +=
                 energyChangePerStep;  // Add the energy change for this instruction to the energy function for each relevant time step
         }
@@ -390,7 +400,9 @@ class MolucularSystem {
 
     float gravity;  // Strength of the constant downward force to simulate gravity
 
-    std::vector<std::array<double, d>> positions;
+    std::vector<std::array<double, d>> prevPositions;
+    std::vector<std::array<double, d>> currPositions;
+    std::vector<std::array<double, d>> sampledPositions;
     std::vector<std::array<double, d>> velocities;
     std::vector<std::array<double, d>> accelerations;
 
@@ -405,25 +417,35 @@ class MolucularSystem {
     std::vector<double> kineticEnergies;
     std::vector<double> totalEnergies;
 
-    std::vector<double> energyFunction;    // Stores the timesteps and the ∆E values for the system
-    unsigned int energyFunctionIndex = 0;  // Index to track the current position in the energyFunction vector
+    std::vector<double> energyFunction;  // Stores the timesteps and the ∆E values for the system
+    size_t energyFunctionIndex = 0;      // Index to track the current position in the energyFunction vector
 
-    unsigned int numParticles;
-    unsigned int timeSteps;
+    size_t numParticles;
+    size_t timeSteps;
     double finalTime;
     double timeStep;
-    unsigned int onePercentOfTimeSteps;
+    size_t onePercentOfTimeSteps;
+    size_t sampledSteps;
 
     int stepSkip;
 
     // Assume sigma, epsilon, and mass are all 1 for simplicity in reduced units
 
+    static size_t checkedMul(size_t a, size_t b, const std::string& context) {
+        if (a != 0 && b > (std::numeric_limits<size_t>::max() / a)) {
+            throw std::overflow_error("Size overflow while computing " + context);
+        }
+        return a * b;
+    }
+
     MolucularSystem(std::map<std::string, std::string> config) {
-        this->timeSteps = std::stoul(config["timeSteps"]);
+        this->timeSteps = std::stoull(config["timeSteps"]);
         this->finalTime = std::stof(config["finalTime"]);
 
-
-        this->stepSkip = std::stoul(config["stepSkip"]);
+        this->stepSkip = static_cast<int>(std::stoul(config["stepSkip"]));
+        if (stepSkip <= 0) {
+            throw std::runtime_error("stepSkip must be >= 1.");
+        }
 
         this->width = std::stof(config["width"]);
         this->height = std::stof(config["height"]);
@@ -437,9 +459,18 @@ class MolucularSystem {
 
         this->numParticles = initialPositions.size();
 
+        if (numParticles == 0) {
+            throw std::runtime_error("No particles were generated from initialPositionsInstructions.");
+        }
+
         this->energyFunction = buildEnergyFunction(config["EnergyInstructions"], timeSteps, numParticles);
 
-        positions.resize(numParticles * timeSteps);
+        sampledSteps = (timeSteps + static_cast<size_t>(stepSkip) - 1) / static_cast<size_t>(stepSkip);
+        size_t totalSampledEntries = checkedMul(numParticles, sampledSteps, "sampled positions entries (numParticles * sampledSteps)");
+
+        prevPositions.resize(numParticles);
+        currPositions.resize(numParticles);
+        sampledPositions.resize(totalSampledEntries);
         accelerations.resize(numParticles);
         velocities.resize(numParticles);
         temperatures.resize(timeSteps);
@@ -450,13 +481,14 @@ class MolucularSystem {
         // give partical 0 a small velocity to break symmetry and allow the system to evolve
 
         // #pragma omp parallel for schedule(static)
-        for (unsigned int i = 0; i < numParticles; i++) {
-            positions[i] = initialPositions[i];  // Set initial positions for the first time step
-            velocities[i] = {0.0, 0.0};          // Initialize velocities to zero
-            accelerations[i] = {0.0, 0.0};       // Initialize accelerations to zero
+        for (size_t i = 0; i < numParticles; i++) {
+            prevPositions[i] = initialPositions[i];  // Set initial positions for the first time step
+            currPositions[i] = initialPositions[i];
+            velocities[i] = {0.0, 0.0};     // Initialize velocities to zero
+            accelerations[i] = {0.0, 0.0};  // Initialize accelerations to zero
         }
         timeStep = finalTime / timeSteps;
-        onePercentOfTimeSteps = static_cast<unsigned int>(timeSteps / 100);
+        onePercentOfTimeSteps = std::max<size_t>(1, timeSteps / 100);
         velocities[0] = {0.001, 0.001};  // Small initial velocity for particle 0
 
         // Assign function pointers once — the if/else runs only at construction, never in the hot loop
@@ -495,11 +527,12 @@ class MolucularSystem {
      * @param dim The dimension of the box in this direction (width or height).
      */
     static void reflectivePositionBC(double& pos, double& vel, double dim) {
+        // Use integer division and bitwise ops for efficiency (avoids fmod and abs)
         double n = std::floor(pos / dim);
         double p = pos - dim * n;
-        double parity = std::fmod(std::abs(n), 2.0);  // 0.0 or 1.0
-        pos = p + parity * (dim - 2.0 * p);
-        vel *= 1.0 - 2.0 * parity;
+        int parity = static_cast<int>(n) & 1; // 0 if even, 1 if odd
+        pos = parity ? (dim - p) : p;
+        if (parity) vel = -vel;
     }
 
     /** @brief Periodic minimum-image: folds displacement into [-dim/2, dim/2) using round.
@@ -547,33 +580,43 @@ class MolucularSystem {
         yMinImFn(dy, height);
     }
 
-    /** @brief Get the position of a particle at a specific time step.
-     * @param timeStep The time step for which to retrieve the position.
-     * @param particleIndex The index of the particle for which to retrieve the position.
-     * @return A reference to the position array of the specified particle at the specified time step.
+    /** @brief Get a sampled trajectory position.
+     * @param sampleIndex The sampled frame index (not the raw timestep).
+     * @param particleIndex The particle index.
+     * @return A reference to the sampled position.
      */
-    inline std::array<double, d>& getPosition(unsigned int timeStep, unsigned int particleIndex) {
-        return positions[timeStep * numParticles + particleIndex];
+    inline std::array<double, d>& getSampledPosition(size_t sampleIndex, size_t particleIndex) {
+        return sampledPositions[sampleIndex * numParticles + particleIndex];
     }
 
-    /** @brief Set the position of a particle at a specific time step.
-     * @param timeStep The time step for which to set the position.
-     * @param particleIndex The index of the particle for which to set the position.
-     * @param newPosition The new position to set.
+    /** @brief Copy live positions into sampled storage on sampled timesteps.
+     * @param t Raw simulation timestep.
      */
-    inline void setPosition(unsigned int timeStep, unsigned int particleIndex, const std::array<double, d>& newPosition) {
-        positions[timeStep * numParticles + particleIndex] = newPosition;
+    inline void saveSampledStep(size_t t) {
+        if (t % static_cast<size_t>(stepSkip) != 0) {
+            return;
+        }
+
+        size_t sampleIndex = t / static_cast<size_t>(stepSkip);
+        if (sampleIndex >= sampledSteps) {
+            return;
+        }
+
+#pragma omp parallel for schedule(static) if (numParticles > 1000)
+        for (int i = 0; i < static_cast<int>(numParticles); i++) {
+            getSampledPosition(sampleIndex, static_cast<size_t>(i)) = currPositions[static_cast<size_t>(i)];
+        }
     }
 
     /** @brief Calculate the accelerations for all particles at a specific time step.
-     * @param t The time step for which to calculate accelerations.
+     * @param activePositions The active particle positions for force evaluation.
      */
-    void calculateAccelerations(unsigned int t) {
+    void calculateAccelerations(const std::vector<std::array<double, d>>& activePositions) {
         // Implement the logic to calculate accelerations based on the current positions using the leanord jonse potential
         currentPE = 0.0;  // Reset potential energy before calculation
 
         // #pragma omp parallel for schedule(static)
-        for (unsigned int i = 0; i < numParticles; i++) {
+        for (size_t i = 0; i < numParticles; i++) {
             accelerations[i] = {0.0, 0.0};  // Reset accelerations before calculation
         }
 
@@ -582,13 +625,13 @@ class MolucularSystem {
             std::vector<std::array<double, d>> localAccelerations(numParticles, {0.0, 0.0});  // Thread-local storage for accelerations
             double localPE = 0.0;                                                             // Thread-local storage for potential energy
 #pragma omp for schedule(guided)
-            for (int p1_ind = 0; p1_ind < numParticles; ++p1_ind) {
-                std::array<double, d>& p1_pos = getPosition(t, p1_ind);
+            for (int p1_ind = 0; p1_ind < static_cast<int>(numParticles); ++p1_ind) {
+                const std::array<double, d>& p1_pos = activePositions[static_cast<size_t>(p1_ind)];
                 localPE += gravity * p1_pos[1];            // Add potential energy contribution from the constant downward force to simulate gravity
                 localAccelerations[p1_ind][1] -= gravity;  // Add a small constant downward force to simulate gravity
 
-                for (int p2_ind = p1_ind + 1; p2_ind < numParticles; p2_ind++) {
-                    std::array<double, d>& p2_pos = getPosition(t, p2_ind);
+                for (int p2_ind = p1_ind + 1; p2_ind < static_cast<int>(numParticles); p2_ind++) {
+                    const std::array<double, d>& p2_pos = activePositions[static_cast<size_t>(p2_ind)];
 
                     double dx = p1_pos[0] - p2_pos[0];
                     double dy = p1_pos[1] - p2_pos[1];
@@ -629,7 +672,7 @@ class MolucularSystem {
 #pragma omp critical
             {
                 currentPE += localPE;  // Accumulate potential energy from all threads
-                for (int i = 0; i < numParticles; i++) {
+                for (int i = 0; i < static_cast<int>(numParticles); i++) {
                     accelerations[i][0] += localAccelerations[i][0];
                     accelerations[i][1] += localAccelerations[i][1];
 
@@ -642,15 +685,15 @@ class MolucularSystem {
     /** @brief Perform a single Verlet integration step.
      * @param t The time step for which to perform the integration.
      */
-    void verletStep(int t) {
+    void verletStep(size_t t) {
         // Implement the logic to perform a single Verlet integration step
         currentKE_times2 = 0.0;               // Reset kinetic energy before calculation
 #pragma omp parallel if (numParticles > 100)  // Only parallelize if there are enough particles to justify the overhead
         {
 #pragma omp for schedule(static)
-            for (int i = 0; i < numParticles; i++) {
-                std::array<double, d>& old_pos = getPosition(t - 1, i);
-                std::array<double, d>& pos = getPosition(t, i);
+            for (int i = 0; i < static_cast<int>(numParticles); i++) {
+                std::array<double, d>& old_pos = prevPositions[static_cast<size_t>(i)];
+                std::array<double, d>& pos = currPositions[static_cast<size_t>(i)];
                 std::array<double, d>& accel = accelerations[i];
                 std::array<double, d>& vel = velocities[i];
 
@@ -671,13 +714,13 @@ class MolucularSystem {
             }
         }
 
-        calculateAccelerations(t);            // Recalculate accelerations based on the new positions
-                                              // Update velocities again using the new accelerations
-#pragma omp parallel if (numParticles > 100)  // Only parallelize if there are enough particles to justify the overhead
+        calculateAccelerations(currPositions);  // Recalculate accelerations based on the new positions
+                                                // Update velocities again using the new accelerations
+#pragma omp parallel if (numParticles > 100)    // Only parallelize if there are enough particles to justify the overhead
         {
             double localKE_times2 = 0.0;  // Thread-local storage for kinetic energy
 #pragma omp for schedule(static)
-            for (int i = 0; i < numParticles; i++) {
+            for (int i = 0; i < static_cast<int>(numParticles); i++) {
                 std::array<double, d>& vel = velocities[i];
                 std::array<double, d>& accel = accelerations[i];
                 vel[0] += accel[0] * timeStep * 0.5;
@@ -698,8 +741,8 @@ class MolucularSystem {
     /** @brief Perform energy calculations and apply any energy changes based on the energyFunction vector.
      * @param t The time step for which to perform energy calculations.
      */
-    void energyCalculations(int t) {
-        if (t < (int)energyFunction.size() && energyFunction[t] != 0.0) {
+    void energyCalculations(size_t t) {
+        if (t < energyFunction.size() && energyFunction[t] != 0.0) {
             double desiredEnergyChange = energyFunction[t];  // Energy change scheduled for this timestep
 
             double scaleingFactor =
@@ -712,7 +755,7 @@ class MolucularSystem {
             }
 
 #pragma omp parallel for schedule(static) if (numParticles > 200)  // Only parallelize if there are enough particles to justify the overhead
-            for (int i = 0; i < numParticles; i++) {
+            for (int i = 0; i < static_cast<int>(numParticles); i++) {
                 if (std::abs(velocities[i][0]) > 0.01 ||
                     scaleingFactor > 1)  // Only scale if the velocity is above a certain threshold or if we are adding energy to the system
                     velocities[i][0] *= scaleingFactor;
@@ -729,25 +772,30 @@ class MolucularSystem {
         temperatures[t] = currentKE_times2 / (numParticles * d);  // Calculate temperature using the kinetic energy and degrees of freedom
     }
 
-    inline void monitoringLogic(int t) {
+    inline bool monitoringLogic(size_t t) {
         if (t % onePercentOfTimeSteps == 0) {
-                std::cout << "Completed " << (t * 100) / timeSteps << "% of simulation." << std::endl;
-            }
-            if (getPosition(t, 0)[0] != getPosition(t, 0)[0] || getPosition(t, 0)[1] != getPosition(t, 0)[1])
-            {
-                std::cout << "Error: NaN detected in positions at time step " << t << ". Aborting simulation.\n";
-                return;
-            }
+            std::cout << "Completed " << (t * 100) / timeSteps << "% of simulation." << std::endl;
+        }
+        if (currPositions[0][0] != currPositions[0][0] || currPositions[0][1] != currPositions[0][1]) {
+            std::cout << "Error: NaN detected in positions at time step " << t << ". Aborting simulation.\n";
+            return true;
+        }
+        return false;
     }
 
     /** @brief Run the simulation for the specified number of time steps.
      */
     void runSimulation() {
-        calculateAccelerations(0);  // Calculate initial accelerations based on the initial positions
-        energyCalculations(0);      // Perform initial energy calculations
-        for (int t = 1; t < timeSteps; t++) {
-            verletStep(t);  // Perform subsequent Verlet steps
-            monitoringLogic(t);  // Check for errors and report progress
+        calculateAccelerations(prevPositions);  // Calculate initial accelerations based on the initial positions
+        energyCalculations(0);                  // Perform initial energy calculations
+        saveSampledStep(0);
+        for (size_t t = 1; t < timeSteps; t++) {
+            verletStep(t);       // Perform subsequent Verlet steps
+            if (monitoringLogic(t)) {  // Check for errors and report progress
+                break;
+            }
+            saveSampledStep(t);
+            std::swap(prevPositions, currPositions);
         }
     }
 
@@ -759,7 +807,7 @@ class MolucularSystem {
         // Only save one in 5 positions to reduce file size; all data saved as float.
         std::vector<float> positions_float, temperatures_float, potentialEnergies_float, kineticEnergies_float, totalEnergies_float;
 
-        const int sampled_steps = (timeSteps + stepSkip - 1) / stepSkip;
+        const size_t sampled_steps = sampledSteps;
 
         positions_float.resize(sampled_steps * numParticles * d);
         temperatures_float.resize(timeSteps);
@@ -768,18 +816,18 @@ class MolucularSystem {
         totalEnergies_float.resize(timeSteps);
 
 #pragma omp parallel for collapse(3) schedule(static) if (sampled_steps * numParticles * d > 1000)
-        for (int t = 0; t < timeSteps; t += stepSkip) {
-            for (int i = 0; i < numParticles; i++) {
+        for (int s = 0; s < static_cast<int>(sampled_steps); s++) {
+            for (int i = 0; i < static_cast<int>(numParticles); i++) {
                 for (int j = 0; j < d; j++) {
-                    int idx = ((t / stepSkip) * numParticles + i) * d + j;
-                    positions_float[idx] = static_cast<float>(positions[(t * numParticles + i)][j]);
+                    size_t idx = (static_cast<size_t>(s) * numParticles + static_cast<size_t>(i)) * d + static_cast<size_t>(j);
+                    positions_float[idx] = static_cast<float>(getSampledPosition(static_cast<size_t>(s), static_cast<size_t>(i))[j]);
                 }
             }
         }
 
 // Convert scalar time-series (these are small, no need for skip)
 #pragma omp parallel for schedule(static) if (timeSteps > 1000)
-        for (int t = 0; t < (int)timeSteps; t++) {
+        for (int t = 0; t < static_cast<int>(timeSteps); t++) {
             temperatures_float[t] = static_cast<float>(temperatures[t]);
             potentialEnergies_float[t] = static_cast<float>(potentialEnergies[t]);
             kineticEnergies_float[t] = static_cast<float>(kineticEnergies[t]);
@@ -787,10 +835,10 @@ class MolucularSystem {
         }
 
         cnpy::npy_save(directory + "/positions.npy", positions_float.data(), {(size_t)sampled_steps, (size_t)numParticles, (size_t)d}, "w");
-        cnpy::npy_save(directory + "/temperatures.npy", temperatures_float.data(), {timeSteps}, "w");
-        cnpy::npy_save(directory + "/potentialEnergies.npy", potentialEnergies_float.data(), {timeSteps}, "w");
-        cnpy::npy_save(directory + "/kineticEnergies.npy", kineticEnergies_float.data(), {timeSteps}, "w");
-        cnpy::npy_save(directory + "/totalEnergies.npy", totalEnergies_float.data(), {timeSteps}, "w");
+        cnpy::npy_save(directory + "/temperatures.npy", temperatures_float.data(), {static_cast<size_t>(timeSteps)}, "w");
+        cnpy::npy_save(directory + "/potentialEnergies.npy", potentialEnergies_float.data(), {static_cast<size_t>(timeSteps)}, "w");
+        cnpy::npy_save(directory + "/kineticEnergies.npy", kineticEnergies_float.data(), {static_cast<size_t>(timeSteps)}, "w");
+        cnpy::npy_save(directory + "/totalEnergies.npy", totalEnergies_float.data(), {static_cast<size_t>(timeSteps)}, "w");
 
         std::vector<double> metadata = {static_cast<double>(width), static_cast<double>(height), static_cast<double>(numParticles),
                                         static_cast<double>(timeSteps), finalTime};
@@ -809,7 +857,7 @@ class MolucularSystem {
         // Write header
         file << "TimeStep,Temperature,PotentialEnergy,KineticEnergy,TotalEnergy\n";
         // Write data
-        for (int t = 0; t < timeSteps; t += stepSkip) {
+        for (int t = 0; t < static_cast<int>(timeSteps); t += stepSkip) {
             file << t << "," << temperatures[t] << "," << potentialEnergies[t] << "," << kineticEnergies[t] << "," << totalEnergies[t] << "\n";
         }
         file.close();
@@ -827,9 +875,10 @@ class MolucularSystem {
         // Write header
         file << "TimeStep,ParticleIndex,X,Y\n";
         // Write data
-        for (int t = 0; t < timeSteps; t += stepSkip) {
-            for (int i = 0; i < numParticles; i++) {
-                std::array<double, d>& pos = getPosition(t, i);
+        for (int t = 0; t < static_cast<int>(timeSteps); t += stepSkip) {
+            size_t sampleIndex = static_cast<size_t>(t / stepSkip);
+            for (int i = 0; i < static_cast<int>(numParticles); i++) {
+                std::array<double, d>& pos = getSampledPosition(sampleIndex, static_cast<size_t>(i));
                 file << t << "," << i << "," << pos[0] << "," << pos[1] << "\n";
             }
         }
@@ -851,14 +900,14 @@ class MolucularSystem {
     }
 
     void binSave() {
-            // Implement the logic to save the results (positions, energies, etc.) to a file
-            // create a directory within the ./output dir titled
-            // "out_{i}" where i is the next available integer (i.e. if there are already 3 directories in output, the next one will be out_4)
+        // Implement the logic to save the results (positions, energies, etc.) to a file
+        // create a directory within the ./output dir titled
+        // "out_{i}" where i is the next available integer (i.e. if there are already 3 directories in output, the next one will be out_4)
 
-            std::string outputDir =  getOutputDir();
+        std::string outputDir = getOutputDir();
 
-            std::filesystem::create_directories(outputDir);
-            saveResultsToNpy(outputDir);
+        std::filesystem::create_directories(outputDir);
+        saveResultsToNpy(outputDir);
     }
 
     inline std::string getOutputDir() {

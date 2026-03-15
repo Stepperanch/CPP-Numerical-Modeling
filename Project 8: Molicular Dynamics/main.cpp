@@ -8,18 +8,24 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::map<std::string, std::string> config = parseConfigFile(argv[1]);
+    try {
+        std::map<std::string, std::string> config = parseConfigFile(argv[1]);
 
-    MolucularSystem system(config);
-    std::cout << "Running simulation with " << system.numParticles << " particles for " << system.timeSteps << " time steps on " << omp_get_num_threads() << " threads." << std::endl;
-    system.runSimulation();
-    std::cout << "Simulation complete. Saving results..." << std::endl;
+        MolucularSystem system(config);
+        std::cout << "Running simulation with " << system.numParticles << " particles for " << system.timeSteps << " time steps on "
+                  << omp_get_num_threads() << " threads." << std::endl;
+        system.runSimulation();
+        std::cout << "Simulation complete. Saving results..." << std::endl;
 
-    //system.save();
+        // system.save();
 
-    system.binSave();  // Save results in binary format for efficient loading in Python
+        system.binSave();  // Save results in binary format for efficient loading in Python
 
-    std::cout << "Results saved to NPZ file." << std::endl;
+        std::cout << "Results saved to NPZ file." << std::endl;
+    } catch (const std::exception& ex) {
+        std::cerr << "Fatal error: " << ex.what() << std::endl;
+        return 1;
+    }
 
     return 0;
 }

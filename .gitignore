@@ -125,3 +125,6 @@ CPP_Workspace.code-workspace
 !assets/
 !assets/**
 
+# Core dumps
+core.*
+

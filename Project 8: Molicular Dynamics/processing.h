@@ -400,7 +400,6 @@ class MolucularSystem {
 
     float gravity;  // Strength of the constant downward force to simulate gravity
 
-    std::vector<std::array<double, d>> prevPositions;
     std::vector<std::array<double, d>> currPositions;
     std::vector<std::array<double, d>> sampledPositions;
     std::vector<std::array<double, d>> velocities;
@@ -468,7 +467,6 @@ class MolucularSystem {
         sampledSteps = (timeSteps + static_cast<size_t>(stepSkip) - 1) / static_cast<size_t>(stepSkip);
         size_t totalSampledEntries = checkedMul(numParticles, sampledSteps, "sampled positions entries (numParticles * sampledSteps)");
 
-        prevPositions.resize(numParticles);
         currPositions.resize(numParticles);
         sampledPositions.resize(totalSampledEntries);
         accelerations.resize(numParticles);
@@ -482,7 +480,6 @@ class MolucularSystem {
 
         // #pragma omp parallel for schedule(static)
         for (size_t i = 0; i < numParticles; i++) {
-            prevPositions[i] = initialPositions[i];  // Set initial positions for the first time step
             currPositions[i] = initialPositions[i];
             velocities[i] = {0.0, 0.0};     // Initialize velocities to zero
             accelerations[i] = {0.0, 0.0};  // Initialize accelerations to zero
@@ -692,7 +689,6 @@ class MolucularSystem {
         {
 #pragma omp for schedule(static)
             for (int i = 0; i < static_cast<int>(numParticles); i++) {
-                std::array<double, d>& old_pos = prevPositions[static_cast<size_t>(i)];
                 std::array<double, d>& pos = currPositions[static_cast<size_t>(i)];
                 std::array<double, d>& accel = accelerations[i];
                 std::array<double, d>& vel = velocities[i];
@@ -702,9 +698,9 @@ class MolucularSystem {
                 vel[1] += accel[1] * timeStep * 0.5;
                 // vel[2] += accel[2] * timeStep * 0.5; // For 3D
 
-                // Update positions using the new velocities
-                pos[0] = old_pos[0] + vel[0] * timeStep;
-                pos[1] = old_pos[1] + vel[1] * timeStep;
+                // Update positions in place using the half-step velocities.
+                pos[0] += vel[0] * timeStep;
+                pos[1] += vel[1] * timeStep;
                 // pos[2] = old_pos[2] + vel[2] * timeStep; // For 3D
 
                 // Apply boundary conditions based on xBCType and yBCType
@@ -786,7 +782,7 @@ class MolucularSystem {
     /** @brief Run the simulation for the specified number of time steps.
      */
     void runSimulation() {
-        calculateAccelerations(prevPositions);  // Calculate initial accelerations based on the initial positions
+        calculateAccelerations(currPositions);  // Calculate initial accelerations based on the initial positions
         energyCalculations(0);                  // Perform initial energy calculations
         saveSampledStep(0);
         for (size_t t = 1; t < timeSteps; t++) {
@@ -795,7 +791,6 @@ class MolucularSystem {
                 break;
             }
             saveSampledStep(t);
-            std::swap(prevPositions, currPositions);
         }
     }
 

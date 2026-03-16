@@ -371,7 +371,8 @@ class NodalBracket {
     double minusEnergy;
     int node
 
-    NodalBracket(double plusEnergy_, double minusEnergy_, int nodeCount_) : plusEnergy(plusEnergy_), minusEnergy(minusEnergy_), nodeCount(nodeCount_) {}
+    NodalBracket(double plusEnergy_, double minusEnergy_, int nodeCount_)
+        : plusEnergy(plusEnergy_), minusEnergy(minusEnergy_), nodeCount(nodeCount_) {}
 }
 
 class ESweep {
@@ -413,9 +414,7 @@ class ESweep {
      *
      */
     std::vector<NodalBracket> findNodalBrackets() const {
-
-
         return brackets;
-};
+    };
 
 #endif  // PROCESSING_H

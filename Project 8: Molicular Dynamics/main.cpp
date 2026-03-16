@@ -8,18 +8,9 @@
 static std::vector<int> buildThreadSweep(int maxThreads) {
     std::set<int> threadSet;
     threadSet.insert(1);
-    if (maxThreads >= 2)
-        threadSet.insert(2);
-    if (maxThreads >= 4)
-        threadSet.insert(4);
-    if (maxThreads >= 8)
-        threadSet.insert(8);
-    if (maxThreads >= 16)
-        threadSet.insert(16);
-    if (maxThreads >= 32)
-        threadSet.insert(32);
-    if (maxThreads >= 64)
-        threadSet.insert(64);
+    for (int t = 2; t <= maxThreads; t *= 2) {
+        threadSet.insert(t);
+    }
     threadSet.insert(maxThreads);
     return std::vector<int>(threadSet.begin(), threadSet.end());
 }

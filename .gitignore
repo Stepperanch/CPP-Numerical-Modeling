@@ -55,6 +55,10 @@ Thumbs.db
 *.npz
 *.npy
 
+# Configuration files (tuning runs)
+*tune_*.cfg
+*tuned_*.cfg
+
 # Anamations
 *.mp4
 *.avi

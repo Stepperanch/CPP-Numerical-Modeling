@@ -4,6 +4,11 @@
 
 # Project 2: Driven Damped Pendulum — Route to Chaos
 
+> [!TIP]
+> Every highlighted link in this page is clickable.
+> Fast navigation: [Portfolio Hub](https://nelsbuhrley.github.io/CPP-Numerical-Modeling/) | [Table of Contents](#table-of-contents)
+
+
 **Author:** Nels Buhrley
 **Language:** C++17 · Python 3 (visualization)
 **Build:** `make release` — see [Build & Run](#build--run)

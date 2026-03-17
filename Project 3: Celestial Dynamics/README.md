@@ -4,6 +4,11 @@
 
 # Project 3: Celestial Dynamics — N-Body Gravitational Simulation
 
+> [!TIP]
+> Every highlighted link in this page is clickable.
+> Fast navigation: [Portfolio Hub](https://nelsbuhrley.github.io/CPP-Numerical-Modeling/) | [Table of Contents](#table-of-contents)
+
+
 **Author:** Nels Buhrley
 **Language:** C++17 · Python 3 (visualization)
 **Build:** `make` — see [Build & Run](#build--run)

@@ -1,5 +1,10 @@
 # Computational Physics Portfolio
 
+> [!TIP]
+> Every highlighted link in this page is clickable.
+> Fast navigation: [Portfolio Hub](https://nelsbuhrley.github.io/CPP-Numerical-Modeling/) | [Table of Contents](#table-of-contents)
+
+
 **Nels Buhrley**
 *Physics Student — Brigham Young University–Idaho*
 
@@ -8,12 +13,10 @@
 ## Table of Contents
 
 - [About](#about)
-  - [Core Competencies](#core-competencies)
-  - [The Fulton Supercomputer at BYU](#the-fulton-supercomputer-at-byu)
 - [**Academic Projects**](#academic-projects)
-  - [Progression](#progression)
 - [Personal Projects](#personal-projects)
 - [**Selected Results**](#selected-results)
+- [The Fulton Supercomputer at BYU](#the-fulton-supercomputer-at-byu)
 - [Quick Start](#quick-start)
   - [Build Toolchain](#build-toolchain)
   - [Prerequisites](#prerequisites)
@@ -35,99 +38,6 @@ This repository is a collection of **nine numerical simulation and computational
 | **High-Performance Computing** | BYU Supercomputer — SLURM batch scheduling with up to 128 CPU cores for intensive simulations (Projects 4, 6, 7) |
 | **I/O & Visualization** | CSV, NPZ (via cnpy/zlib), Matplotlib (3D surfaces, contour maps, animations, phase-space portraits) |
 | **Build Systems** | GNU Make with multi-target builds (debug, release, profile-guided optimization) |
-
-### The Fulton Supercomputer at BYU
-
-<table>
-<tr>
-<td width="60%" valign="top">
-
-The <strong>Fulton Supercomputer</strong> (managed by the BYU Office of Research Computing) is a HPC cluster providing the processing backbone for my numerical modeling and simulation work. It manages over <strong>35,000 CPU cores</strong> and <strong>360+ GPUs</strong>, supported by a <strong>6 PB</strong> parallel filesystem.
-
-<p><strong>Architecture & Resources (2026 Specs):</strong></p>
-
-<table>
-<tr>
-<td><strong>Compute Nodes</strong></td>
-<td><strong>AMD EPYC 7763</strong> (128 cores/node), <strong>Intel Xeon Platinum 8568Y+</strong> (96 cores/node)</td>
-</tr>
-<tr>
-<td><strong>High-Memory</strong></td>
-<td>Up to <strong>2 TB of DDR5 RAM</strong> for memory-intensive simulations</td>
-</tr>
-<tr>
-<td><strong>GPU Acceleration</strong></td>
-<td><strong>NVIDIA H200 (141GB)</strong>, <strong>L40S (48GB)</strong>, <strong>A100 (80GB)</strong></td>
-</tr>
-<tr>
-<td><strong>Interconnect</strong></td>
-<td><strong>100 Gb/s InfiniBand</strong> and RoCE v2 low-latency networking</td>
-</tr>
-<tr>
-<td><strong>Storage</strong></td>
-<td><strong>6 PB</strong> parallel filesystem via <code>/fslhome</code> and local <strong>NVMe scratch</strong></td>
-</tr>
-</table>
-
-</td>
-<td width="40%" valign="top">
-
-<img src="assets/images/me-at-byuorc.jpeg" alt="Me at Fulton Supercomputer" width="100%"/>
-
-<p><em>Me at the BYU HPC cluster, February 2026</em></p>
-
-</td>
-</tr>
-</table>
-
----
-
-## Workflow & Scheduling
-
-### Job Management
-I utilize **SLURM (Simple Linux Utility for Resource Management)** to orchestrate simulations. This involves writing batch scripts that request specific hardware constraints to optimize performance, such as:
-* `--constraint=avx512` for vector instructions.
-* `--qos=standby` for acess to unused priviate hardware.
-
-### Environment & Compilation
-Development is performed on **RHEL 9.4** login nodes using *Remote - SSH* and the linux terminal to manage my development and computational resources. I manage software dependencies via the `module load` system, typically involving:
-* **GCC/G++** for core simulation logic.
-* **OpenMPI** for distributed memory parallelism.
-* **Python 3/ffmpeg** for visiulation
-
----
-
-## Physics Implementation
-On this cluster, I implement numerical solvers for complex potentials where the computation scales as $O(N^{2+})$. For a system of $N$ particles, the potential $V$ is calculated as:
-
-$$V = \sum_{i < j} \frac{q_i q_j}{4\pi\epsilon_0 |\mathbf{r}_i - \mathbf{r}_j|}$$
-
-By utilizing **OpenMP** for multi-threading and **MPI** for node-to-node communication, I can distribute these calculations, significantly reducing the wall-time required for high-resolution datasets.
-
-```cpp
-// Example: Basic OpenMP Parallelization for Force Calculation
-#pragma omp parallel for reduction(+:total_energy)
-for (int i = 0; i < N; ++i) {
-    for (int j = i + 1; j < N; ++j) {
-        total_energy += calculate_interaction(particles[i], particles[j]);
-    }
-}
-```
-
-**Simulation Deployment (This Portfolio):**
-
-| Project | Configuration | CPUs | Wall Time | Use Case |
-|---|---|---|---|---|
-| Project 4 (SOR) | CPU-only, `#threads=16` | 16 | 30–45 min | Strong-scaling study of iterative PDE solver |
-| Project 6 (Diffusion) | CPU-only, `#threads=32` | 32 | 2-3 min | Parallelizing independent particle trajectories |
-| Project 7 (Ising) | CPU-only, `#threads=128` | 128 | 10–45 min | Large parameter-space sweep with checkerboard MCMC |
-| Project 8 (Molecular Dynamics) | CPU-only, `#threads=8` | 8 | 10 min–2 hrs | Thread-local force accumulation (race condition mitigation) |
-
-**Key Advantages for This Work:**
-- **Scalability Testing:** Weak and strong scaling studies for OpenMP efficiency (Projects 4, 7, 8)
-- **Parameter Sweeps:** Multi-dimensional search spaces (Project 7: 2D temperature × field grid)
-- **Long-Running Simulations:** Statistical ensembles (Project 6: millions of particle trajectories)
-- **Reproducibility:** Identical hardware across multiple runs for benchmarking and verification
 
 ---
 
@@ -259,6 +169,101 @@ Mean power spectrum of transverse string oscillations showing discrete normal-mo
 Mean squared displacement from 3D random-walk Monte Carlo simulation, confirming Einstein's diffusion law $\langle r^2 \rangle = 6Dt$. Ensemble of $10^6$ particle trajectories with reflective boundary conditions.
 
 [→ View detailed results](Project%206%3A%20Diffusion/#results)
+
+---
+
+### The Fulton Supercomputer at BYU
+
+<table>
+<tr>
+<td width="60%" valign="top">
+
+The <strong>Fulton Supercomputer</strong> (managed by the BYU Office of Research Computing) is a HPC cluster providing the processing backbone for my numerical modeling and simulation work. It manages over <strong>35,000 CPU cores</strong> and <strong>360+ GPUs</strong>, supported by a <strong>6 PB</strong> parallel filesystem.
+
+<p><strong>Architecture & Resources (2026 Specs):</strong></p>
+
+<table>
+<tr>
+<td><strong>Compute Nodes</strong></td>
+<td><strong>AMD EPYC 7763</strong> (128 cores/node), <strong>Intel Xeon Platinum 8568Y+</strong> (96 cores/node)</td>
+</tr>
+<tr>
+<td><strong>High-Memory</strong></td>
+<td>Up to <strong>2 TB of DDR5 RAM</strong> for memory-intensive simulations</td>
+</tr>
+<tr>
+<td><strong>GPU Acceleration</strong></td>
+<td><strong>NVIDIA H200 (141GB)</strong>, <strong>L40S (48GB)</strong>, <strong>A100 (80GB)</strong></td>
+</tr>
+<tr>
+<td><strong>Interconnect</strong></td>
+<td><strong>100 Gb/s InfiniBand</strong> and RoCE v2 low-latency networking</td>
+</tr>
+<tr>
+<td><strong>Storage</strong></td>
+<td><strong>6 PB</strong> parallel filesystem via <code>/fslhome</code> and local <strong>NVMe scratch</strong></td>
+</tr>
+</table>
+
+</td>
+<td width="40%" valign="top">
+
+<img src="assets/images/me-at-byuorc.jpeg" alt="Me at Fulton Supercomputer" width="100%"/>
+
+<p><em>Me at the BYU HPC cluster, February 2026</em></p>
+
+</td>
+</tr>
+</table>
+
+---
+
+## Workflow & Scheduling
+
+### Job Management
+I utilize **SLURM (Simple Linux Utility for Resource Management)** to orchestrate simulations. This involves writing batch scripts that request specific hardware constraints to optimize performance, such as:
+* `--constraint=avx512` for vector instructions.
+* `--qos=standby` for acess to unused priviate hardware.
+
+### Environment & Compilation
+Development is performed on **RHEL 9.4** login nodes using *Remote - SSH* and the linux terminal to manage my development and computational resources. I manage software dependencies via the `module load` system, typically involving:
+* **GCC/G++** for core simulation logic.
+* **OpenMPI** for distributed memory parallelism.
+* **Python 3/ffmpeg** for visiulation
+
+---
+
+## Physics Implementation
+On this cluster, I implement numerical solvers for complex potentials where the computation scales as $O(N^{2+})$. For a system of $N$ particles, the potential $V$ is calculated as:
+
+$$V = \sum_{i < j} \frac{q_i q_j}{4\pi\epsilon_0 |\mathbf{r}_i - \mathbf{r}_j|}$$
+
+By utilizing **OpenMP** for multi-threading and **MPI** for node-to-node communication, I can distribute these calculations, significantly reducing the wall-time required for high-resolution datasets.
+
+```cpp
+// Example: Basic OpenMP Parallelization for Force Calculation
+#pragma omp parallel for reduction(+:total_energy)
+for (int i = 0; i < N; ++i) {
+    for (int j = i + 1; j < N; ++j) {
+        total_energy += calculate_interaction(particles[i], particles[j]);
+    }
+}
+```
+
+**Simulation Deployment (This Portfolio):**
+
+| Project | Configuration | CPUs | Wall Time | Use Case |
+|---|---|---|---|---|
+| Project 4 (SOR) | CPU-only, `#threads=16` | 16 | 30–45 min | Strong-scaling study of iterative PDE solver |
+| Project 6 (Diffusion) | CPU-only, `#threads=32` | 32 | 2-3 min | Parallelizing independent particle trajectories |
+| Project 7 (Ising) | CPU-only, `#threads=128` | 128 | 10–45 min | Large parameter-space sweep with checkerboard MCMC |
+| Project 8 (Molecular Dynamics) | CPU-only, `#threads=8` | 8 | 10 min–2 hrs | Thread-local force accumulation (race condition mitigation) |
+
+**Key Advantages for This Work:**
+- **Scalability Testing:** Weak and strong scaling studies for OpenMP efficiency (Projects 4, 7, 8)
+- **Parameter Sweeps:** Multi-dimensional search spaces (Project 7: 2D temperature × field grid)
+- **Long-Running Simulations:** Statistical ensembles (Project 6: millions of particle trajectories)
+- **Reproducibility:** Identical hardware across multiple runs for benchmarking and verification
 
 ---
 

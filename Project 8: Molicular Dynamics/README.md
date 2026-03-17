@@ -4,6 +4,11 @@
 
 # Project 8: Molecular Dynamics — Capstone
 
+> [!TIP]
+> Every highlighted link in this page is clickable.
+> Fast navigation: [Portfolio Hub](https://nelsbuhrley.github.io/CPP-Numerical-Modeling/) | [Table of Contents](#table-of-contents)
+
+
 **Author:** Nels Buhrley
 **Language:** C++17 with OpenMP · Python 3 (visualization)
 **HPC:** Run on the BYU Supercomputer (8 CPUs via SLURM)

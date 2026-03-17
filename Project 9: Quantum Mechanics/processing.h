@@ -155,30 +155,33 @@ class Integrator {
      * @param numSteps Number of intervals in [x0, xEnd].
      * @param psiResults Output psi trajectory.
      */
-    void NumerovIntegrate(double E, const std::vector<double>& potential, double x0, const std::array<double, 2>& Y0,
-                                                      double xEnd, int numSteps, std::vector<double>& psiResults) const {
-        psiResults.clear();  // Clear output vector before starting integration
-        if (numSteps < 2 || potential.size() != static_cast<size_t>(numSteps) + 1) { // Validate input parameters
+    void NumerovIntegrate(double E, const std::vector<double>& potential, double x0, const std::array<double, 2>& Y0, double xEnd, int numSteps,
+                          std::vector<double>& psiResults) const {
+        psiResults.clear();                                                           // Clear output vector before starting integration
+        if (numSteps < 2 || potential.size() != static_cast<size_t>(numSteps) + 1) {  // Validate input parameters
             return;
         }
 
-        const double dx = (xEnd - x0) / static_cast<double>(numSteps); // Step size based on the number of intervals
-        const double h2 = dx * dx; // Precompute dx² for use in the Numerov formula
-        const double divergenceCap = std::max(divergenceThreshold * std::abs(Y0[0]), static_cast<double>(divergenceThreshold)); // Dynamic divergence threshold based on initial psi value
+        const double dx = (xEnd - x0) / static_cast<double>(numSteps);  // Step size based on the number of intervals
+        const double h2 = dx * dx;                                      // Precompute dx² for use in the Numerov formula
+        const double divergenceCap = std::max(divergenceThreshold * std::abs(Y0[0]),
+                                              static_cast<double>(divergenceThreshold));  // Dynamic divergence threshold based on initial psi value
 
-        auto gAt = [&](int i) -> double { return 2.0 * (potential[static_cast<size_t>(i)] - E); }; // Lambda to compute g(x_i) = 2(V(x_i) - E) at grid index i
+        auto gAt = [&](int i) -> double {
+            return 2.0 * (potential[static_cast<size_t>(i)] - E);
+        };  // Lambda to compute g(x_i) = 2(V(x_i) - E) at grid index i
 
-        psiResults.resize(static_cast<size_t>(numSteps) + 1, 0.0);  // Initialize psiResults with the correct size and default values
-        psiResults[0] = Y0[0]; // Set initial psi value at x0
-        psiResults[1] = Y0[0] + dx * Y0[1] + 0.5 * h2 * gAt(0) * Y0[0]; // Compute psi at the first step using Taylor expansion
+        psiResults.resize(static_cast<size_t>(numSteps) + 1, 0.0);       // Initialize psiResults with the correct size and default values
+        psiResults[0] = Y0[0];                                           // Set initial psi value at x0
+        psiResults[1] = Y0[0] + dx * Y0[1] + 0.5 * h2 * gAt(0) * Y0[0];  // Compute psi at the first step using Taylor expansion
 
-        if (!std::isfinite(psiResults[0]) || !std::isfinite(psiResults[1])) { // Check for numerical issues in the initial conditions
+        if (!std::isfinite(psiResults[0]) || !std::isfinite(psiResults[1])) {  // Check for numerical issues in the initial conditions
             psiResults.clear();
             return;
         }
 
         int lastValid = 1;
-        for (int i = 1; i < numSteps; ++i) { // Iterate through the grid points to compute psi using the Numerov recurrence relation
+        for (int i = 1; i < numSteps; ++i) {  // Iterate through the grid points to compute psi using the Numerov recurrence relation
             const double gPrev = gAt(i - 1);
             const double gCurr = gAt(i);
             const double gNext = gAt(i + 1);
@@ -187,23 +190,23 @@ class Integrator {
             const double aCurr = 1.0 - (5.0 * h2 / 12.0) * gCurr;
             const double aNext = 1.0 + (h2 / 12.0) * gNext;
 
-            if (std::abs(aNext) < 1e-14) { // Avoid division by near-zero aNext which can cause numerical instability.
+            if (std::abs(aNext) < 1e-14) {  // Avoid division by near-zero aNext which can cause numerical instability.
                 break;
             }
 
             const double psiNext = (2.0 * aCurr * psiResults[static_cast<size_t>(i)] - aPrev * psiResults[static_cast<size_t>(i - 1)]) / aNext;
-            if (!std::isfinite(psiNext)) { // Check for NaN or Inf which indicates numerical instability.
+            if (!std::isfinite(psiNext)) {  // Check for NaN or Inf which indicates numerical instability.
                 break;
             }
 
             psiResults[static_cast<size_t>(i + 1)] = psiNext;
             lastValid = i + 1;
-            if (std::abs(psiNext) > divergenceCap) { // Check for divergence based on the dynamic threshold.
+            if (std::abs(psiNext) > divergenceCap) {  // Check for divergence based on the dynamic threshold.
                 break;
             }
         }
 
-        psiResults.resize(static_cast<size_t>(lastValid) + 1); // Resize the results vector to include only the valid computed points.
+        psiResults.resize(static_cast<size_t>(lastValid) + 1);  // Resize the results vector to include only the valid computed points.
     }
 };
 
@@ -357,7 +360,7 @@ class Eigenstate {
     double energy;
     int number;
     std::vector<double> psiTrajectory;
-}
+};
 
 class ESweep {
    public:
@@ -398,7 +401,7 @@ class ESweep {
         QuantumTestSystem system(n, E);
         std::vector<double> psi;
 
-        system.solvePsi(x0, {1 }, 2, trajectorySteps, psi);
+        system.solvePsi(x0, {1}, 2, trajectorySteps, psi);
         if (psi.size() < 2) {
             return std::nullopt;
         }
@@ -463,7 +466,8 @@ class ESweep {
         return brackets;
     }
 
-    std::vector<Eigenstate> findEigenstates(const std::vector<NodalBracket>& brackets, int trajectorySteps = 2000, int maxBisectionIterations = 100, double convergenceThreshold = 1e-10) const {
+    std::vector<Eigenstate> findEigenstates(const std::vector<NodalBracket>& brackets, int trajectorySteps = 2000, int maxBisectionIterations = 100,
+                                            double convergenceThreshold = 1e-10) const {
         std::vector<Eigenstate> eigenstates;
         eigenstates.reserve(brackets.size());
 
@@ -477,7 +481,7 @@ class ESweep {
                 E_mid = 0.5 * (E_low + E_high);
                 const auto nodeCountOpt = solveNodeCount(E_mid, trajectorySteps);
                 if (!nodeCountOpt) {
-                    break; // If solver fails, exit bisection for this bracket
+                    break;  // If solver fails, exit bisection for this bracket
                 }
                 const int nodeCount = *nodeCountOpt;
 
@@ -486,20 +490,19 @@ class ESweep {
                 // for odd parity states, psi should be 0 at x0 and -h at -h
                 const auto psiAtX0Opt = solvePsi(x0, Y0, xEnd, trajectorySteps);
                 if (!psiAtX0Opt) {
-                    break; // If solver fails, exit bisection for this bracket
+                    break;  // If solver fails, exit bisection for this bracket
+                }
 
+                Eigenstate state;
+                state.energy = E_mid;
 
+                QuantumTestSystem system(n, E_mid);
+                system.solvePsi(x0, Y0, xEnd, trajectorySteps, state.psiTrajectory);
+                eigenstates.push_back(std::move(state));
             }
 
-            Eigenstate state;
-            state.energy = E_mid;
-
-            QuantumTestSystem system(n, E_mid);
-            system.solvePsi(x0, Y0, xEnd, trajectorySteps, state.psiTrajectory);
-            eigenstates.push_back(std::move(state));
+            return eigenstates;
         }
-
-        return eigenstates;
-
+    }
 };
 #endif  // PROCESSING_H

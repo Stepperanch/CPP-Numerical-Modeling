@@ -82,12 +82,12 @@ class UnitHelper {
     double Mnaught;  // Characteristic mass scale in kilograms
 
     /** @brief Sets the characteristic mass scale in kilograms. */
-    void setMnaught(float mass) {
+    void setMnaught(double mass) {
         Mnaught = mass;
     }
 
     /** @brief Sets the characteristic length scale in meters. */
-    void setLnaught(float length) {
+    void setLnaught(double length) {
         Lnaught = length;
     }
 
@@ -110,7 +110,7 @@ class UnitHelper {
     }
 
     /** @brief Convenience method that calls all four setters in one call. */
-    void setAllConversionFactors(float mass, float length, bool useEvUnits) {
+    void setAllConversionFactors(double mass, double length, bool useEvUnits) {
         setMnaught(mass);
         setLnaught(length);
         calculateEnergyConversionFactor(useEvUnits);
@@ -118,156 +118,97 @@ class UnitHelper {
     }
 
     /** @brief Converts a length from reduced units to meters. */
-    inline float convertLengthFromReducedUnits(float length) const {
+    inline double convertLengthFromReducedUnits(double length) const {
         return length * Lnaught;
     }
     /** @brief Converts a mass from reduced units to kilograms. */
-    inline float convertMassFromReducedUnits(float mass) const {
+    inline double convertMassFromReducedUnits(double mass) const {
         return mass * Mnaught;
     }
     /** @brief Converts an energy from reduced units to SI or eV units. */
-    inline float convertEnergyFromReducedUnits(float energy) const {
+    inline double convertEnergyFromReducedUnits(double energy) const {
         return energy * energyConversionFactor;
     }
     /** @brief Converts a time from reduced units to seconds. */
-    inline float convertTimeFromReducedUnits(float time) const {
+    inline double convertTimeFromReducedUnits(double time) const {
         return time * timeConversionFactor;
     }
 };
 
 /**
- * @brief A helper class for performing numerical integration of ordinary differential equations using the Runge-Kutta methods.
- * Provides methods for fixed-step RK4 integration to compute full trajectories, as well as adaptive RK45 integration to
- * compute final states with error control. The RK45 method returns std::nullopt if it fails to converge within the specified
- * tolerances or maximum steps, allowing the caller to handle these cases gracefully.
+ * @brief A helper class for integrating 1D Schrodinger-form ODEs with the Numerov method.
  *
+ * Uses fixed-step Numerov recurrences on a precomputed potential grid. Provides
+ * trajectory integration, final-state estimation, and node counting utilities.
  */
 class Integrator {
    public:
-    /** @brief Performs a single RK4 step.
-     * @param x The current value of the independent variable.
-     * @param y The current state vector (dependent variables).
-     * @param derivFunc A function that computes the derivatives given x and y.
-     * @param h The step size.
-     *
-     * @note This method updates y in place to the new state after taking the RK4 step.
-     * This method updates y in place to the new state after taking the RK4 step.
+    double divergenceThreshold = 1e4;  //  d Threshold for detecting divergence in the solution.
+    //                                      If |ψ| exceeds this value, the solution is considered to be diverging.
+
+    /** @brief Integrates psi(x) on a fixed grid using Numerov.
+     * @param E Trial energy.
+     * @param potential Precomputed V(x_i) values on a uniform grid.
+     * @param x0 Initial position.
+     * @param Y0 Initial state [psi, dpsi/dx].
+     * @param xEnd Final position.
+     * @param numSteps Number of intervals in [x0, xEnd].
+     * @param psiResults Output psi trajectory.
      */
-    template <typename DerivFunc>
-    inline void RK4Step(double x, std::array<double, 2>& y, const DerivFunc& derivFunc, double h) {
-        auto k1 = derivFunc(x, y);
-        auto k2 = derivFunc(x + h / 2, y + k1 * (h / 2));
-        auto k3 = derivFunc(x + h / 2, y + k2 * (h / 2));
-        auto k4 = derivFunc(x + h, y + k3 * h);
-
-        y = y + (k1 + k2 * 2.0 + k3 * 2.0 + k4) * (h / 6.0);
-    };
-
-    /**
-     * @brief Integrates an ODE using fixed-step RK4 to compute the full trajectory.
-     * @param x0 The initial value of the independent variable.
-     * @param y0 The initial state vector (dependent variables).
-     * @param xEnd The final value of the independent variable to integrate to.
-     * @param numSteps The number of steps to take (determines resolution).
-     * @param derivFunc A function that computes the derivatives given x and y.
-     * @param results A vector to store the resulting trajectory. It will be resized to num
-     * @return The full trajectory from x0 to xEnd, with numSteps + 1 points (including the initial state).
-     */
-    template <typename DerivFunc>
-    void RK4IntegrateTrajectory(double x0, std::array<double, 2> y0, double xEnd, int numSteps, const DerivFunc& derivFunc,
-                                std::vector<std::array<double, 2>>& results) {
-        const double h = (xEnd - x0) / numSteps;
-        std::array<double, 2> y = y0;
-
-        results.resize(numSteps + 1);
-        results[0] = y;
-        for (int i = 0; i < numSteps; ++i) {
-            const double x = x0 + i * h;
-            RK4Step(x, y, derivFunc, h);
-            results[i + 1] = y;
-        }
-    };
-
-    /**
-     * @brief Integrates an ODE using adaptive RK45 to compute the final state at xEnd.
-     * @param x0 The initial value of the independent variable.
-     * @param y0 The initial state vector (dependent variables).
-     * @param xEnd The final value of the independent variable to integrate to.
-     * @param h0 The initial step size to use for the integration.
-     * @param derivFunc A function that computes the derivatives given x and y.
-     *
-     * @param absTol The absolute tolerance for error control (default 1e-10).
-     * @param relTol The relative tolerance for error control (default 1e-8).
-     * @param maxSteps The maximum number of steps to take before giving up (default 1,000,000).
-     * @return The final state at xEnd or at divergence if successful, or std::nullopt if the method fails to converge/ diverge within the specified
-     * tolerances or maximum steps.
-     */
-    template <typename DerivFunc>
-    std::optional<std::array<double, 2>> RK45IntegrateFinal(double x0, std::array<double, 2> y0, double xEnd, double h0, const DerivFunc& derivFunc,
-                                                            double absTol = 1e-10, double relTol = 1e-8, int maxSteps = 1000000) {
-        double x = x0;
-        std::array<double, 2> y = y0;
-        double h = h0;
-
-        // Divergence cap: if |ψ| grows beyond this multiple of its initial value,
-        // the solution is clearly diverging. Return early so the caller can read
-        // the sign for bisection. 1e4 is conservative enough to avoid false positives
-        // while bailing out far sooner than the old 1e8 threshold.
-        const double divergenceCap = std::max(1e4 * std::abs(y[0]), 1e4);
-
-        for (int stepCount = 0; stepCount < maxSteps && x < xEnd; ++stepCount) {
-            if (x + h > xEnd)
-                h = xEnd - x;
-
-            const auto k1 = derivFunc(x, y);
-            const auto k2 = derivFunc(x + h * (1.0 / 5.0), y + k1 * (h * (1.0 / 5.0)));
-            const auto k3 = derivFunc(x + h * (3.0 / 10.0), y + k1 * (h * (3.0 / 40.0)) + k2 * (h * (9.0 / 40.0)));
-            const auto k4 = derivFunc(x + h * (4.0 / 5.0), y + k1 * (h * (44.0 / 45.0)) + k2 * (h * (-56.0 / 15.0)) + k3 * (h * (32.0 / 9.0)));
-            const auto k5 = derivFunc(x + h * (8.0 / 9.0), y + k1 * (h * (19372.0 / 6561.0)) + k2 * (h * (-25360.0 / 2187.0)) +
-                                                               k3 * (h * (64448.0 / 6561.0)) + k4 * (h * (-212.0 / 729.0)));
-            const auto k6 = derivFunc(x + h, y + k1 * (h * (9017.0 / 3168.0)) + k2 * (h * (-355.0 / 33.0)) + k3 * (h * (46732.0 / 5247.0)) +
-                                                 k4 * (h * (49.0 / 176.0)) + k5 * (h * (-5103.0 / 18656.0)));
-            const auto k7 = derivFunc(x + h, y + k1 * (h * (35.0 / 384.0)) + k3 * (h * (500.0 / 1113.0)) + k4 * (h * (125.0 / 192.0)) +
-                                                 k5 * (h * (-2187.0 / 6784.0)) + k6 * (h * (11.0 / 84.0)));
-
-            const auto y5 = y + k1 * (h * (35.0 / 384.0)) + k3 * (h * (500.0 / 1113.0)) + k4 * (h * (125.0 / 192.0)) + k5 * (h * (-2187.0 / 6784.0)) +
-                            k6 * (h * (11.0 / 84.0));
-
-            const auto y4 = y + k1 * (h * (5179.0 / 57600.0)) + k3 * (h * (7571.0 / 16695.0)) + k4 * (h * (393.0 / 640.0)) +
-                            k5 * (h * (-92097.0 / 339200.0)) + k6 * (h * (187.0 / 2100.0)) + k7 * (h * (1.0 / 40.0));
-
-            double errNorm = 0.0;
-            for (size_t i = 0; i < 2; ++i) {
-                const double scale = absTol + relTol * std::max(std::abs(y[i]), std::abs(y5[i]));
-                const double err = std::abs(y5[i] - y4[i]) / scale;
-                errNorm = std::max(errNorm, err);
-            }
-
-            if (errNorm <= 1.0) {
-                x += h;
-                y = y5;
-                if (std::abs(y[0]) > divergenceCap)
-                    return y;  // clearly diverging — return now so caller can read the sign
-            }
-
-            if (h < 1e-15 || std::isnan(y[0]) || std::isinf(y[0])) {
-                return std::nullopt;
-            }
-
-            h *= std::clamp(0.9 * std::pow(std::max(errNorm, 1e-12), -0.2), 0.2, 5.0);
-            ;
+    void NumerovIntegrate(double E, const std::vector<double>& potential, double x0, const std::array<double, 2>& Y0,
+                                                      double xEnd, int numSteps, std::vector<double>& psiResults) const {
+        psiResults.clear();  // Clear output vector before starting integration
+        if (numSteps < 2 || potential.size() != static_cast<size_t>(numSteps) + 1) { // Validate input parameters
+            return;
         }
 
-        if (x < xEnd)
-            return std::nullopt;  // maxSteps exhausted
+        const double dx = (xEnd - x0) / static_cast<double>(numSteps); // Step size based on the number of intervals
+        const double h2 = dx * dx; // Precompute dx² for use in the Numerov formula
+        const double divergenceCap = std::max(divergenceThreshold * std::abs(Y0[0]), static_cast<double>(divergenceThreshold)); // Dynamic divergence threshold based on initial psi value
 
-        return y;
+        auto gAt = [&](int i) -> double { return 2.0 * (potential[static_cast<size_t>(i)] - E); }; // Lambda to compute g(x_i) = 2(V(x_i) - E) at grid index i
+
+        psiResults.resize(static_cast<size_t>(numSteps) + 1, 0.0);  // Initialize psiResults with the correct size and default values
+        psiResults[0] = Y0[0]; // Set initial psi value at x0
+        psiResults[1] = Y0[0] + dx * Y0[1] + 0.5 * h2 * gAt(0) * Y0[0]; // Compute psi at the first step using Taylor expansion
+
+        if (!std::isfinite(psiResults[0]) || !std::isfinite(psiResults[1])) { // Check for numerical issues in the initial conditions
+            psiResults.clear();
+            return;
+        }
+
+        int lastValid = 1;
+        for (int i = 1; i < numSteps; ++i) { // Iterate through the grid points to compute psi using the Numerov recurrence relation
+            const double gPrev = gAt(i - 1);
+            const double gCurr = gAt(i);
+            const double gNext = gAt(i + 1);
+
+            const double aPrev = 1.0 + (h2 / 12.0) * gPrev;
+            const double aCurr = 1.0 - (5.0 * h2 / 12.0) * gCurr;
+            const double aNext = 1.0 + (h2 / 12.0) * gNext;
+
+            if (std::abs(aNext) < 1e-14) { // Avoid division by near-zero aNext which can cause numerical instability.
+                break;
+            }
+
+            const double psiNext = (2.0 * aCurr * psiResults[static_cast<size_t>(i)] - aPrev * psiResults[static_cast<size_t>(i - 1)]) / aNext;
+            if (!std::isfinite(psiNext)) { // Check for NaN or Inf which indicates numerical instability.
+                break;
+            }
+
+            psiResults[static_cast<size_t>(i + 1)] = psiNext;
+            lastValid = i + 1;
+            if (std::abs(psiNext) > divergenceCap) { // Check for divergence based on the dynamic threshold.
+                break;
+            }
+        }
+
+        psiResults.resize(static_cast<size_t>(lastValid) + 1); // Resize the results vector to include only the valid computed points.
     }
 };
 
 /** @brief A system for testing quantum mechanical calculations.
- * The potential is V(x) = x^n / n, and the Schrodinger equation is solved for a given energy level E using both adaptive RK45 (for final state) and
- * fixed-step RK4 (for full trajectory).
+ * The potential is V(x) = x^n / n, and the Schrodinger equation is solved for a given energy level E using Numerov.
  */
 class QuantumTestSystem {
    public:
@@ -305,21 +246,38 @@ class QuantumTestSystem {
         return std::array<double, 2>{Yvec[1], derivhelper(x) * Yvec[0]};
     }
 
-    /** @brief Solves the Schrodinger equation for the given initial conditions and parameters.
+    /** @brief Builds a potential grid V(x_i) for Numerov integration.
+     * @param x0 The initial position.
+     * @param xEnd The final position.
+     * @param numSteps Number of uniform intervals.
+     * @return V(x_i) values with size numSteps + 1.
+     */
+    std::vector<double> buildPotentialGrid(double x0, double xEnd, int numSteps) const {
+        std::vector<double> potential(static_cast<size_t>(numSteps) + 1);
+        const double dx = (xEnd - x0) / static_cast<double>(numSteps);
+        for (int i = 0; i <= numSteps; ++i) {
+            const double x = x0 + static_cast<double>(i) * dx;
+            potential[static_cast<size_t>(i)] = V(x);
+        }
+        return potential;
+    }
+
+    /** @brief Solves the Schrodinger equation for the given initial conditions and parameters using Numerov.
      * @param x0 The initial position.
      * @param Y0 The initial state vector.
      * @param xEnd The final position.
-     * @param h0 The initial step size.
-     * @return The final state at xEnd or at divergence if successful, or std::nullopt if the method fails to converge/ diverge within the specified
-     * tolerances or maximum steps.
+     * @param h0 Step size hint used to build a fixed Numerov grid.
+     * @return The final state at xEnd (or at divergence) on success, std::nullopt on numerical failure.
      */
     std::optional<std::array<double, 2>> solve(double x0, std::array<double, 2> Y0, double xEnd, double h0 = 0.01) const {
-        Integrator integrator;
-        return integrator.RK45IntegrateFinal(x0, Y0, xEnd, h0,
-                                             [this](double x, const std::array<double, 2>& Yvec) { return derivativeFunc(x, Yvec); });
+        if (h0 <= 0.0) {
+            return std::nullopt;
+        }
+        const int numSteps = std::max(2, static_cast<int>(std::ceil(std::abs((xEnd - x0) / h0))));
+        return solve(x0, Y0, xEnd, numSteps);
     }
 
-    /** @brief Computes the full trajectory using fixed-step RK4.
+    /** @brief Computes the full trajectory using fixed-step Numerov.
      * @param x0 The initial position.
      * @param Y0 The initial state vector.
      * @param xEnd The final position.
@@ -327,16 +285,40 @@ class QuantumTestSystem {
      * @param results A vector to store the trajectory points.
      */
     void solve(double x0, std::array<double, 2> Y0, double xEnd, int numSteps, std::vector<std::array<double, 2>>& results) const {
+        results.clear();
+        if (numSteps < 2) {
+            return;
+        }
+
         Integrator integrator;
-        integrator.RK4IntegrateTrajectory(
-            x0, Y0, xEnd, numSteps, [this](double x, const std::array<double, 2>& Yvec) { return derivativeFunc(x, Yvec); }, results);
+        const std::vector<double> potential = buildPotentialGrid(x0, xEnd, numSteps);
+
+        std::vector<double> psi;
+        integrator.NumerovIntegrate(E, potential, x0, Y0, xEnd, numSteps, psi);
+        if (psi.empty()) {
+            return;
+        }
+
+        const double dx = (xEnd - x0) / static_cast<double>(numSteps);
+        results.resize(psi.size());
+        for (size_t i = 0; i < psi.size(); ++i) {
+            double dpsi = 0.0;
+            if (i == 0) {
+                dpsi = Y0[1];
+            } else if (i + 1 < psi.size()) {
+                dpsi = (psi[i + 1] - psi[i - 1]) / (2.0 * dx);
+            } else {
+                dpsi = (psi[i] - psi[i - 1]) / dx;
+            }
+            results[i] = {psi[i], dpsi};
+        }
     }
 
-    /** @brief Returns only psi(xEnd) using adaptive RK45.
+    /** @brief Returns only psi(xEnd) using fixed-step Numerov.
      * @param x0 The initial position.
      * @param Y0 The initial state vector [psi, dpsi/dx].
      * @param xEnd The final position.
-     * @param h0 Initial RK45 step size hint.
+     * @param h0 Initial step size hint.
      * @return psi(xEnd) (or divergence psi) if successful, std::nullopt on solver failure.
      */
     std::optional<double> solvePsi(double x0, std::array<double, 2> Y0, double xEnd, double h0 = 0.01) const {
@@ -347,21 +329,17 @@ class QuantumTestSystem {
         return (*finalState)[0];
     }
 
-    /** @brief Returns only the psi trajectory using fixed-step RK4.
+    /** @brief Returns only the psi trajectory using fixed-step Numerov.
      * @param x0 The initial position.
      * @param Y0 The initial state vector [psi, dpsi/dx].
      * @param xEnd The final position.
-     * @param numSteps Number of RK4 steps.
+     * @param numSteps Number of Numerov steps.
      * @param psiResults Output vector containing psi values at each step.
      */
     void solvePsi(double x0, std::array<double, 2> Y0, double xEnd, int numSteps, std::vector<double>& psiResults) const {
-        std::vector<std::array<double, 2>> fullResults;
-        solve(x0, Y0, xEnd, numSteps, fullResults);
-
-        psiResults.resize(fullResults.size());
-        for (size_t i = 0; i < fullResults.size(); ++i) {
-            psiResults[i] = fullResults[i][0];
-        }
+        Integrator integrator;
+        const std::vector<double> potential = buildPotentialGrid(x0, xEnd, numSteps);
+        integrator.NumerovIntegrate(E, potential, x0, Y0, xEnd, numSteps, psiResults);
     }
 };
 
@@ -371,17 +349,19 @@ class NodalBracket {
     double minusEnergy;
     int node;
 
-    NodalBracket(double plusEnergy_, double minusEnergy_, int node_)
-        : plusEnergy(plusEnergy_), minusEnergy(minusEnergy_), node(node_) {}
+    NodalBracket(double plusEnergy_, double minusEnergy_, int node_) : plusEnergy(plusEnergy_), minusEnergy(minusEnergy_), node(node_) {}
 };
 
 class ESweep {
+   public:
     int n;
     int nodesToFind;  // Number of energy eigenstates to find, determined by counting nodes in the wavefunction
-    double E_min;     // Minimum energy level for which we want to solve the Schrodinger equation
-    double E_max;     // Maximum energy level for which we want to solve the Schrodinger equation
+    double x0;
+    std::array<double, 2> Y0;
+    double xEnd;
+    double h0;
 
-    ESweep(int n_, double E_min_, double E_max_, int nodesToFind_ = 8) : n(n_), E_min(E_min_), E_max(E_max_), nodesToFind(nodesToFind_) {}
+    ESweep(int n_, int nodesToFind_ = 8) : n(n_), nodesToFind(nodesToFind_) {}
 
     /**
      * @brief Performs an energy sweep to find the first 8 energy eigenstates of the quantum test system.
@@ -391,30 +371,92 @@ class ESweep {
      * @param h0 The initial step size.
      * @return A vector of the first 8 energy eigenstates found.
      */
-    std::vector<std::optional<std::array<double, 2>>> performSweep(double x0, std::array<double, 2> Y0, double xEnd, double h0 = 0.01) {
-        std::vector<std::optional<std::array<double, 2>>> eigenstates;
-        return eigenstates;
-    }
 
     /** @brief Counts the number of nodes in a wavefunction.
      * @param state The wavefunction state vector.
      * @return The number of nodes.
      */
-    int countNodes(const std::array<double, 2>& state) const {
+    int countNodes(const std::vector<double>& psi) const {
         int nodes = 0;
-        for (size_t i = 1; i < state.size(); ++i) {
-            if (state[i - 1] * state[i] < 0) {
+        for (size_t i = 1; i < psi.size(); ++i) {
+            if (psi[i - 1] * psi[i] < 0.0) {
                 ++nodes;
             }
         }
         return nodes;
     }
 
-    /** @brief Uses bisection to find energy eigenstates by counting nodes in the wavefunction.
-     *
+    /** @brief Solves at a trial energy and returns its node count from a full trajectory.
+     * @param E Trial energy.
+     * @param trajectorySteps Number of fixed Numerov steps to resolve node crossings.
+     * @return Node count on success, std::nullopt on solver failure.
      */
-    std::vector<NodalBracket> findNodalBrackets() const {
-        return {};
-    };
+    std::optional<int> solveNodeCount(double E, int trajectorySteps) const {
+        QuantumTestSystem system(n, E);
+        std::vector<double> psi;
+        system.solvePsi(x0, Y0, xEnd, trajectorySteps, psi);
+        if (psi.size() < 2) {
+            return std::nullopt;
+        }
+        return countNodes(psi);
+    }
+
+    /** @brief Builds a reusable potential grid V(x_i) for the sweep interval.
+     * @param trajectorySteps Number of intervals in [x0, xEnd].
+     * @return Vector containing V on a uniform grid of size trajectorySteps + 1.
+     */
+    std::vector<double> buildPotentialGrid(int trajectorySteps) const {
+        std::vector<double> potential(static_cast<size_t>(trajectorySteps) + 1);
+        const double dx = (xEnd - x0) / static_cast<double>(trajectorySteps);
+        for (int i = 0; i <= trajectorySteps; ++i) {
+            const double x = x0 + static_cast<double>(i) * dx;
+            potential[static_cast<size_t>(i)] = std::pow(x, n) / n;
+        }
+        return potential;
+    }
+
+    /** @brief Uses bisection to find energy eigenstates by counting nodes in the wavefunction.
+     *  this method rapidly processed the energy sweep results from a coarse Numerov sweep to find
+     *  energy levels bracketing to the first 8 eigenstates, which are then returned as a
+     *  vector of NodalBrackets.
+     */
+    std::vector<NodalBracket> findNodalBrackets(double E_min, double E_h, double E_max = std::numeric_limits<double>::infinity(),
+                                                int trajectorySteps = 2000, int maxIterations = 200000) const {
+        std::vector<NodalBracket> brackets;
+        brackets.reserve(static_cast<size_t>(nodesToFind));
+
+        if (nodesToFind <= 0 || E_h <= 0.0 || trajectorySteps < 2 || maxIterations <= 0) {
+            return brackets;
+        }
+
+        int lastNodeCount = -1;
+        double E = E_min;
+        int iterations = 0;
+        const std::vector<double> potential = buildPotentialGrid(trajectorySteps);
+        Integrator integrator;
+
+        while (brackets.size() < static_cast<size_t>(nodesToFind) && E <= E_max && iterations < maxIterations) {
+            const auto nodeCountOpt = integrator.NumerovCountNodesOnPotentialGrid(E, potential, x0, Y0, xEnd, trajectorySteps);
+            if (!nodeCountOpt) {
+                E += E_h;
+                ++iterations;
+                continue;  // Skip this energy level if the solver failed
+            }
+            const int nodeCount = *nodeCountOpt;
+
+            if (lastNodeCount != -1 && nodeCount > lastNodeCount) {
+                const int jump = nodeCount - lastNodeCount;
+                for (int missed = 1; missed <= jump && brackets.size() < static_cast<size_t>(nodesToFind); ++missed) {
+                    brackets.emplace_back(E, E - E_h, lastNodeCount + missed);  // Bracket for each crossed node level in this energy interval
+                }
+            }
+
+            lastNodeCount = nodeCount;
+            E += E_h;
+            ++iterations;
+        }
+
+        return brackets;
+    }
 };
 #endif  // PROCESSING_H

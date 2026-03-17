@@ -2,7 +2,7 @@
 
 > [!TIP]
 > Every highlighted link in this page is clickable.
-> Fast navigation: | [Table of Contents](#table-of-contents)
+> For fast navagation use [Table of Contents](#table-of-contents)
 
 
 **Nels Buhrley**

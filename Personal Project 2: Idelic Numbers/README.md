@@ -6,7 +6,7 @@
 
 > [!TIP]
 > Every highlighted link in this page is clickable.
-> Fast navigation: [Portfolio Hub](https://nelsbuhrley.github.io/CPP-Numerical-Modeling/) | [Table of Contents](#table-of-contents)
+> For fast navagation use [Table of Contents](#table-of-contents)
 
 
 **Author:** Nels Buhrley

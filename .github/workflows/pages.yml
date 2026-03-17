@@ -4,6 +4,16 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '_config.yml'
+      - '_includes/**'
+      - 'Project*/**'
+      - 'Personal Project*/**'
+      - 'src/**'
+      - 'include/**'
+      - 'README.md'
+      - 'assets/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -19,20 +29,41 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Main Repo
         uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 1
+
+      - name: Cache Submodules
+        id: cache-submodules
+        uses: actions/cache@v4
+        with:
+          path: assets
+          key: ${{ runner.os }}-submodule-${{ hashFiles('.gitmodules', 'assets') }}
+
+      - name: Update Submodules (Only if Cache Miss)
+        if: steps.cache-submodules.outputs.cache-hit != 'true'
+        run: |
+          git submodule update --init --recursive --depth 1
+
+      - name: Cache Jekyll Build
+        uses: actions/cache@v4
+        with:
+          path: .jekyll-cache
+          key: ${{ runner.os }}-jekyll-${{ hashFiles('_config.yml', 'Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-jekyll-
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
-        with:
-          source: ./
-          destination: ./_site
+      - name: Build with Jekyll (Incremental)
+        run: |
+          gem install jekyll bundler
+          bundle install --quiet 2>/dev/null || true
+          bundle exec jekyll build --incremental --profile
+        env:
+          JEKYLL_ENV: production
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

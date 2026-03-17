@@ -352,22 +352,25 @@ class NodalBracket {
     NodalBracket(double plusEnergy_, double minusEnergy_, int node_) : plusEnergy(plusEnergy_), minusEnergy(minusEnergy_), node(node_) {}
 };
 
+class Eigenstate {
+   public:
+    double energy;
+    int number;
+    std::vector<double> psiTrajectory;
+}
+
 class ESweep {
    public:
     int n;
     int nodesToFind;  // Number of energy eigenstates to find, determined by counting nodes in the wavefunction
     double x0;
-    std::array<double, 2> Y0;
-    double xEnd;
     double h0;
+    double xEnd;
 
-    ESweep(int n_, int nodesToFind_ = 8) : n(n_), nodesToFind(nodesToFind_) {}
+    ESweep(int n_, int nodesToFind_ = 8) : n(n_), nodesToFind(nodesToFind_), xEnd(2) {}
 
     /**
      * @brief Performs an energy sweep to find the first 8 energy eigenstates of the quantum test system.
-     * @param x0 The initial position.
-     * @param Y0 The initial state vector.
-     * @param xEnd The final position.
      * @param h0 The initial step size.
      * @return A vector of the first 8 energy eigenstates found.
      */
@@ -394,7 +397,8 @@ class ESweep {
     std::optional<int> solveNodeCount(double E, int trajectorySteps) const {
         QuantumTestSystem system(n, E);
         std::vector<double> psi;
-        system.solvePsi(x0, Y0, xEnd, trajectorySteps, psi);
+
+        system.solvePsi(x0, {1 }, 2, trajectorySteps, psi);
         if (psi.size() < 2) {
             return std::nullopt;
         }
@@ -436,7 +440,7 @@ class ESweep {
         Integrator integrator;
 
         while (brackets.size() < static_cast<size_t>(nodesToFind) && E <= E_max && iterations < maxIterations) {
-            const auto nodeCountOpt = integrator.NumerovCountNodesOnPotentialGrid(E, potential, x0, Y0, xEnd, trajectorySteps);
+            const auto nodeCountOpt = solveNodeCount(E, trajectorySteps);
             if (!nodeCountOpt) {
                 E += E_h;
                 ++iterations;
@@ -458,5 +462,44 @@ class ESweep {
 
         return brackets;
     }
+
+    std::vector<Eigenstate> findEigenstates(const std::vector<NodalBracket>& brackets, int trajectorySteps = 2000, int maxBisectionIterations = 100, double convergenceThreshold = 1e-10) const {
+        std::vector<Eigenstate> eigenstates;
+        eigenstates.reserve(brackets.size());
+
+        for (const auto& bracket : brackets) {
+            double E_low = bracket.minusEnergy;
+            double E_high = bracket.plusEnergy;
+            double E_mid = 0.0;
+            int nodes = bracket.node;
+
+            for (int i = 0; i < maxBisectionIterations; ++i) {
+                E_mid = 0.5 * (E_low + E_high);
+                const auto nodeCountOpt = solveNodeCount(E_mid, trajectorySteps);
+                if (!nodeCountOpt) {
+                    break; // If solver fails, exit bisection for this bracket
+                }
+                const int nodeCount = *nodeCountOpt;
+
+                // converge based off boundary conditions
+                // for even parity states, psi should be 1 at x0 and 1 at -h,
+                // for odd parity states, psi should be 0 at x0 and -h at -h
+                const auto psiAtX0Opt = solvePsi(x0, Y0, xEnd, trajectorySteps);
+                if (!psiAtX0Opt) {
+                    break; // If solver fails, exit bisection for this bracket
+
+
+            }
+
+            Eigenstate state;
+            state.energy = E_mid;
+
+            QuantumTestSystem system(n, E_mid);
+            system.solvePsi(x0, Y0, xEnd, trajectorySteps, state.psiTrajectory);
+            eigenstates.push_back(std::move(state));
+        }
+
+        return eigenstates;
+
 };
 #endif  // PROCESSING_H

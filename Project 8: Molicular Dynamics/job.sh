@@ -4,9 +4,9 @@
 #SBATCH --error=slurm_out/slurm_%j.err        # stderr log
 #SBATCH --nodes=1                  # single node (OpenMP, not MPI)
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=40          # number of OpenMP threads — adjust to node size
-#SBATCH --mem=64G
-#SBATCH --time=10:00:00             # wall time — increase if needed
+#SBATCH --cpus-per-task=8          # number of OpenMP threads — adjust to node size
+#SBATCH --mem=8G
+#SBATCH --time=20:00:00             # wall time — increase if needed
 ##SBATCH --qos=normal
 ##SBATCH --partition=compute        # uncomment and set your partition name if required
 ##SBATCH --account=your_account     # uncomment and set your allocation if required
@@ -23,6 +23,8 @@ module load ffmpeg
 
 # Tell OpenMP to use all allocated CPUs
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
+export OMP_PROC_BIND=spread
+export OMP_PLACES=cores
 
 # --- Build -------------------------------------------------------------
 cd "$SLURM_SUBMIT_DIR"
@@ -99,8 +101,57 @@ fi
 
 
 # --- Run ---------------------------------------------------------------
+AUTO_TUNE=${AUTO_TUNE:-1}
+RUN_CFG="simulation_2.cfg"
+
+if [ "$AUTO_TUNE" = "1" ]; then
+    echo "=== Auto-tuning thread/neighbor settings at $(date) ==="
+    BENCH_CFG="simulation_2_autotune_${SLURM_JOB_ID}.cfg"
+    BENCH_CSV="slurm_out/tune_${SLURM_JOB_ID}.csv"
+    TUNED_CFG="simulation_2_tuned_${SLURM_JOB_ID}.cfg"
+
+    cp simulation_2.cfg "$BENCH_CFG"
+    perl -0pi -e 's/^timeSteps=\d+/timeSteps=1000/m; s/^finalTime=[0-9.]+/finalTime=2.0/m; s/^stepSkip=\d+/stepSkip=20/m' "$BENCH_CFG"
+
+    if grep -q '^showProgress=' "$BENCH_CFG"; then
+        perl -0pi -e 's/^showProgress=.*/showProgress=0/m' "$BENCH_CFG"
+    else
+        echo "showProgress=0" >> "$BENCH_CFG"
+    fi
+
+    if OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK ./bin/main "$BENCH_CFG" --benchmark > "$BENCH_CSV"; then
+        BEST_ROW=$(awk -F, 'NR>2 && $1 ~ /^[0-9]+$/ {if(($6+0)>best){best=$6+0; row=$0}} END{print row}' "$BENCH_CSV")
+        if [ -n "$BEST_ROW" ]; then
+            BEST_THREADS=$(echo "$BEST_ROW" | awk -F, '{print $1}')
+            BEST_SKIN=$(echo "$BEST_ROW" | awk -F, '{print $2}')
+            echo "    Best row: $BEST_ROW"
+
+            if [ "$BEST_THREADS" -gt "$SLURM_CPUS_PER_TASK" ]; then
+                BEST_THREADS=$SLURM_CPUS_PER_TASK
+            fi
+
+            cp simulation_2.cfg "$TUNED_CFG"
+            if grep -q '^neighborSkin=' "$TUNED_CFG"; then
+                perl -0pi -e "s/^neighborSkin=.*/neighborSkin=$BEST_SKIN/m" "$TUNED_CFG"
+            else
+                echo "neighborSkin=$BEST_SKIN" >> "$TUNED_CFG"
+            fi
+
+            export OMP_NUM_THREADS=$BEST_THREADS
+            RUN_CFG="$TUNED_CFG"
+            echo "    Selected OMP_NUM_THREADS=$OMP_NUM_THREADS"
+            echo "    Selected neighborSkin=$BEST_SKIN"
+            echo "    Tuned config: $RUN_CFG"
+        else
+            echo "    Warning: No valid benchmark rows found; falling back to simulation_2.cfg"
+        fi
+    else
+        echo "    Warning: Auto-tune benchmark failed; falling back to simulation_2.cfg"
+    fi
+fi
+
 echo "=== Running with OMP_NUM_THREADS=$OMP_NUM_THREADS at $(date) ==="
-time ./bin/main simulation_2.cfg
+time ./bin/main "$RUN_CFG"
 if [ $? -ne 0 ]; then
     echo "Execution failed — aborting." >&2
     exit 1

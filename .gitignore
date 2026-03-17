@@ -131,3 +131,9 @@ CPP_Workspace.code-workspace
 !assets/
 !assets/**
 
+# Core dumps
+core.*
+
+# Tuneing Files
+*autotune_*
+*tuned_*

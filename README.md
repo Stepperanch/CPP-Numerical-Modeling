@@ -2,7 +2,7 @@
 
 > [!TIP]
 > Every highlighted link in this page is clickable.
-> Fast navigation: [Portfolio Hub](https://nelsbuhrley.github.io/CPP-Numerical-Modeling/) | [Table of Contents](#table-of-contents)
+> Fast navigation: | [Table of Contents](#table-of-contents)
 
 
 **Nels Buhrley**
@@ -26,7 +26,7 @@
 
 ## About
 
-This repository is a collection of **nine numerical simulation and computational mathematics projects** developed during my physics coursework and independent study. The work spans classical mechanics, electrostatics, statistical mechanics, and number theory — all implemented in **C++17** with **Python 3** visualization pipelines.
+I created this repository as a collection of **thirteen numerical simulation and computational mathematics projects** developed during my physics coursework and independent study. The work spans classical mechanics, electrostatics, statistical mechanics, and number theory — all implemented in **C++17** with **Python 3** visualization pipelines.
 
 ### Core Competencies
 
@@ -34,9 +34,9 @@ This repository is a collection of **nine numerical simulation and computational
 |---|---|
 | **Languages** | C++17, Python 3 |
 | **Numerical Methods** | Runge-Kutta (RK4), Euler-Cromer, Störmer-Verlet, Monte Carlo (Metropolis), Finite Differences, Successive Over-Relaxation, FFT spectral analysis |
-| **Parallelism** | OpenMP multi-threading (Projects 4–7, Personal Project 2) |
+| **Parallelism** | OpenMP multi-threadin, manual thread allocation, and parrellel logic implimentation in tightly coupled simulations |
 | **High-Performance Computing** | BYU Supercomputer — SLURM batch scheduling with up to 128 CPU cores for intensive simulations (Projects 4, 6, 7) |
-| **I/O & Visualization** | CSV, NPZ (via cnpy/zlib), Matplotlib (3D surfaces, contour maps, animations, phase-space portraits) |
+| **I/O & Visualization** | CSV, NPZ (via cnpy/zlib), Matplotlib (3D surfaces, contour maps, animations, phase-space portraits), Plotly (interactive HTML plots) |
 | **Build Systems** | GNU Make with multi-target builds (debug, release, profile-guided optimization) |
 
 ---
@@ -53,6 +53,7 @@ This repository is a collection of **nine numerical simulation and computational
 | 6 | [Diffusion](Project%206%3A%20Diffusion/) | 3D Brownian random-walk ensemble | Monte Carlo with reflective BCs | ✓ parallel particles | ✓ |
 | 7 | [The Ising Model](Project%207%3A%20The%20Ising%20Model/) | 3D ferromagnetic phase transition | Metropolis MCMC, checkerboard sweep | ✓ multifactor parallel | ✓ 128 CPUs |
 | 8 | [Molecular Dynamics](Project%208%3A%20Molicular%20Dynamics/) | 2D Lennard-Jones fluid (400 particles) | Velocity Verlet, O(N²) pair forces | ✓ thread-local accumulators | ✓ 8 CPUs |
+| 9 | [Quantum Mechanics](Project%209%3A%20Quantum%20Mechanics/) (In Progress) | Quantum wells & bound states | Shooting & matching with Numerov Integration | — | — |
 
 ### Progression
 

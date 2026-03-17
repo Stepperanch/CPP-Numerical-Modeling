@@ -25,6 +25,8 @@ obj/
 *.su
 *.idb
 *.pdb
+core
+core.*
 
 # Profiling
 gmon.out

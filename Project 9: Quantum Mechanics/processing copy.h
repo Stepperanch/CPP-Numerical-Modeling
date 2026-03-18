@@ -393,98 +393,31 @@ class ESweep {
     /** @brief Removes obvious divergence tails from a Numerov trajectory.
      *  Detects sudden amplitude blow-up followed by persistent growth and trims from that point.
      */
-    void trimNumericalInstability(std::vector<double>& psi, bool aggressive) const {
-        if (psi.size() < 8) {
-            return;
-        }
+    void trimNumericalInstability(std::vector<double>& psi) const {
 
         std::vector<double> absPsi(psi.size(), 0.0);
         for (size_t i = 0; i < psi.size(); ++i) {
             absPsi[i] = std::abs(psi[i]);
         }
 
-        const double blowupRatio = 50.0;
-        double runningMax = std::max(1e-14, absPsi[0]);
         size_t trimStart = psi.size();
 
-        for (size_t i = 1; i + 2 < absPsi.size(); ++i) {
-            if (absPsi[i] > blowupRatio * runningMax && absPsi[i + 2] > absPsi[i + 1] && absPsi[i + 1] > absPsi[i]) {
-                trimStart = i;
+        // trim back from the last point until we see the first local minimum leave everything else
+
+        double lastAbsPsi = absPsi[absPsi.size() - 1];
+        for (size_t i = absPsi.size() - 2; i + 1 > 0; --i) {
+            if (absPsi[i] >= lastAbsPsi) {
+                trimStart = i + 1;
+            }
+            else {
                 break;
             }
-            runningMax = std::max(runningMax, absPsi[i]);
+            lastAbsPsi = absPsi[i];
         }
 
-        if (!aggressive) {
-            // For even states, only trim unmistakable catastrophic divergence.
-            if (trimStart < psi.size() && trimStart >= 3 && absPsi.back() > 100.0 * std::max(1e-14, runningMax)) {
-                psi.resize(trimStart);
-            }
-            return;
-        }
 
-        // Also trim sustained monotonic growth tails (common forbidden-region instability pattern).
-        if (absPsi.size() >= 10) {
-            size_t growthStart = absPsi.size() - 1;
-            while (growthStart > 0 && absPsi[growthStart] > absPsi[growthStart - 1]) {
-                --growthStart;
-            }
-
-            const size_t suffixLen = absPsi.size() - growthStart;
-            if (suffixLen >= 8 && growthStart > absPsi.size() / 3) {
-                double prefixMax = 0.0;
-                for (size_t i = 0; i < growthStart; ++i) {
-                    prefixMax = std::max(prefixMax, absPsi[i]);
-                }
-                if (prefixMax > 0.0 && absPsi.back() > 2.0 * prefixMax) {
-                    trimStart = std::min(trimStart, growthStart);
-                }
-            }
-        }
-
-        // Envelope-minimum criterion: if the right tail rises far above a late minimum,
-        // cut from the point where growth clearly restarts.
-        const size_t startWindow = absPsi.size() / 4;
-        if (startWindow + 8 < absPsi.size()) {
-            size_t minIdx = startWindow;
-            for (size_t i = startWindow + 1; i < absPsi.size(); ++i) {
-                if (absPsi[i] < absPsi[minIdx]) {
-                    minIdx = i;
-                }
-            }
-
-            const double minVal = std::max(1e-15, absPsi[minIdx]);
-            if (minIdx + 6 < absPsi.size() && absPsi.back() > 20.0 * minVal) {
-                for (size_t j = minIdx + 1; j + 3 < absPsi.size(); ++j) {
-                    if (absPsi[j] > 5.0 * minVal && absPsi[j + 1] > absPsi[j] && absPsi[j + 2] > absPsi[j + 1] && absPsi[j + 3] > absPsi[j + 2]) {
-                        trimStart = std::min(trimStart, j);
-                        break;
-                    }
-                }
-            }
-        }
-
-        // Long increasing-run criterion: trim when the tail increases for many consecutive points.
-        const size_t runLength = 24;
-        size_t runStart = absPsi.size();
-        size_t runCount = 0;
-        for (size_t i = 1; i < absPsi.size(); ++i) {
-            if (absPsi[i] > absPsi[i - 1]) {
-                if (runCount == 0) {
-                    runStart = i - 1;
-                }
-                ++runCount;
-                if (runCount >= runLength && runStart > absPsi.size() / 6) {
-                    trimStart = std::min(trimStart, runStart);
-                    break;
-                }
-            } else {
-                runCount = 0;
-            }
-        }
-
-        if (trimStart < psi.size() && trimStart >= 3) {
-            psi.resize(trimStart);
+        for (size_t i = trimStart; i < psi.size(); ++i) {
+            psi[i] = 0.0;
         }
     }
 
@@ -762,7 +695,7 @@ class ESweep {
             QuantumTestSystem system(n, E_mid);
             system.solvePsi(x0, ic, xEnd, trajectorySteps, state.psiTrajectory);
 
-            trimNumericalInstability(state.psiTrajectory, !evenParity);
+            trimNumericalInstability(state.psiTrajectory);
             normalizeTrajectory(state.psiTrajectory, trajectorySteps);
 
             eigenstates[static_cast<size_t>(targetNodes - 1)] = std::move(state);  // Write to unique slot: thread-safe.

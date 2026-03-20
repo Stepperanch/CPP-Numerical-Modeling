@@ -25,44 +25,421 @@
 #ifndef PROCESSING_H
 #define PROCESSING_H
 
-/**
- * @brief Element-wise addition of two std::array objects.
- *
- * @param a First array operand.
- * @param b Second array operand.
- *
- * @return A new std::array where each element is the sum of the corresponding elements in a and b.
- *
- * @tparam T The type of the elements in the arrays.
- * @tparam N The size of the arrays.
+/** @brief Computes the potential function.
+ * @param x The position at which to evaluate the potential.
+ * @param degree The degree of the potential.
+ * @return The value of the potential at x.
  */
-template <typename T, size_t N>
-std::array<T, N> operator+(const std::array<T, N>& a, const std::array<T, N>& b) {
-    std::array<T, N> res;
-    for (size_t i = 0; i < N; ++i)
-        res[i] = a[i] + b[i];
-    return res;
+inline double V(double x, int degree) {
+    return std::pow(x, degree) / degree;
+}
+
+/** @brief Builds a potential Mesh V(x_i) for Numerov integration.
+ * @param x0 The initial position.
+ * @param xEnd The final position.
+ * @param numSteps Number of uniform intervals.
+ * @return V(x_i) values with size numSteps + 1.
+ */
+std::vector<double> build2TimesPotentialMesh(int degree, double xEnd, double stepSize) {
+    int numSteps = static_cast<int>(xEnd / stepSize);
+    stepSize = xEnd / static_cast<double>(numSteps);  // Recalculate step size to ensure it divides xEnd evenly.
+
+    std::vector<double> potential(static_cast<size_t>(numSteps) + 1);
+    const double dx = (xEnd) / static_cast<double>(numSteps);
+    for (int i = 0; i <= numSteps; ++i) {
+        const double x = static_cast<double>(i) * dx;
+        potential[static_cast<size_t>(i)] = 2.0 * V(x, degree);
+    }
+    return potential;
+}
+
+/** @brief Integrates the 1D Schrodinger equation using the Numerov method.
+ * @param E The energy level.
+ * @param degree The degree of the potential.
+ * @param xEnd The final position.
+ * @param numSteps Number of uniform intervals.
+ * @param Y0 The initial state vector. Y0[0] = psi(x0), Y0[1] = psi'(x0).
+ * @param divergenceThreshold The threshold for detecting divergence.
+ * @param potential The precomputed potential values at the grid points.
+ * @return A vector containing the integrated psi values at each grid point.
+ */
+std::vector<double> NumerovIntegrate(double ETimesTwo, int degree, double stepSize, double xEnd, const std::array<double, 2>& Y0,
+                                     const std::vector<double>& potentialTimesTwo, double divergenceThreshold = 1e4) {
+    int numSteps = static_cast<int>(xEnd / stepSize);
+    stepSize = xEnd / static_cast<double>(numSteps);  // Recalculate step size to ensure it divides xEnd evenly.
+
+    const double dx = stepSize;
+    const double h2 = dx * dx;
+
+    /** @brief Lambda to compute g(x_i) = 2(V(x_i) - E) at grid index i.
+     * Uses precomputed potential values for efficiency.
+     */
+    auto gAt = [&](int i) -> double {
+        return potentialTimesTwo[static_cast<size_t>(i)] - ETimesTwo;
+    };  // Lambda to compute g(x_i) = 2(V(x_i) - E) at grid index i
+
+    std::vector<double> psiResults(static_cast<size_t>(numSteps) + 1);  // Vector to store psi values at each grid point
+
+    psiResults[0] = Y0[0];                                           // Set initial psi value at x0
+    psiResults[1] = Y0[0] + dx * Y0[1] + 0.5 * h2 * gAt(0) * Y0[0];  // Compute psi at the first step using Taylor expansion
+
+    if (!std::isfinite(psiResults[0]) || !std::isfinite(psiResults[1])) {  // Check for numerical issues in the initial conditions
+        psiResults.clear();
+        return psiResults;
+    }
+
+    double aPrev;
+    double aCurr;
+    double aNext;
+
+    double psiNext;
+
+    int lastValid = 1;
+    for (int i = 1; i < numSteps; ++i) {  // Iterate through the grid points to compute psi using the Numerov recurrence relation
+
+        // Precompute the coefficients for the Numerov formula to improve readability and efficiency.
+        aPrev = 1.0 - (h2 / 12.0) * gAt(i - 1);
+        aCurr = 1.0 + (5.0 * h2 / 12.0) * gAt(i);
+        aNext = 1.0 - (h2 / 12.0) * gAt(i + 1);
+
+        if (std::abs(aNext) < 1e-14) {  // Avoid division by near-zero aNext which can cause numerical instability.
+            break;
+        }
+
+        psiNext = (2.0 * aCurr * psiResults[static_cast<size_t>(i)] - aPrev * psiResults[static_cast<size_t>(i - 1)]) / aNext;
+
+        psiResults[static_cast<size_t>(i + 1)] = psiNext;
+
+        lastValid = i + 1;
+        if (std::abs(psiNext) > divergenceThreshold) {  // Check for divergence based on the dynamic threshold.
+            break;
+        }
+    }
+    psiResults.resize(static_cast<size_t>(lastValid) + 1);  // Resize the results vector to include only the valid computed points.
+    return psiResults;
 }
 
 /**
- * @brief Element-wise multiplication of a std::array by a scalar.
- *
- * @param a The array operand.
- * @param scalar The scalar operand.
- *
- * @return A new std::array where each element is the product of the corresponding element in a and scalar.
- *
- * @tparam T The type of the elements in the array.
- * @tparam N The size of the array.
- *
+ * @brief A helper class for bracketing energy eigenvalues based on node counting.
+ * Stores pairs of energies that bracket a node transition along with the node count at the transition.
  */
-template <typename T, size_t N>
-std::array<T, N> operator*(const std::array<T, N>& a, T scalar) {
-    std::array<T, N> res;
-    for (size_t i = 0; i < N; ++i)
-        res[i] = a[i] * scalar;
-    return res;
+class NodalBracket {
+   public:
+    double plusEnergy;
+    double minusEnergy;
+    int node;
+
+    NodalBracket() : plusEnergy(0.0), minusEnergy(0.0), node(0) {}
+    NodalBracket(double plusEnergy_, double minusEnergy_, int node_) : plusEnergy(plusEnergy_), minusEnergy(minusEnergy_), node(node_) {}
+};
+
+/**
+ * @brief A class for performing energy sweeps to find energy eigenstates of the quantum test system.
+ * Sweeps through energy values, counts nodes in the wavefunction, and collects brackets where node transitions occur.
+ */
+class Eigenstate {
+   public:
+    double energy;
+    int number;
+    std::vector<double> psiTrajectory;
+
+    Eigenstate() : energy(0.0), number(0), psiTrajectory() {}
+    Eigenstate(double energy_, int number_, std::vector<double> psiTrajectory_)
+        : energy(energy_), number(number_), psiTrajectory(std::move(psiTrajectory_)) {}
+};
+
+int countNodes(const std::vector<double>& psi) {
+    int nodeCount = 0;
+    for (size_t i = 1; i < psi.size(); ++i) {
+        if (psi[i - 1] * psi[i] < 0) {  // Check for a sign change indicating a node.
+            ++nodeCount;
+        }
+    }
+    return nodeCount;
 }
+
+void trimPsiTrajectory(std::vector<double>& psi) {
+    int lastIndex = static_cast<int>(psi.size()) - 1;
+    int secondLastIndex = static_cast<int>(psi.size()) - 2;
+
+    double absPsiMinOne = std::abs(psi[lastIndex]);
+    double absPsiMinTwo = std::abs(psi[secondLastIndex]);
+
+    while (lastIndex > 0 && absPsiMinOne > absPsiMinTwo) {
+        --lastIndex;
+        --secondLastIndex;
+        absPsiMinOne = absPsiMinTwo;
+        absPsiMinTwo = std::abs(psi[secondLastIndex]);
+    }
+
+    psi.resize(static_cast<size_t>(lastIndex) + 1);  // Trim the trajectory to remove the divergent tail.
+}
+
+void normalizePsiTrajectory(std::vector<double>& psi) {
+    double norm = 0.0;
+    for (const auto& val : psi) {
+        norm += val * val;
+    }
+    norm = std::sqrt(norm);
+
+    if (norm > 0.0) {
+        for (auto& val : psi) {
+            val /= norm;  // Normalize the trajectory to have a unit norm.
+        }
+    }
+}
+
+// build a lambda that returns the initial conditions based on the parity of the state number (even or odd).
+auto initialConditions = [](int stateNumber) -> std::array<double, 2> {
+    if (stateNumber % 2 == 0) {
+        return {1, 0.0};  // Even states: start with a positive psi and zero derivative.
+    } else {
+        return {0.0, 1};  // Odd states: start with zero psi and a positive derivative.
+    }
+};
+
+std::vector<NodalBracket> findNodalBracketsAtDegree(int degree, double xEnd, double stepSize, double energyMin, double energyStepSize,
+                                                    int nodesToFind) {
+    std::vector<double> potentialTimesTwo = build2TimesPotentialMesh(degree, xEnd, stepSize);
+
+    // Sweep even and odd parity states independently.
+    // Each parity tracks its own node count and previous energy.
+    struct ParitySweep {
+        int nodeCount = 0;
+        double previousEnergy;
+        std::array<double, 2> iC;
+        std::vector<NodalBracket> brackets;
+
+        ParitySweep(double energyMin, std::array<double, 2> iC_) : previousEnergy(energyMin), iC(iC_) {}
+    };
+
+    ParitySweep evenSweep(energyMin, {1.0, 0.0});
+    ParitySweep oddSweep(energyMin, {0.0, 1.0});
+
+    int totalFound = 0;
+    double currentEnergy = energyMin;
+
+    while (totalFound < nodesToFind) {
+        currentEnergy += energyStepSize;
+
+        // Even parity sweep
+        {
+            std::vector<double> psi = NumerovIntegrate(2.0 * currentEnergy, degree, stepSize, xEnd, evenSweep.iC, potentialTimesTwo);
+            if (!psi.empty()) {
+                int nodeCount = countNodes(psi);
+                if (nodeCount > evenSweep.nodeCount) {
+                    evenSweep.brackets.emplace_back(currentEnergy, evenSweep.previousEnergy, evenSweep.brackets.size() * 2);
+                    ++evenSweep.nodeCount;
+                    ++totalFound;
+                }
+                evenSweep.previousEnergy = currentEnergy;
+            }
+        }
+
+        // Odd parity sweep
+        {
+            std::vector<double> psi = NumerovIntegrate(2.0 * currentEnergy, degree, stepSize, xEnd, oddSweep.iC, potentialTimesTwo);
+            if (!psi.empty()) {
+                int nodeCount = countNodes(psi);
+                if (nodeCount > oddSweep.nodeCount) {
+                    oddSweep.brackets.emplace_back(currentEnergy, oddSweep.previousEnergy, oddSweep.brackets.size() * 2 + 1);
+                    ++oddSweep.nodeCount;
+                    ++totalFound;
+                }
+                oddSweep.previousEnergy = currentEnergy;
+            }
+        }
+    }
+
+    // Merge even and odd brackets sorted by minusEnergy (the lower bracket energy).
+    std::vector<NodalBracket> brackets;
+    brackets.insert(brackets.end(), evenSweep.brackets.begin(), evenSweep.brackets.end());
+    brackets.insert(brackets.end(), oddSweep.brackets.begin(), oddSweep.brackets.end());
+    std::sort(brackets.begin(), brackets.end(), [](const NodalBracket& a, const NodalBracket& b) { return a.minusEnergy < b.minusEnergy; });
+
+    brackets.resize(static_cast<size_t>(nodesToFind));
+    return brackets;
+}
+
+// std::vector<NodalBracket> findNodalBracketsAtDegree(int degree, double xEnd, double stepSize, double energyMin, double energyStepSize,
+//                                                     int nodesToFind) {
+//     std::vector<NodalBracket> brackets(nodesToFind);
+//     std::vector<double> potentialTimesTwo = build2TimesPotentialMesh(degree, xEnd, stepSize);
+
+//     int currentNodeCount = 0;
+//     double currentEnergy = energyMin + energyStepSize;  // Start at the first energy step above the minimum.
+//     double previousEnergy = energyMin;                  // Initialize previousEnergy to one step below the minimum energy.
+
+//     while (currentNodeCount < nodesToFind) {
+//         currentEnergy = previousEnergy + energyStepSize;
+
+//         std::vector<double> psiResults =
+//             NumerovIntegrate(2.0 * currentEnergy, degree, stepSize, xEnd, initialConditions(currentNodeCount), potentialTimesTwo);
+
+//         if (psiResults.empty()) {
+//             previousEnergy = currentEnergy;  // If the solver failed, skip to the next energy step without updating the node count.
+//             continue;
+//         }
+
+//         int nodeCount = countNodes(psiResults);
+
+//         if (nodeCount > currentNodeCount) {  // A node transition has occurred between previousEnergy and currentEnergy.
+//             brackets[currentNodeCount] = NodalBracket(currentEnergy, previousEnergy, currentNodeCount);
+//             ++currentNodeCount;  // Move on to finding the next node transition.
+//         }
+//         previousEnergy = currentEnergy;  // Update previousEnergy for the next iteration.
+//     }
+//     return brackets;
+// }
+
+std::vector<Eigenstate> findEigenstatesAtDegree(int degree, double xEnd, double stepSize, double convergenceTol, int maxItterations,
+                                                const std::vector<NodalBracket>& brackets) {
+    std::vector<Eigenstate> eigenstates;
+    std::vector<double> potentialTimesTwo = build2TimesPotentialMesh(degree, xEnd, stepSize);
+
+    for (size_t i = 0; i < brackets.size(); ++i) {
+        double lowerEnergy = brackets[i].minusEnergy;
+        double upperEnergy = brackets[i].plusEnergy;
+        double midEnergy = 0.5 * (lowerEnergy + upperEnergy);
+        int nodeCount = 0;
+        int node = brackets[i].node;
+        std::array<double, 2> iC = ::initialConditions(node);  // Get initial conditions based on the parity of the state number.
+
+        double psiAtUpperBoundary = NumerovIntegrate(2.0 * upperEnergy, degree, stepSize, xEnd, iC, potentialTimesTwo)
+                                        .back();  // Compute psi at the upper energy boundary for the bisection method.
+
+        std::vector<double> psiResults;
+        for (int itteration = 0; itteration < maxItterations; ++itteration) {
+        
+            psiResults = NumerovIntegrate(2.0 * midEnergy, degree, stepSize, xEnd, iC, potentialTimesTwo);
+
+            if (psiResults.empty()) {
+                std::cerr << "Numerov solver failed for energy bracket [" << lowerEnergy << ", " << upperEnergy << "]" << std::endl;
+                break;  // If the solver failed, exit the iteration loop and move on to the next bracket.
+            }
+
+            nodeCount = countNodes(psiResults);
+            double psiAtBoundary = psiResults.back();
+            if (psiAtBoundary * psiAtUpperBoundary > 0) {
+                upperEnergy = midEnergy;
+            } else {
+                lowerEnergy = midEnergy;
+            }
+
+            midEnergy = 0.5 * (lowerEnergy + upperEnergy);  // Update midEnergy for the next iteration.
+
+            if (std::abs(upperEnergy - lowerEnergy) < convergenceTol) {  // Check for convergence based on the energy bracket width.
+                break;
+            }
+        }
+
+        psiResults = NumerovIntegrate(2.0 * midEnergy, degree, stepSize, xEnd, iC, potentialTimesTwo);  // Final integration at the converged energy.
+
+        if (psiResults.empty()) {
+            std::cerr << "Numerov solver failed for final energy " << midEnergy << std::endl;
+            continue;  // If the solver failed, skip adding this eigenstate and move on to the next one.
+        }
+
+        trimPsiTrajectory(psiResults);       // Trim the psi trajectory to remove any divergent tails.
+        normalizePsiTrajectory(psiResults);  // Normalize the psi trajectory to have a unit norm.
+        eigenstates.emplace_back(Eigenstate(midEnergy, node, psiResults));
+    }
+    return eigenstates;
+}
+
+class Sweep {
+   public:
+    int maxDegree;
+    int nodesToFind;
+    double xEnd = 50.0;
+
+    Sweep(int maxDegree_, int nodesToFind_) : maxDegree(maxDegree_), nodesToFind(nodesToFind_) {}
+
+    std::vector<std::pair<int, std::vector<Eigenstate>>> performSweep(double stepSize, double energyStepSize, double convergenceTol,
+                                                                      int maxItterations, double energyMin = 0.001) {
+        std::vector<std::pair<int, std::vector<Eigenstate>>> sweepResults(static_cast<size_t>(
+            maxDegree / 2));  // Vector to store the results of the sweep, with each entry containing the degree and its corresponding eigenstates.
+
+#pragma omp parallel for
+        for (int degree = 2; degree <= maxDegree; degree += 2) {
+            std::vector<NodalBracket> brackets = findNodalBracketsAtDegree(degree, xEnd, stepSize, energyMin, energyStepSize, nodesToFind);
+            std::vector<Eigenstate> eigenstates = findEigenstatesAtDegree(degree, xEnd, stepSize, convergenceTol, maxItterations, brackets);
+            sweepResults[(degree / 2) - 1] =
+                std::make_pair(degree, std::move(eigenstates));  // Store the degree and its corresponding eigenstates in the results vector.
+        }
+        return sweepResults;
+    }
+};
+
+std::vector<double> resamplePsiTrajectory(const std::vector<double>& psi, double stepSize, int targetPoints, double targetXEnd) {
+    double originalXEnd = static_cast<double>(psi.size() - 1) * stepSize;
+
+    std::vector<double> resampled(static_cast<size_t>(targetPoints));
+    for (int i = 0; i < targetPoints; ++i) {
+        double x = targetXEnd * static_cast<double>(i) / static_cast<double>(targetPoints - 1);
+
+        if (x > originalXEnd) {
+            resampled[static_cast<size_t>(i)] = 0.0;
+            continue;
+        }
+
+        double idx = x / stepSize;
+        int lower = static_cast<int>(idx);
+        int upper = lower + 1;
+
+        if (upper >= static_cast<int>(psi.size())) {
+            resampled[static_cast<size_t>(i)] = psi.back();
+            continue;
+        }
+
+        double frac = idx - static_cast<double>(lower);
+        resampled[static_cast<size_t>(i)] = (1.0 - frac) * psi[static_cast<size_t>(lower)] + frac * psi[static_cast<size_t>(upper)];
+    }
+    return resampled;
+}
+
+void resampleSweepResults(std::vector<std::pair<int, std::vector<Eigenstate>>>& sweepResults, double stepSize, int targetPoints,
+                                               double targetXEnd) {
+
+    for (auto& [degree, eigenstates] : sweepResults) {
+        for (auto& eigenstate : eigenstates) {
+            eigenstate.psiTrajectory = resamplePsiTrajectory(eigenstate.psiTrajectory, stepSize, targetPoints, targetXEnd);
+        }
+    }
+}
+
+void saveSweepResults(const std::vector<std::pair<int, std::vector<Eigenstate>>>& sweepResults, const std::string& filename) {
+    std::vector<size_t> degreesShape = {1};
+    double degreesData = static_cast<double>(sweepResults.size());
+    cnpy::npz_save(filename, "degrees", &degreesData, degreesShape, "w");  // Save the degrees as a separate array in the NPZ file.
+
+    for (size_t i = 0; i < sweepResults.size(); ++i) {
+        int degree = sweepResults[i].first;
+        const std::vector<Eigenstate>& eigenstates = sweepResults[i].second;
+
+        std::vector<double> energies(eigenstates.size());
+        std::vector<double> psiSizes(eigenstates.size());
+
+        for (size_t j = 0; j < eigenstates.size(); ++j) {
+            energies[j] = eigenstates[j].energy;                                     // Extract the energy values for each eigenstate.
+            psiSizes[j] = static_cast<double>(eigenstates[j].psiTrajectory.size());  // Store the size of each psi trajectory for later retrieval.
+        }
+
+        std::vector<size_t> energiesShape = {energies.size()};
+        cnpy::npz_save(filename, "energies_degree_" + std::to_string(degree), energies.data(), energiesShape,
+                       "a");  // Append energies to the NPZ file.
+
+        std::vector<size_t> psiSizesShape = {psiSizes.size()};
+        cnpy::npz_save(filename, "psi_sizes_degree_" + std::to_string(degree), psiSizes.data(), psiSizesShape,
+                       "a");  // Append psi sizes to the NPZ file.
+
+        for (size_t j = 0; j < eigenstates.size(); ++j) {
+            std::vector<size_t> psiShape = {eigenstates[j].psiTrajectory.size()};
+            cnpy::npz_save(filename, "psi_degree_" + std::to_string(degree) + "_state_" + std::to_string(j), eigenstates[j].psiTrajectory.data(),
+                           psiShape, "a");  // Append each psi trajectory to the NPZ file with a unique name.
+        }
+    }
+};
 
 /**
  * @brief A helper class for performing unit conversions in quantum mechanical calculations.
@@ -135,702 +512,4 @@ class UnitHelper {
     }
 };
 
-/**
- * @brief A helper class for integrating 1D Schrodinger-form ODEs with the Numerov method.
- *
- * Uses fixed-step Numerov recurrences on a precomputed potential grid. Provides
- * trajectory integration, final-state estimation, and node counting utilities.
- */
-class Integrator {
-   public:
-    double divergenceThreshold = 1e4;  //  d Threshold for detecting divergence in the solution.
-    //                                      If |ψ| exceeds this value, the solution is considered to be diverging.
-
-    /** @brief Integrates psi(x) on a fixed grid using Numerov.
-     * @param E Trial energy.
-     * @param potential Precomputed V(x_i) values on a uniform grid.
-     * @param x0 Initial position.
-     * @param Y0 Initial state [psi, dpsi/dx].
-     * @param xEnd Final position.
-     * @param numSteps Number of intervals in [x0, xEnd].
-     * @param psiResults Output psi trajectory.
-     */
-    void NumerovIntegrate(double E, const std::vector<double>& potential, double x0, const std::array<double, 2>& Y0, double xEnd, int numSteps,
-                          std::vector<double>& psiResults) const {
-        psiResults.clear();                                                           // Clear output vector before starting integration
-        if (numSteps < 2 || potential.size() != static_cast<size_t>(numSteps) + 1) {  // Validate input parameters
-            return;
-        }
-
-        const double dx = (xEnd - x0) / static_cast<double>(numSteps);  // Step size based on the number of intervals
-        const double h2 = dx * dx;                                      // Precompute dx² for use in the Numerov formula
-        const double divergenceCap = std::max(divergenceThreshold * std::abs(Y0[0]),
-                                              static_cast<double>(divergenceThreshold));  // Dynamic divergence threshold based on initial psi value
-
-        auto gAt = [&](int i) -> double {
-            return 2.0 * (potential[static_cast<size_t>(i)] - E);
-        };  // Lambda to compute g(x_i) = 2(V(x_i) - E) at grid index i
-
-        psiResults.resize(static_cast<size_t>(numSteps) + 1, 0.0);       // Initialize psiResults with the correct size and default values
-        psiResults[0] = Y0[0];                                           // Set initial psi value at x0
-        psiResults[1] = Y0[0] + dx * Y0[1] + 0.5 * h2 * gAt(0) * Y0[0];  // Compute psi at the first step using Taylor expansion
-
-        if (!std::isfinite(psiResults[0]) || !std::isfinite(psiResults[1])) {  // Check for numerical issues in the initial conditions
-            psiResults.clear();
-            return;
-        }
-
-        int lastValid = 1;
-        for (int i = 1; i < numSteps; ++i) {  // Iterate through the grid points to compute psi using the Numerov recurrence relation
-            const double gPrev = gAt(i - 1);
-            const double gCurr = gAt(i);
-            const double gNext = gAt(i + 1);
-
-            // const double aPrev = 1.0 - (h2 / 12.0) * gPrev;
-            // const double aCurr = 1.0 + (5.0 * h2 / 12.0) * gCurr;
-            // const double aNext = 1.0 - (h2 / 12.0) * gNext;
-
-            const double aPrev = 1.0 - (h2 / 12.0) * gPrev;
-            const double aCurr = 1.0 + (5.0 * h2 / 12.0) * gCurr;
-            const double aNext = 1.0 - (h2 / 12.0) * gNext;
-
-            if (std::abs(aNext) < 1e-14) {  // Avoid division by near-zero aNext which can cause numerical instability.
-                break;
-            }
-
-            const double psiNext = (2.0 * aCurr * psiResults[static_cast<size_t>(i)] - aPrev * psiResults[static_cast<size_t>(i - 1)]) / aNext;
-            if (!std::isfinite(psiNext)) {  // Check for NaN or Inf which indicates numerical instability.
-                break;
-            }
-
-            psiResults[static_cast<size_t>(i + 1)] = psiNext;
-            lastValid = i + 1;
-            if (std::abs(psiNext) > divergenceCap) {  // Check for divergence based on the dynamic threshold.
-                break;
-            }
-        }
-
-        psiResults.resize(static_cast<size_t>(lastValid) + 1);  // Resize the results vector to include only the valid computed points.
-    }
-};
-
-/** @brief A system for testing quantum mechanical calculations.
- * The potential is V(x) = x^n / n, and the Schrodinger equation is solved for a given energy level E using Numerov.
- */
-class QuantumTestSystem {
-   public:
-    int n;
-    double E;  // Energy level for which we want to solve the Schrodinger equation
-
-    /** @brief Constructs a quantum test system with the given potential and energy level.
-     * @param n The power of the potential function.
-     * @param E The energy level for which to solve the Schrodinger equation.
-     */
-    QuantumTestSystem(int n_, double E_) : n(n_), E(E_) {}
-
-    /** @brief Computes the potential function V(x).
-     * @param x The position at which to evaluate the potential.
-     * @return The value of the potential at x.
-     */
-    inline double V(double x) const {
-        return std::pow(x, n) / n;
-    }
-
-    /** @brief Computes the derivative helper function.
-     * @param x The position at which to evaluate the derivative.
-     * @return The value of the derivative helper at x.
-     */
-    inline double derivhelper(double x) const {
-        return 2 * (V(x) - E);
-    }
-
-    /** @brief Computes the derivative function.
-     * @param x The position at which to evaluate the derivative.
-     * @param Yvec The state vector at x.
-     * @return The value of the derivative at x.
-     */
-    inline std::array<double, 2> derivativeFunc(double x, const std::array<double, 2>& Yvec) const {
-        return std::array<double, 2>{Yvec[1], derivhelper(x) * Yvec[0]};
-    }
-
-    /** @brief Builds a potential grid V(x_i) for Numerov integration.
-     * @param x0 The initial position.
-     * @param xEnd The final position.
-     * @param numSteps Number of uniform intervals.
-     * @return V(x_i) values with size numSteps + 1.
-     */
-    std::vector<double> buildPotentialGrid(double x0, double xEnd, int numSteps) const {
-        std::vector<double> potential(static_cast<size_t>(numSteps) + 1);
-        const double dx = (xEnd - x0) / static_cast<double>(numSteps);
-        for (int i = 0; i <= numSteps; ++i) {
-            const double x = x0 + static_cast<double>(i) * dx;
-            potential[static_cast<size_t>(i)] = V(x);
-        }
-        return potential;
-    }
-
-    /** @brief Solves the Schrodinger equation for the given initial conditions and parameters using Numerov.
-     * @param x0 The initial position.
-     * @param Y0 The initial state vector.
-     * @param xEnd The final position.
-     * @param h0 Step size hint used to build a fixed Numerov grid.
-     * @return The final state at xEnd (or at divergence) on success, std::nullopt on numerical failure.
-     */
-    std::optional<std::array<double, 2>> solve(double x0, std::array<double, 2> Y0, double xEnd, double h0 = 0.01) const {
-        if (h0 <= 0.0) {
-            return std::nullopt;
-        }
-        const int numSteps = std::max(2, static_cast<int>(std::ceil(std::abs((xEnd - x0) / h0))));
-        return solve(x0, Y0, xEnd, numSteps);
-    }
-
-    /** @brief Computes the full trajectory using fixed-step Numerov.
-     * @param x0 The initial position.
-     * @param Y0 The initial state vector.
-     * @param xEnd The final position.
-     * @param numSteps The number of steps to take.
-     * @param results A vector to store the trajectory points.
-     */
-    void solve(double x0, std::array<double, 2> Y0, double xEnd, int numSteps, std::vector<std::array<double, 2>>& results) const {
-        results.clear();
-        if (numSteps < 2) {
-            return;
-        }
-
-        Integrator integrator;
-        const std::vector<double> potential = buildPotentialGrid(x0, xEnd, numSteps);
-
-        std::vector<double> psi;
-        integrator.NumerovIntegrate(E, potential, x0, Y0, xEnd, numSteps, psi);
-        if (psi.empty()) {
-            return;
-        }
-
-        const double dx = (xEnd - x0) / static_cast<double>(numSteps);
-        results.resize(psi.size());
-        for (size_t i = 0; i < psi.size(); ++i) {
-            double dpsi = 0.0;
-            if (i == 0) {
-                dpsi = Y0[1];
-            } else if (i + 1 < psi.size()) {
-                dpsi = (psi[i + 1] - psi[i - 1]) / (2.0 * dx);
-            } else {
-                dpsi = (psi[i] - psi[i - 1]) / dx;
-            }
-            results[i] = {psi[i], dpsi};
-        }
-    }
-
-    /** @brief Returns only psi(xEnd) using fixed-step Numerov.
-     * @param x0 The initial position.
-     * @param Y0 The initial state vector [psi, dpsi/dx].
-     * @param xEnd The final position.
-     * @param h0 Initial step size hint.
-     * @return psi(xEnd) (or divergence psi) if successful, std::nullopt on solver failure.
-     */
-    std::optional<double> solvePsi(double x0, std::array<double, 2> Y0, double xEnd, double h0 = 0.01) const {
-        const auto finalState = solve(x0, Y0, xEnd, h0);
-        if (!finalState) {
-            return std::nullopt;
-        }
-        return (*finalState)[0];
-    }
-
-    /** @brief Returns only the psi trajectory using fixed-step Numerov.
-     * @param x0 The initial position.
-     * @param Y0 The initial state vector [psi, dpsi/dx].
-     * @param xEnd The final position.
-     * @param numSteps Number of Numerov steps.
-     * @param psiResults Output vector containing psi values at each step.
-     */
-    void solvePsi(double x0, std::array<double, 2> Y0, double xEnd, int numSteps, std::vector<double>& psiResults) const {
-        Integrator integrator;
-        const std::vector<double> potential = buildPotentialGrid(x0, xEnd, numSteps);
-        integrator.NumerovIntegrate(E, potential, x0, Y0, xEnd, numSteps, psiResults);
-    }
-};
-
-/**
- * @brief A helper class for bracketing energy eigenvalues based on node counting.
- * Stores pairs of energies that bracket a node transition along with the node count at the transition.
- */
-class NodalBracket {
-   public:
-    double plusEnergy;
-    double minusEnergy;
-    int node;
-
-    NodalBracket(double plusEnergy_, double minusEnergy_, int node_) : plusEnergy(plusEnergy_), minusEnergy(minusEnergy_), node(node_) {}
-};
-
-/**
- * @brief A class for performing energy sweeps to find energy eigenstates of the quantum test system.
- * Sweeps through energy values, counts nodes in the wavefunction, and collects brackets where node transitions occur.
- */
-class Eigenstate {
-   public:
-    double energy;
-    int number;
-    std::vector<double> psiTrajectory;
-};
-
-/**
- * @brief Performs an energy sweep to find the first 8 energy eigenstates of the quantum test system.
- * @param n The power of the potential function V(x) = x^n / n.
- * @param nodesToFind The number of energy eigenstates to find, determined by counting nodes in the wavefunction.
- * @return A vector of the first "nodesToFind" energy eigenstates found.
- *
- */
-class ESweep {
-   public:
-    int n;
-    int nodesToFind;  // Number of energy eigenstates to find, determined by counting nodes in the wavefunction
-    double x0 = 0.0;
-    double xEnd = 8.0;
-
-    ESweep(int n_, int nodesToFind_ = 10) : n(n_), nodesToFind(nodesToFind_), x0(0.0) {}
-
-    /** @brief Removes obvious divergence tails from a Numerov trajectory.
-     *  Detects sudden amplitude blow-up followed by persistent growth and trims from that point.
-     */
-    void trimNumericalInstability(std::vector<double>& psi, bool aggressive) const {
-        if (psi.size() < 8) {
-            return;
-        }
-
-        std::vector<double> absPsi(psi.size(), 0.0);
-        for (size_t i = 0; i < psi.size(); ++i) {
-            absPsi[i] = std::abs(psi[i]);
-        }
-
-        const double blowupRatio = 50.0;
-        double runningMax = std::max(1e-14, absPsi[0]);
-        size_t trimStart = psi.size();
-
-        for (size_t i = 1; i + 2 < absPsi.size(); ++i) {
-            if (absPsi[i] > blowupRatio * runningMax && absPsi[i + 2] > absPsi[i + 1] && absPsi[i + 1] > absPsi[i]) {
-                trimStart = i;
-                break;
-            }
-            runningMax = std::max(runningMax, absPsi[i]);
-        }
-
-        if (!aggressive) {
-            // For even states, only trim unmistakable catastrophic divergence.
-            if (trimStart < psi.size() && trimStart >= 3 && absPsi.back() > 100.0 * std::max(1e-14, runningMax)) {
-                psi.resize(trimStart);
-            }
-            return;
-        }
-
-        // Also trim sustained monotonic growth tails (common forbidden-region instability pattern).
-        if (absPsi.size() >= 10) {
-            size_t growthStart = absPsi.size() - 1;
-            while (growthStart > 0 && absPsi[growthStart] > absPsi[growthStart - 1]) {
-                --growthStart;
-            }
-
-            const size_t suffixLen = absPsi.size() - growthStart;
-            if (suffixLen >= 8 && growthStart > absPsi.size() / 3) {
-                double prefixMax = 0.0;
-                for (size_t i = 0; i < growthStart; ++i) {
-                    prefixMax = std::max(prefixMax, absPsi[i]);
-                }
-                if (prefixMax > 0.0 && absPsi.back() > 2.0 * prefixMax) {
-                    trimStart = std::min(trimStart, growthStart);
-                }
-            }
-        }
-
-        // Envelope-minimum criterion: if the right tail rises far above a late minimum,
-        // cut from the point where growth clearly restarts.
-        const size_t startWindow = absPsi.size() / 4;
-        if (startWindow + 8 < absPsi.size()) {
-            size_t minIdx = startWindow;
-            for (size_t i = startWindow + 1; i < absPsi.size(); ++i) {
-                if (absPsi[i] < absPsi[minIdx]) {
-                    minIdx = i;
-                }
-            }
-
-            const double minVal = std::max(1e-15, absPsi[minIdx]);
-            if (minIdx + 6 < absPsi.size() && absPsi.back() > 20.0 * minVal) {
-                for (size_t j = minIdx + 1; j + 3 < absPsi.size(); ++j) {
-                    if (absPsi[j] > 5.0 * minVal && absPsi[j + 1] > absPsi[j] && absPsi[j + 2] > absPsi[j + 1] && absPsi[j + 3] > absPsi[j + 2]) {
-                        trimStart = std::min(trimStart, j);
-                        break;
-                    }
-                }
-            }
-        }
-
-        // Long increasing-run criterion: trim when the tail increases for many consecutive points.
-        const size_t runLength = 24;
-        size_t runStart = absPsi.size();
-        size_t runCount = 0;
-        for (size_t i = 1; i < absPsi.size(); ++i) {
-            if (absPsi[i] > absPsi[i - 1]) {
-                if (runCount == 0) {
-                    runStart = i - 1;
-                }
-                ++runCount;
-                if (runCount >= runLength && runStart > absPsi.size() / 6) {
-                    trimStart = std::min(trimStart, runStart);
-                    break;
-                }
-            } else {
-                runCount = 0;
-            }
-        }
-
-        if (trimStart < psi.size() && trimStart >= 3) {
-            psi.resize(trimStart);
-        }
-    }
-
-    /** @brief Normalizes psi so the full mirrored wavefunction has unit norm when x0=0.
-     *  For half-domain parity solutions, integral over full line is 2 * integral over [0, +inf).
-     */
-    void normalizeTrajectory(std::vector<double>& psi, int trajectorySteps) const {
-        if (psi.size() < 2 || trajectorySteps <= 0) {
-            return;
-        }
-
-        const double dx = std::abs((xEnd - x0) / static_cast<double>(trajectorySteps));
-        if (!(dx > 0.0)) {
-            return;
-        }
-
-        double halfIntegral = 0.0;
-        for (size_t i = 1; i < psi.size(); ++i) {
-            const double y0 = psi[i - 1] * psi[i - 1];
-            const double y1 = psi[i] * psi[i];
-            halfIntegral += 0.5 * (y0 + y1) * dx;
-        }
-
-        if (!(halfIntegral > 0.0) || !std::isfinite(halfIntegral)) {
-            return;
-        }
-
-        // If we start at x=0, this trajectory is one parity half of the full wavefunction.
-        const bool isHalfDomainFromCenter = std::abs(x0) < 1e-12;
-        const double fullIntegral = isHalfDomainFromCenter ? (2.0 * halfIntegral) : halfIntegral;
-
-        if (!(fullIntegral > 0.0) || !std::isfinite(fullIntegral)) {
-            return;
-        }
-
-        const double scale = 1.0 / std::sqrt(fullIntegral);
-        for (double& value : psi) {
-            value *= scale;
-        }
-    }
-
-    /** @brief Counts the number of nodes in a wavefunction.
-     * @param state The wavefunction state vector.
-     * @return The number of nodes.
-     */
-    int countNodes(const std::vector<double>& psi) const {
-        if (psi.empty()) {
-            return 0;
-        }
-
-        double maxAbsPsi = 0.0;
-        for (double value : psi) {
-            maxAbsPsi = std::max(maxAbsPsi, std::abs(value));
-        }
-
-        // Ignore tiny numerical sign chatter near zero when counting nodes.
-        const double tolerance = std::max(1e-12, 1e-8 * maxAbsPsi);
-
-        int nodes = 0;
-        int lastSign = 0;
-        for (double value : psi) {
-            if (std::abs(value) <= tolerance) {
-                continue;
-            }
-
-            const int sign = (value > 0.0) ? 1 : -1;
-            if (lastSign != 0 && sign != lastSign) {
-                ++nodes;
-            }
-            lastSign = sign;
-        }
-
-        return nodes;
-    }
-
-    /** @brief Solves at a trial energy and returns its node count from a full trajectory.
-     * @param E Trial energy.
-     * @param trajectorySteps Number of fixed Numerov steps to resolve node crossings.
-     * @param evenParity If true, use even-parity initial conditions {1,0}; otherwise odd-parity {0,1}.
-     * @return Node count on success, std::nullopt on solver failure.
-     */
-    std::optional<int> solveNodeCount(double E, int trajectorySteps, bool evenParity) const {
-        QuantumTestSystem system(n, E);
-        std::vector<double> psi;
-
-        if (xEnd <= x0 + 1e-10) {
-            return 0;
-        }
-
-        // Use even or odd parity initial conditions.
-        const std::array<double, 2> ic = evenParity ? std::array<double, 2>{1.0, 0.0} : std::array<double, 2>{0.0, 1.0};
-        system.solvePsi(x0, ic, xEnd, trajectorySteps, psi);
-
-        if (psi.size() < 2) {
-            return std::nullopt;
-        }
-        return countNodes(psi);
-    }
-
-    /** @brief Builds a reusable potential grid V(x_i) for the sweep interval.
-     * @param trajectorySteps Number of intervals in [x0, xEnd].
-     * @return Vector containing V on a uniform grid of size trajectorySteps + 1.
-     */
-    std::vector<double> buildPotentialGrid(int trajectorySteps) const {
-        std::vector<double> potential(static_cast<size_t>(trajectorySteps) + 1);
-        const double dx = (xEnd - x0) / static_cast<double>(trajectorySteps);
-        for (int i = 0; i <= trajectorySteps; ++i) {
-            const double x = x0 + static_cast<double>(i) * dx;
-            potential[static_cast<size_t>(i)] = std::pow(x, n) / n;
-        }
-        return potential;
-    }
-
-    /** @brief Sweeps one parity channel and collects up to maxToFind node-transition brackets.
-     * @param evenParity True for even-parity {1,0} ICs, false for odd-parity {0,1} ICs.
-     * @param maxToFind Maximum number of brackets to collect in this channel.
-     * @param E_min Starting energy.
-     * @param E_h Energy step size.
-     * @param E_max Upper energy limit.
-     * @param trajectorySteps Numerov steps per solve.
-     * @param maxIterations Safety cap on loop iterations.
-     * @return Vector of (minusEnergy, plusEnergy) pairs where a node transition was detected.
-     */
-    std::vector<std::pair<double, double>> sweepParity(bool evenParity, int maxToFind, double E_min, double E_h, double E_max, int trajectorySteps,
-                                                       int maxIterations) const {
-        std::vector<std::pair<double, double>> transitions;
-        transitions.reserve(static_cast<size_t>(maxToFind));
-
-        int lastNodeCount = -1;
-        double E = E_min;
-        for (int iter = 0; iter < maxIterations && E <= E_max; ++iter, E += E_h) {
-            const auto nc = solveNodeCount(E, trajectorySteps, evenParity);
-            if (!nc)
-                continue;
-
-            if (lastNodeCount != -1 && *nc > lastNodeCount) {
-                const int jump = *nc - lastNodeCount;
-                for (int s = 1; s <= jump && static_cast<int>(transitions.size()) < maxToFind; ++s) {
-                    transitions.emplace_back(E - E_h, E);
-                }
-            }
-            if (lastNodeCount == -1 || *nc > lastNodeCount)
-                lastNodeCount = *nc;
-            if (static_cast<int>(transitions.size()) >= maxToFind)
-                break;
-        }
-        return transitions;
-    }
-
-    /** @brief Finds nodal brackets by running separate even- and odd-parity sweeps then
-     *  merging and sorting by energy, yielding the full ordered spectrum.
-     */
-    std::vector<NodalBracket> findNodalBrackets(double E_min, double E_h, double E_max = std::numeric_limits<double>::infinity(),
-                                                int trajectorySteps = 2000, int maxIterations = 200000) const {
-        if (nodesToFind <= 0 || E_h <= 0.0 || trajectorySteps < 2 || maxIterations <= 0) {
-            return {};
-        }
-
-        // Each parity channel contributes half the states (ceil for even, floor for odd).
-        const int evenCount = (nodesToFind + 1) / 2;
-        const int oddCount = nodesToFind / 2;
-
-        const auto evenTransitions = sweepParity(true, evenCount, E_min, E_h, E_max, trajectorySteps, maxIterations);
-        const auto oddTransitions = sweepParity(false, oddCount, E_min, E_h, E_max, trajectorySteps, maxIterations);
-
-        // Merge both channels into one list sorted by the lower bound of each bracket.
-        std::vector<std::pair<double, double>> all;
-        all.insert(all.end(), evenTransitions.begin(), evenTransitions.end());
-        all.insert(all.end(), oddTransitions.begin(), oddTransitions.end());
-        std::sort(all.begin(), all.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
-
-        // Assign sequential node labels (1-indexed) after sorting by energy.
-        std::vector<NodalBracket> brackets;
-        brackets.reserve(all.size());
-        for (int i = 0; i < static_cast<int>(all.size()); ++i) {
-            brackets.emplace_back(all[static_cast<size_t>(i)].second, all[static_cast<size_t>(i)].first, i + 1);
-        }
-        return brackets;
-    }
-
-    std::vector<Eigenstate> findEigenstates(const std::vector<NodalBracket>& brackets, int trajectorySteps = 2000, int maxBisectionIterations = 1000,
-                                            double convergenceThreshold = 1e-10) const {
-        std::vector<Eigenstate> eigenstates(brackets.size());
-
-#pragma omp parallel for
-        for (int idx = 0; idx < static_cast<int>(brackets.size()); ++idx) {
-            const auto& bracket = brackets[static_cast<size_t>(idx)];
-            double E_low = bracket.minusEnergy;
-            double E_high = bracket.plusEnergy;
-            double E_mid = 0.5 * (E_low + E_high);
-            const int targetNodes = bracket.node;
-            // Quantum number is 0-indexed: node label 1 = n=0 (even), 2 = n=1 (odd), ...
-            const bool evenParity = ((targetNodes - 1) % 2 == 0);
-
-            // Map merged spectrum index to parity-channel index used by solveNodeCount.
-            const int targetInParityChannel = evenParity ? ((targetNodes + 1) / 2) : (targetNodes / 2);
-
-            const std::array<double, 2> ic = evenParity ? std::array<double, 2>{1.0, 0.0} : std::array<double, 2>{0.0, 1.0};
-
-            auto endpointPsi = [&](double E_trial) -> std::optional<double> {
-                QuantumTestSystem trialSystem(n, E_trial);
-                std::vector<double> psiTrial;
-                trialSystem.solvePsi(x0, ic, xEnd, trajectorySteps, psiTrial);
-                if (psiTrial.empty()) {
-                    return std::nullopt;
-                }
-                return psiTrial.back();
-            };
-
-            auto psiLowOpt = endpointPsi(E_low);
-            auto psiHighOpt = endpointPsi(E_high);
-            const bool hasResidualBracket = psiLowOpt.has_value() && psiHighOpt.has_value() && std::isfinite(*psiLowOpt) &&
-                                            std::isfinite(*psiHighOpt) && ((*psiLowOpt) * (*psiHighOpt) <= 0.0);
-
-            for (int i = 0; i < maxBisectionIterations; ++i) {
-                E_mid = 0.5 * (E_low + E_high);
-                if (std::abs(E_high - E_low) < convergenceThreshold)
-                    break;
-
-                if (hasResidualBracket) {
-                    const auto psiMidOpt = endpointPsi(E_mid);
-                    if (!psiMidOpt || !std::isfinite(*psiMidOpt)) {
-                        break;
-                    }
-
-                    if (std::abs(*psiMidOpt) < convergenceThreshold) {
-                        break;
-                    }
-
-                    if ((*psiLowOpt) * (*psiMidOpt) <= 0.0) {
-                        E_high = E_mid;
-                        psiHighOpt = psiMidOpt;
-                    } else {
-                        E_low = E_mid;
-                        psiLowOpt = psiMidOpt;
-                    }
-                } else {
-                    // Fallback: minimize |psi(xEnd)| inside the bracket when no sign change is present.
-                    // This better enforces the decaying boundary condition than node-count fallback.
-                    constexpr int samples = 48;
-                    double bestE = E_mid;
-                    double bestAbsResidual = std::numeric_limits<double>::infinity();
-
-                    for (int s = 0; s <= samples; ++s) {
-                        const double alpha = static_cast<double>(s) / static_cast<double>(samples);
-                        const double E_test = E_low + alpha * (E_high - E_low);
-                        const auto psiTestOpt = endpointPsi(E_test);
-                        if (!psiTestOpt || !std::isfinite(*psiTestOpt)) {
-                            continue;
-                        }
-
-                        const double absResidual = std::abs(*psiTestOpt);
-                        if (absResidual < bestAbsResidual) {
-                            bestAbsResidual = absResidual;
-                            bestE = E_test;
-                        }
-                    }
-
-                    E_mid = bestE;
-
-                    // Shrink around the current best point to refine subsequent iterations.
-                    const double halfWidth = std::max(0.25 * (E_high - E_low), convergenceThreshold);
-                    E_low = std::max(bracket.minusEnergy, E_mid - halfWidth);
-                    E_high = std::min(bracket.plusEnergy, E_mid + halfWidth);
-
-                    if (bestAbsResidual < convergenceThreshold) {
-                        break;
-                    }
-                }
-            }
-
-            Eigenstate state;
-            state.energy = E_mid;
-            state.number = targetNodes - 1;
-            QuantumTestSystem system(n, E_mid);
-            system.solvePsi(x0, ic, xEnd, trajectorySteps, state.psiTrajectory);
-
-            trimNumericalInstability(state.psiTrajectory, !evenParity);
-            normalizeTrajectory(state.psiTrajectory, trajectorySteps);
-
-            eigenstates[static_cast<size_t>(targetNodes - 1)] = std::move(state);  // Write to unique slot: thread-safe.
-        }
-
-        return eigenstates;
-    }
-
-    std::vector<Eigenstate> findEigenstates(double E_min, double E_h, double E_max = std::numeric_limits<double>::infinity(),
-                                            int trajectorySteps = 2000, int maxIterations = 200000, int maxBisectionIterations = 1000,
-                                            double convergenceThreshold = 1e-10) const {
-        const auto brackets = findNodalBrackets(E_min, E_h, E_max, trajectorySteps, maxIterations);
-        return findEigenstates(brackets, trajectorySteps, maxBisectionIterations, convergenceThreshold);
-    }
-};
-
-class EigenstateFinder {
-   public:
-    int maxN;
-    int nodesToFind;
-
-    EigenstateFinder(int maxN_, int nodesToFind_ = 10) : maxN(maxN_), nodesToFind(nodesToFind_) {}
-
-    std::map<int, std::vector<Eigenstate>> findEigenstatesForAllN(double E_min, double E_h, double E_max = std::numeric_limits<double>::infinity(),
-                                                                  int trajectorySteps = 2000, int maxIterations = 200000,
-                                                                  int maxBisectionIterations = 1000, double convergenceThreshold = 1e-10) const {
-        std::map<int, std::vector<Eigenstate>> allEigenstates;
-        for (int n = 2; n <= maxN; ++n) {
-            ESweep sweep(n, nodesToFind);
-            const auto eigenstates =
-                sweep.findEigenstates(E_min, E_h, E_max, trajectorySteps, maxIterations, maxBisectionIterations, convergenceThreshold);
-            allEigenstates[n] = std::move(eigenstates);
-        }
-        return allEigenstates;
-    }
-};
-
-class outHelper {
-   public:
-    std::filesystem::path outputDir;
-
-    explicit outHelper(std::filesystem::path outputDir_) : outputDir(std::move(outputDir_)) {
-        std::filesystem::create_directories(outputDir);
-    }
-
-    void saveEigenstates(const std::map<int, std::vector<Eigenstate>>& allEigenstates) const {
-        const std::filesystem::path archivePath = outputDir / "eigenstates.npz";
-
-        bool wroteAny = false;
-        for (const auto& [n, eigenstates] : allEigenstates) {
-            for (size_t idx = 0; idx < eigenstates.size(); ++idx) {
-                const auto& state = eigenstates[idx];
-                if (state.psiTrajectory.empty()) {
-                    continue;
-                }
-
-                const std::string varName = "n_" + std::to_string(n) + "_state_" + std::to_string(state.number) + "_idx_" + std::to_string(idx);
-                const char* mode = wroteAny ? "a" : "w";
-                cnpy::npz_save(archivePath.string(), varName, state.psiTrajectory.data(), {state.psiTrajectory.size()}, mode);
-                wroteAny = true;
-            }
-        }
-
-        // Ensure the archive exists even if all trajectories were empty.
-        if (!wroteAny) {
-            const std::array<double, 1> emptyMarker{0.0};
-            cnpy::npz_save(archivePath.string(), "empty", emptyMarker.data(), {static_cast<size_t>(0)}, "w");
-        }
-    }
-};
 #endif  // PROCESSING_H

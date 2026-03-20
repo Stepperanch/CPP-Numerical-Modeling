@@ -1,34 +1,48 @@
-#include <cstdlib>
 #include <iostream>
-#include <vector>
+#include <string>
 
-#include "processing copy.h"
+#include "processing.h"
 
 int main() {
+    // Sweep parameters
+    constexpr int    maxDegree     = 6;
+    constexpr int    nodesToFind   = 10;
 
-    const int maxN = 6;
-    const int nodesToFind = 10;
+    // Solver parameters
+    constexpr double stepSize      = 0.0001;   // Spatial step size for Numerov integration
+    constexpr double energyStepSize = 0.5;  // Energy step size for nodal bracket search
+    constexpr double convergenceTol = 1e-15; // Bisection convergence tolerance on energy bracket width
+    constexpr int    maxIterations  = 150;  // Maximum bisection iterations per eigenstate
+    constexpr double energyMin      = 0.001; // Minimum energy to start the sweep from
 
-    EigenstateFinder finder(maxN, nodesToFind);
-    std::map<int, std::vector<Eigenstate>> eigenstatesMap = finder.findEigenstatesForAllN(0.01, 0.05);
-    outHelper outputHelper("output");
-    outputHelper.saveEigenstates(eigenstatesMap);
+    // Output file
+    const std::string outputFile = "output/eigenstates.npz";
 
-    // ESweep sweep(n);
+    std::cout << "Starting sweep: degrees 2 to " << maxDegree
+              << ", " << nodesToFind << " eigenstates per degree.\n";
 
-    // const double E_min = 0.1;
-    // const double E_step = 0.005;
+    Sweep sweep(maxDegree, nodesToFind);
+    auto results = sweep.performSweep(stepSize, energyStepSize, convergenceTol, maxIterations, energyMin);
 
-    // std::vector<NodalBracket> brackets = sweep.findNodalBrackets(E_min, E_step);
+    resampleSweepResults(results, stepSize, 50, 4.0);
 
-    // std::cout << "First 10 nodal brackets for n=2:\n";
-    // for (size_t i = 0; i < brackets.size() && i < 10; ++i) {
-    //     const NodalBracket &b = brackets[i];
-    //     std::cout << "node=" << b.node << "  ["
-    //               << b.minusEnergy << ", " << b.plusEnergy << "]\n";
-    // }
+    std::cout << "Sweep complete. Saving results to " << outputFile << "...\n";
 
+    saveSweepResults(results, outputFile);
 
+    std::cout << "Done.\n";
+
+    // Print a summary of found energies to console
+    for (const auto& [degree, eigenstates] : results) {
+        std::cout << "Degree " << degree << ":\n";
+        for (const auto& state : eigenstates) {
+            std::cout << "  State " << state.number
+                      << "  E = " << state.energy
+                      << "  psi points = " << state.psiTrajectory.size()
+                      << "\n";
+        }
+    }
 
     return 0;
 }
+

@@ -137,3 +137,5 @@ core.*
 # Tuneing Files
 *autotune_*
 *tuned_*
+
+eigenstates_*.html

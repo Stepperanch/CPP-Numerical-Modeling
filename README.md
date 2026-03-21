@@ -156,7 +156,7 @@ N-body orbital dynamics of the Solar System computed with 4th-order Runge-Kutta 
     <iframe
         src="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs_simple.html"
         width="100%"
-        height="100%"
+        height="200%"
         style="border: none; display: block;">
     </iframe>
 </div>

@@ -177,7 +177,7 @@ The eigenstates across all potential degrees (n = 2 to 6) and up to 10 bound sta
     <iframe
         src="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs_simple.html"
         width="100%"
-        height="100%"
+        height="200%"
         style="border: none; display: block;">
     </iframe>
 </div>

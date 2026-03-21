@@ -69,6 +69,9 @@ Thumbs.db
 *.jpg
 *.jpeg
 
+# Generated HTML visualizations
+*.html
+
 # Temporary files
 *~
 *.swp
@@ -139,3 +142,5 @@ core.*
 *tuned_*
 
 eigenstates_*.html
+Project 9: Quantum Mechanics/output/eigenstates_tabs_detailed.html
+Project 9: Quantum Mechanics/output/eigenstates_tabs_simple.html

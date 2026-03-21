@@ -310,7 +310,6 @@ std::vector<Eigenstate> findEigenstatesAtDegree(int degree, double xEnd, double 
 
         std::vector<double> psiResults;
         for (int itteration = 0; itteration < maxItterations; ++itteration) {
-        
             psiResults = NumerovIntegrate(2.0 * midEnergy, degree, stepSize, xEnd, iC, potentialTimesTwo);
 
             if (psiResults.empty()) {
@@ -398,9 +397,7 @@ std::vector<double> resamplePsiTrajectory(const std::vector<double>& psi, double
     return resampled;
 }
 
-void resampleSweepResults(std::vector<std::pair<int, std::vector<Eigenstate>>>& sweepResults, double stepSize, int targetPoints,
-                                               double targetXEnd) {
-
+void resampleSweepResults(std::vector<std::pair<int, std::vector<Eigenstate>>>& sweepResults, double stepSize, int targetPoints, double targetXEnd) {
     for (auto& [degree, eigenstates] : sweepResults) {
         for (auto& eigenstate : eigenstates) {
             eigenstate.psiTrajectory = resamplePsiTrajectory(eigenstate.psiTrajectory, stepSize, targetPoints, targetXEnd);
@@ -408,10 +405,16 @@ void resampleSweepResults(std::vector<std::pair<int, std::vector<Eigenstate>>>& 
     }
 }
 
-void saveSweepResults(const std::vector<std::pair<int, std::vector<Eigenstate>>>& sweepResults, const std::string& filename) {
+void saveSweepResults(const std::vector<std::pair<int, std::vector<Eigenstate>>>& sweepResults, const std::string& filename,
+                      double targetXEnd = 8.0) {
     std::vector<size_t> degreesShape = {1};
     double degreesData = static_cast<double>(sweepResults.size());
     cnpy::npz_save(filename, "degrees", &degreesData, degreesShape, "w");  // Save the degrees as a separate array in the NPZ file.
+
+    // Save targetXEnd for x-axis scaling in plots
+    std::vector<size_t> targetXEndShape = {1};
+    std::vector<double> targetXEndData = {targetXEnd};
+    cnpy::npz_save(filename, "targetXEnd", targetXEndData.data(), targetXEndShape, "a");
 
     for (size_t i = 0; i < sweepResults.size(); ++i) {
         int degree = sweepResults[i].first;

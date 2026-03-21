@@ -175,14 +175,14 @@ The eigenstates across all potential degrees (n = 2 to 6) and up to 10 bound sta
 
 <div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
     <iframe
-        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/eigenstates_tabs_detailed.html"
+        src="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs_simple.html"
         width="100%"
         height="100%"
         style="border: none; display: block;">
     </iframe>
 </div>
 
-<a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/eigenstates_tabs_detailed.html" target="_blank">View Detailed Eigenstates Fullscreen ↗️</a>
+<a href="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs_detailed.html" target="_blank">View Detailed Eigenstates Fullscreen ↗️</a>
 
 **Features:**
 - **Tabs by potential degree:** Switch between harmonic (n=2), cubic (n=3), quartic (n=4), and higher-order wells

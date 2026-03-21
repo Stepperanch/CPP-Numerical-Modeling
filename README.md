@@ -26,7 +26,7 @@
 
 ## About
 
-I created this repository as a collection of **thirteen numerical simulation and computational mathematics projects** developed during my physics coursework and independent study. The work spans classical mechanics, electrostatics, statistical mechanics, and number theory — all implemented in **C++17** with **Python 3** visualization pipelines.
+I created this repository as a collection of **thirteen numerical simulation and computational mathematics projects** developed during my physics coursework and independent study. The work spans classical mechanics, electrostatics, statistical mechanics, quantum mechanics and number theory — all implemented in **C++17** with **Python 3** visualization pipelines.
 
 ### Core Competencies
 
@@ -53,7 +53,7 @@ I created this repository as a collection of **thirteen numerical simulation and
 | 6 | [Diffusion](Project%206%3A%20Diffusion/) | 3D Brownian random-walk ensemble | Monte Carlo with reflective BCs | ✓ parallel particles | ✓ |
 | 7 | [The Ising Model](Project%207%3A%20The%20Ising%20Model/) | 3D ferromagnetic phase transition | Metropolis MCMC, checkerboard sweep | ✓ multifactor parallel | ✓ 128 CPUs |
 | 8 | [Molecular Dynamics](Project%208%3A%20Molicular%20Dynamics/) | 2D Lennard-Jones fluid (400 particles) | Velocity Verlet, O(N²) pair forces | ✓ thread-local accumulators | ✓ 8 CPUs |
-| 9 | [Quantum Mechanics](Project%209%3A%20Quantum%20Mechanics/) (In Progress) | Quantum wells & bound states | Shooting & matching with Numerov Integration | — | — |
+| 9 | [Quantum Mechanics](Project%209%3A%20Quantum%20Mechanics/) | 1D Schrödinger equation, polynomial potentials (degrees 2–6) | Numerov 4th-order integration, nodal bracketing, bisection energy refinement | — | — |
 
 ### Progression
 
@@ -63,7 +63,8 @@ The projects follow a deliberate arc of increasing computational sophistication:
 - **Project 4** introduces PDE solving, iterative methods, and OpenMP parallelism
 - **Projects 5–6** combine PDE/stochastic methods with spectral analysis and 3D particle tracking
 - **Project 7** synthesizes everything: statistical physics, Monte Carlo methods, precomputed lookup tables, multi-dimensional parameter sweeps, and full HPC deployment
-- **Project 8 (Capstone)** tackles the hardest parallelization challenge — an $O(N^2)$ N-body problem where Newton's third law optimizations create race conditions, resolved via thread-local accumulators and guided scheduling
+- **Project 8** tackles the hardest parallelization challenge — an $O(N^2)$ N-body problem where Newton's third law optimizations create race conditions, resolved via thread-local accumulators and guided scheduling
+- **Project 9** applies boundary value problem solvers to quantum mechanics: energy quantization through nodal counting, high-order Numerov schemes, and robust bisection convergence
 
 ---
 
@@ -146,6 +147,25 @@ Interactive 3D visualization of electrostatic potential field solved via Success
 N-body orbital dynamics of the Solar System computed with 4th-order Runge-Kutta integration. Simulation tracks all major planets over multi-year timescales, demonstrating long-term orbital stability and resonance effects.
 
 [→ View detailed results](Project%203%3A%20Celestial%20Dynamics/#results)
+
+---
+
+### Project 9: Quantum Mechanics
+
+<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+    <iframe
+        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/eigenstates_tabs_simple.html"
+        width="100%"
+        height="100%"
+        style="border: none; display: block;">
+    </iframe>
+</div>
+
+<a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/eigenstates_tabs_detailed.html" target="_blank">View Eigenstates Fullscreen ↗️</a>
+
+Interactive visualization of bound states for polynomial potential wells (degrees 2–6). Each tab displays eigenstates with 3D wavefunction plots overlaid with the potential well shape. Eigenstates computed via Numerov 4th-order integration, energy quantization by nodal counting, and bisection refinement to machine precision ($\Delta E < 10^{-15}$).
+
+[→ View detailed results](Project%209%3A%20Quantum%20Mechanics/#results)
 
 ---
 

@@ -152,11 +152,11 @@ N-body orbital dynamics of the Solar System computed with 4th-order Runge-Kutta 
 
 ### Project 9: Quantum Mechanics
 
-<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+<div style="width: 100%; aspect-ratio: 1 / 1; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
     <iframe
         src="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs_simple.html"
         width="100%"
-        height="200%"
+        height="100%"
         style="border: none; display: block;">
     </iframe>
 </div>

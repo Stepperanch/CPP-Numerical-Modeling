@@ -171,12 +171,6 @@ def make_single_state_2d(rec: StateRecord, n_val: int, target_x_end: float) -> g
 	return fig
 
 
-def normalize_x(length: int) -> np.ndarray:
-	if length <= 1:
-		return np.array([0.0])
-	return np.linspace(0.0, 1.0, length)
-
-
 def make_simple_3d(records: List[StateRecord], n_val: int, target_x_end: float) -> go.Figure:
 	fig = go.Figure()
 	for rec in records:
@@ -444,8 +438,9 @@ def build_tabbed_html_with_states(figs_by_n: Dict[int, go.Figure], records_by_n:
 		for rec in records:
 			plot_json = pio.to_json(figs_2d_by_n_state[(n_val, rec.state)])
 			# Encode as base64 to safely embed in HTML
-			encoded = base64.b64encode(plot_json.encode()).decode()
-			html_doc += f'\tplotsData[{n_val}][{rec.state}] = "{encoded}";\n'
+			if plot_json is not None:
+				encoded = base64.b64encode(plot_json.encode()).decode()
+				html_doc += f'\tplotsData[{n_val}][{rec.state}] = "{encoded}";\n'
 
 	html_doc += """
 	// Decode base64 plot data

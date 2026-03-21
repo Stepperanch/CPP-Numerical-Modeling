@@ -154,14 +154,14 @@ N-body orbital dynamics of the Solar System computed with 4th-order Runge-Kutta 
 
 <div style="width: 100%; aspect-ratio: 1 / 1; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
     <iframe
-        src="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs_simple.html"
+        src="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs.html"
         width="100%"
         height="100%"
         style="border: none; display: block;">
     </iframe>
 </div>
 
-<a href="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs_detailed.html" target="_blank">View Eigenstates Fullscreen ↗️</a>
+<a href="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs.html" target="_blank">View Eigenstates Fullscreen ↗️</a>
 
 Interactive visualization of bound states for polynomial potential wells (degrees 2–6). Each tab displays eigenstates with 3D wavefunction plots overlaid with the potential well shape. Eigenstates computed via Numerov 4th-order integration, energy quantization by nodal counting, and bisection refinement to machine precision ($\Delta E < 10^{-15}$).
 

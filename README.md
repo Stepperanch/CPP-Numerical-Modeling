@@ -53,7 +53,7 @@ I created this repository as a collection of **thirteen numerical simulation and
 | 6 | [Diffusion](Project%206%3A%20Diffusion/) | 3D Brownian random-walk ensemble | Monte Carlo with reflective BCs | ✓ parallel particles | ✓ |
 | 7 | [The Ising Model](Project%207%3A%20The%20Ising%20Model/) | 3D ferromagnetic phase transition | Metropolis MCMC, checkerboard sweep | ✓ multifactor parallel | ✓ 128 CPUs |
 | 8 | [Molecular Dynamics](Project%208%3A%20Molicular%20Dynamics/) | 2D Lennard-Jones fluid (400 particles) | Velocity Verlet, O(N²) pair forces | ✓ thread-local accumulators | ✓ 8 CPUs |
-| 9 | [Quantum Mechanics](Project%209%3A%20Quantum%20Mechanics/) | 1D Schrödinger equation, polynomial potentials (degrees 2–10) | Numerov 4th-order integration, nodal bracketing, bisection energy refinement | — | — |
+| 9 | [Quantum Mechanics](Project%209%3A%20Quantum%20Mechanics/) | 1D Schrödinger equation, symmetric polynomial potentials (even degrees: 2, 4, 6, 8, 10) | Numerov 4th-order integration, nodal bracketing, dual shooting/matching bisection | — | — |
 
 ### Progression
 
@@ -64,7 +64,7 @@ The projects follow a deliberate arc of increasing computational sophistication:
 - **Projects 5–6** combine PDE/stochastic methods with spectral analysis and 3D particle tracking
 - **Project 7** synthesizes everything: statistical physics, Monte Carlo methods, precomputed lookup tables, multi-dimensional parameter sweeps, and full HPC deployment
 - **Project 8** tackles the hardest parallelization challenge — an $O(N^2)$ N-body problem where Newton's third law optimizations create race conditions, resolved via thread-local accumulators and guided scheduling
-- **Project 9** applies boundary value problem solvers to quantum mechanics: energy quantization through nodal counting, high-order Numerov schemes, and robust bisection convergence
+- **Project 9** applies boundary value problem solvers to quantum mechanics: energy quantization through nodal counting, high-order Numerov schemes, and dual-method bisection convergence (shooting via forward integration from origin; matching via backward integration with origin-centric boundary matching)
 
 ---
 
@@ -173,7 +173,7 @@ N-body orbital dynamics of the Solar System computed with 4th-order Runge-Kutta 
 
 <a href="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs.html" target="_blank">View Eigenstates Fullscreen ↗️</a>
 
-Interactive visualization of bound states for polynomial potential wells (degrees 2–6). Each tab displays eigenstates with 3D wavefunction plots overlaid with the potential well shape. Eigenstates computed via Numerov 4th-order integration, energy quantization by nodal counting, and bisection refinement to machine precision ($\Delta E < 10^{-15}$).
+Interactive visualization of bound states for symmetric polynomial potential wells (even degrees: 2, 4, 6, 8, 10). Each tab displays eigenstates with 3D wavefunction plots overlaid with the potential well shape. Eigenstates computed via Numerov 4th-order integration, energy quantization by nodal counting, and dual-method bisection refinement (selectable shooting method with forward integration or matching method with origin-centric convergence) achieving high precision ($\Delta E < 10^{-8}$).
 
 [→ View detailed results](Project%209%3A%20Quantum%20Mechanics/#results)
 

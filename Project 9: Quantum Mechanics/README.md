@@ -19,7 +19,7 @@
 - Built a full quantum mechanics eigenstate solver that computes bound states for polynomial potential wells by integrating the 1D Schrödinger equation.
 - Implemented the **Numerov method** (4th-order finite-difference integration) to solve $-\frac{\hbar^2}{2m}\psi''(x) + V(x)\psi(x) = E\psi(x)$ with arbitrary precision.
 - Developed a **shooting-and-matching algorithm** combining energy sweeps with node counting and bisection search to locate eigenstate energies.
-- Generated interactive 3D visualizations of eigenstates and potential wells across multiple quantum numbers and well shapes (polynomial degrees up to 6).
+- Generated interactive 3D visualizations of eigenstates and potential wells across multiple quantum numbers and well shapes (polynomial degrees up to 10).
 - Demonstrates expertise in numerical quantum mechanics, boundary value problem solving, and high-precision root-finding.
 
 For a fast technical check, jump to [Code Structure](#code-structure), [Results](#results), and [Build & Run](#build--run).
@@ -171,7 +171,7 @@ Once the eigenstate energy is converged:
 
 ### Interactive Eigenstates Visualization
 
-The eigenstates across all potential degrees (n = 2 to 6) and up to 10 bound states per degree are visualized as **tabbed interactive 3D plots**.
+The eigenstates across all potential degrees (n = 2 to 10) and up to 10 bound states per degree are visualized as **tabbed interactive 3D plots**.
 
 <div style="width: 100%; aspect-ratio: 1 / 1; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
     <iframe
@@ -186,8 +186,7 @@ The eigenstates across all potential degrees (n = 2 to 6) and up to 10 bound sta
 
 **Features:**
 - **Tabs by potential degree:** Switch between harmonic (n=2), cubic (n=3), quartic (n=4), and higher-order wells
-- **3D wavefunction plot:** $\psi(x)$ and potential well superimposed; rotate to inspect structure
-- **Potential profile:** Visual representation of the well shape
+- **3D and 2D Viewing:** Switch between 2D and 3D repersentations of the wavefunction with the potental well superemposed over the 2D plots
 - **Energy table:** Quantized energy levels with full precision
 
 Select any degree tab above to explore states for that potential family.

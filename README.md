@@ -53,7 +53,7 @@ I created this repository as a collection of **thirteen numerical simulation and
 | 6 | [Diffusion](Project%206%3A%20Diffusion/) | 3D Brownian random-walk ensemble | Monte Carlo with reflective BCs | ✓ parallel particles | ✓ |
 | 7 | [The Ising Model](Project%207%3A%20The%20Ising%20Model/) | 3D ferromagnetic phase transition | Metropolis MCMC, checkerboard sweep | ✓ multifactor parallel | ✓ 128 CPUs |
 | 8 | [Molecular Dynamics](Project%208%3A%20Molicular%20Dynamics/) | 2D Lennard-Jones fluid (400 particles) | Velocity Verlet, O(N²) pair forces | ✓ thread-local accumulators | ✓ 8 CPUs |
-| 9 | [Quantum Mechanics](Project%209%3A%20Quantum%20Mechanics/) | 1D Schrödinger equation, polynomial potentials (degrees 2–6) | Numerov 4th-order integration, nodal bracketing, bisection energy refinement | — | — |
+| 9 | [Quantum Mechanics](Project%209%3A%20Quantum%20Mechanics/) | 1D Schrödinger equation, polynomial potentials (degrees 2–10) | Numerov 4th-order integration, nodal bracketing, bisection energy refinement | — | — |
 
 ### Progression
 
@@ -140,11 +140,21 @@ Interactive 3D visualization of electrostatic potential field solved via Success
 
 ### Project 3: Celestial Dynamics
 
+videos/
+
 <p align="center">
-  <img src="Project%203%3A%20Celestial%20Dynamics/Output/celestial_analysis_9_3d.png" alt="Celestial Dynamics — 3D orbits" width="60%"/>
+  <img src="Project%203%3A%20Celestial%20Dynamics/Output/celestial_analysis_9_3d.png" alt="Celestial Dynamics — 3D orbits" width="42%"/>
+  <video width="54%" controls autoplay muted loop style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <source src="https://nelsbuhrley.github.io/assets/videos/celestial_analysis_11_3d.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <br>
+
+  <em>
+N-body orbital dynamics of the Solar System computed with 4th-order Runge-Kutta integration. Left: Static plot of solar system. Right: Video of the solar system with the mass of Jupeter equil to about 0.94 Solar Masses.</em>
 </p>
 
-N-body orbital dynamics of the Solar System computed with 4th-order Runge-Kutta integration. Simulation tracks all major planets over multi-year timescales, demonstrating long-term orbital stability and resonance effects.
+
 
 [→ View detailed results](Project%203%3A%20Celestial%20Dynamics/#results)
 

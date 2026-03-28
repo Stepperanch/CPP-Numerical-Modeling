@@ -4,6 +4,11 @@
 
 # Project 7: The 3D Ising Model
 
+> [!TIP]
+> Every highlighted link in this page is clickable.
+> For fast navagation use [Table of Contents](#table-of-contents)
+
+
 **Author:** Nels Buhrley
 **Language:** C++17 with OpenMP · Python 3 (visualization)
 **HPC:** Run on the BYU Supercomputer (128 CPUs via SLURM)
@@ -323,7 +328,7 @@ This allows intuitive exploration of the phase change geometry without generatin
 
 <div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
     <iframe
-        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive_embeded.html"
+        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive_embedded.html"
         width="100%"
         height="100%"
         style="border: none; display: block;">

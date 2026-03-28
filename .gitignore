@@ -69,6 +69,9 @@ Thumbs.db
 *.jpg
 *.jpeg
 
+# Generated HTML visualizations
+*.html
+
 # Temporary files
 *~
 *.swp
@@ -131,3 +134,13 @@ CPP_Workspace.code-workspace
 !assets/
 !assets/**
 
+# Core dumps
+core.*
+
+# Tuneing Files
+*autotune_*
+*tuned_*
+
+eigenstates_*.html
+Project 9: Quantum Mechanics/output/eigenstates_tabs_detailed.html
+Project 9: Quantum Mechanics/output/eigenstates_tabs_simple.html

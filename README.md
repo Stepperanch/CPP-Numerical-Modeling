@@ -1,5 +1,10 @@
 # Computational Physics Portfolio
 
+> [!TIP]
+> Every highlighted link in this page is clickable.
+> For fast navagation use [Table of Contents](#table-of-contents)
+
+
 **Nels Buhrley**
 *Physics Student — Brigham Young University–Idaho*
 
@@ -8,12 +13,10 @@
 ## Table of Contents
 
 - [About](#about)
-  - [Core Competencies](#core-competencies)
-  - [The Fulton Supercomputer at BYU](#the-fulton-supercomputer-at-byu)
 - [**Academic Projects**](#academic-projects)
-  - [Progression](#progression)
 - [Personal Projects](#personal-projects)
 - [**Selected Results**](#selected-results)
+- [The Fulton Supercomputer at BYU](#the-fulton-supercomputer-at-byu)
 - [Quick Start](#quick-start)
   - [Build Toolchain](#build-toolchain)
   - [Prerequisites](#prerequisites)
@@ -23,7 +26,7 @@
 
 ## About
 
-This repository is a collection of **nine numerical simulation and computational mathematics projects** developed during my physics coursework and independent study. The work spans classical mechanics, electrostatics, statistical mechanics, and number theory — all implemented in **C++17** with **Python 3** visualization pipelines.
+I created this repository as a collection of **thirteen numerical simulation and computational mathematics projects** developed during my physics coursework and independent study. The work spans classical mechanics, electrostatics, statistical mechanics, quantum mechanics and number theory — all implemented in **C++17** with **Python 3** visualization pipelines.
 
 ### Core Competencies
 
@@ -31,10 +34,174 @@ This repository is a collection of **nine numerical simulation and computational
 |---|---|
 | **Languages** | C++17, Python 3 |
 | **Numerical Methods** | Runge-Kutta (RK4), Euler-Cromer, Störmer-Verlet, Monte Carlo (Metropolis), Finite Differences, Successive Over-Relaxation, FFT spectral analysis |
-| **Parallelism** | OpenMP multi-threading (Projects 4–7, Personal Project 2) |
+| **Parallelism** | OpenMP multi-threadin, manual thread allocation, and parrellel logic implimentation in tightly coupled simulations |
 | **High-Performance Computing** | BYU Supercomputer — SLURM batch scheduling with up to 128 CPU cores for intensive simulations (Projects 4, 6, 7) |
-| **I/O & Visualization** | CSV, NPZ (via cnpy/zlib), Matplotlib (3D surfaces, contour maps, animations, phase-space portraits) |
+| **I/O & Visualization** | CSV, NPZ (via cnpy/zlib), Matplotlib (3D surfaces, contour maps, animations, phase-space portraits), Plotly (interactive HTML plots) |
 | **Build Systems** | GNU Make with multi-target builds (debug, release, profile-guided optimization) |
+
+---
+
+## Academic Projects
+
+| # | Project | Physical System | Numerical Method | OpenMP | HPC |
+|---|---|---|---|---|---|
+| 1 | [Realistic Projectile Motion](Project%201%3A%20realistic%20projectile%20motion/) | 3D ballistics with drag, spin (Magnus), wind | 4th-order Runge-Kutta | — | — |
+| 2 | [Driven Damped Oscillations](Project%202%3A%20driven%20damped%20oscillations/) | Nonlinear pendulum → periodic & chaotic regimes | RK4 + Euler-Cromer; Poincaré sections | — | — |
+| 3 | [Celestial Dynamics](Project%203%3A%20Celestial%20Dynamics/) | N-body gravitational orbits (full Solar System) | RK4, Euler-Cromer, Störmer-Verlet | — | — |
+| 4 | [Overrelaxation](Project%204%3A%20Overrelaxation/) | 3D Laplace's equation (electrostatics) | Red-Black SOR with optimal $\omega$ | ✓  | ✓ |
+| 5 | [Oscillations on a String](Project%205%3A%20Occilations%20on%20a%20string/) | Damped stiff wave equation + spectral analysis | Finite differences (2nd + 4th order) + KissFFT | ✓ parallel spatial | — |
+| 6 | [Diffusion](Project%206%3A%20Diffusion/) | 3D Brownian random-walk ensemble | Monte Carlo with reflective BCs | ✓ parallel particles | ✓ |
+| 7 | [The Ising Model](Project%207%3A%20The%20Ising%20Model/) | 3D ferromagnetic phase transition | Metropolis MCMC, checkerboard sweep | ✓ multifactor parallel | ✓ 128 CPUs |
+| 8 | [Molecular Dynamics](Project%208%3A%20Molicular%20Dynamics/) | 2D Lennard-Jones fluid (400 particles) | Velocity Verlet, O(N²) pair forces | ✓ thread-local accumulators | ✓ 8 CPUs |
+| 9 | [Quantum Mechanics](Project%209%3A%20Quantum%20Mechanics/) | 1D Schrödinger equation, symmetric polynomial potentials (even degrees: 2, 4, 6, 8, 10) | Numerov 4th-order integration, nodal bracketing, dual shooting/matching bisection | — | — |
+
+### Progression
+
+The projects follow a deliberate arc of increasing computational sophistication:
+
+- **Projects 1–3** build fluency with ODE integration (RK4, symplectic methods) and interactive simulations
+- **Project 4** introduces PDE solving, iterative methods, and OpenMP parallelism
+- **Projects 5–6** combine PDE/stochastic methods with spectral analysis and 3D particle tracking
+- **Project 7** synthesizes everything: statistical physics, Monte Carlo methods, precomputed lookup tables, multi-dimensional parameter sweeps, and full HPC deployment
+- **Project 8** tackles the hardest parallelization challenge — an $O(N^2)$ N-body problem where Newton's third law optimizations create race conditions, resolved via thread-local accumulators and guided scheduling
+- **Project 9** applies boundary value problem solvers to quantum mechanics: energy quantization through nodal counting, high-order Numerov schemes, and dual-method bisection convergence (shooting via forward integration from origin; matching via backward integration with origin-centric boundary matching)
+
+---
+
+## Personal Projects
+
+| # | Project | Domain | Key Challenge | Parallelism |
+|---|---|---|---|---|
+| 1 | [Collatz Conjecture (3n+1)](Personal%20Project%201%3A%203n%2B1/) | Number theory | Exhaustive sequence analysis for $n \leq 10^6$; recursive max-value chaining | — |
+| 2 | [Euler's Idoneal Numbers](Personal%20Project%202%3A%20Idelic%20Numbers/) | Number theory | Sieve over triple loop $a < b < c$ up to $5 \times 10^7$; thread-safe monotonic writes | ✓ OpenMP `dynamic` |
+| 3 | [Monty Hall Problem](Personal%20Project%203%3A%20Monty%20Hall%20Simulation%20%28Goat%20and%20Car%20Game%20Show%29/) | Probability & Statistics | Monte Carlo simulation to empirically verify counterintuitive theoretical predictions | — |
+
+---
+
+## Selected Results
+
+### Project 7: The Ising Model
+
+<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+    <iframe
+        src="https://nelsbuhrley.github.io/assets/html-assets/magnetization_3d_interactive_embedded.html"
+        width="100%"
+        height="100%"
+        style="border: none; display: block;">
+    </iframe>
+</div>
+
+<a href="https://nelsbuhrley.github.io/assets/html-assets/magnetization_3d_interactive.html" target="_blank">View Simulation Fullscreen ↗️</a>
+
+<p align="center">
+  <img src="Project%207%3A%20The%20Ising%20Model/output/Out_1/magnetization_3d_surface_angle3.png" alt="Ising Model — 3D magnetization surface" width="48%"/>
+  <img src="Project%207%3A%20The%20Ising%20Model/output/Out_1/magnetization_contour.png" alt="Ising Model — contour map" width="48%"/>
+</p>
+
+Magnetization surface and contour map of the 3D Ising model, revealing the ferromagnetic phase transition at $T_c \approx 4.51\,J/k_B$. Monte Carlo Metropolis algorithm with checkerboard sweep optimization across 2D temperature × magnetic field parameter space.
+
+[→ View detailed results](Project%207%3A%20The%20Ising%20Model/#results)
+
+---
+
+### Project 8: Molecular Dynamics
+
+<p align="center">
+  <video width="70%" controls autoplay muted loop style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <source src="https://nelsbuhrley.github.io/assets/videos/md_animation2.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <br>
+  <em>Heating/cooling cycle simulation of 400 particles under Lennard-Jones potential. Particle trajectories show transition from ordered grid to gas-like disorder during heating, then re-ordering during cooling. A shock wave propagates down from the top and reflects back up after the particles expand to the container boundary.</em>
+</p>
+
+[→ View detailed results](Project%208%3A%20Molicular%20Dynamics/#results)
+
+---
+
+### Project 4: Overrelaxation (Electrostatics)
+
+<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+    <iframe
+        src="https://nelsbuhrley.github.io/assets/html-assets/potential_3d_interactive_dynamic_embedded.html"
+        width="100%"
+        height="100%"
+        style="border: none; display: block;">
+    </iframe>
+</div>
+
+<a href="https://nelsbuhrley.github.io/assets/html-assets/potential_3d_interactive_dynamic.html" target="_blank">View Simulation Fullscreen ↗️</a>
+
+Interactive 3D visualization of electrostatic potential field solved via Successive Over-Relaxation (SOR) with optimal relaxation parameter $\omega \approx 1.84$. Navigate through z-axis slices to explore the full 3D solution space ($N=1000^3$ grid points).
+
+[→ View detailed results](Project%204%3A%20Overrelaxation/#results)
+
+---
+
+### Project 3: Celestial Dynamics
+
+videos/
+
+<p align="center">
+  <img src="Project%203%3A%20Celestial%20Dynamics/Output/celestial_analysis_9_3d.png" alt="Celestial Dynamics — 3D orbits" width="42%"/>
+  <video width="54%" controls autoplay muted loop style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <source src="https://nelsbuhrley.github.io/assets/videos/celestial_analysis_11_3d.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <br>
+
+  <em>
+N-body orbital dynamics of the Solar System computed with 4th-order Runge-Kutta integration. Left: Static plot of solar system. Right: Video of the solar system with the mass of Jupeter equil to about 0.94 Solar Masses.</em>
+</p>
+
+
+
+[→ View detailed results](Project%203%3A%20Celestial%20Dynamics/#results)
+
+---
+
+### Project 9: Quantum Mechanics
+
+<div style="width: 100%; aspect-ratio: 1 / 1; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
+    <iframe
+        src="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs.html"
+        width="100%"
+        height="100%"
+        style="border: none; display: block;">
+    </iframe>
+</div>
+
+<a href="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs.html" target="_blank">View Eigenstates Fullscreen ↗️</a>
+
+Interactive visualization of bound states for symmetric polynomial potential wells (even degrees: 2, 4, 6, 8, 10). Each tab displays eigenstates with 3D wavefunction plots overlaid with the potential well shape. Eigenstates computed via Numerov 4th-order integration, energy quantization by nodal counting, and dual-method bisection refinement (selectable shooting method with forward integration or matching method with origin-centric convergence) achieving high precision ($\Delta E < 10^{-8}$).
+
+[→ View detailed results](Project%209%3A%20Quantum%20Mechanics/#results)
+
+---
+
+### Project 5: Oscillations on a String
+
+<p align="center">
+  <img src="Project%205%3A%20Occilations%20on%20a%20string/mean_power_spectrum.png" alt="String oscillations — power spectrum" width="60%"/>
+</p>
+
+Mean power spectrum of transverse string oscillations showing discrete normal-mode peaks. FFT spectral analysis reveals harmonic structure and damping characteristics from finite-difference wave equation solver.
+
+[→ View detailed results](Project%205%3A%20Occilations%20on%20a%20string/#results)
+
+---
+
+### Project 6: Diffusion
+
+<p align="center">
+  <img src="Project%206%3A%20Diffusion/output/fixed_Mean_Squared_Distance_plot.png" alt="Diffusion MSD" width="60%"/>
+</p>
+
+Mean squared displacement from 3D random-walk Monte Carlo simulation, confirming Einstein's diffusion law $\langle r^2 \rangle = 6Dt$. Ensemble of $10^6$ particle trajectories with reflective boundary conditions.
+
+[→ View detailed results](Project%206%3A%20Diffusion/#results)
+
+---
 
 ### The Fulton Supercomputer at BYU
 
@@ -128,137 +295,6 @@ for (int i = 0; i < N; ++i) {
 - **Parameter Sweeps:** Multi-dimensional search spaces (Project 7: 2D temperature × field grid)
 - **Long-Running Simulations:** Statistical ensembles (Project 6: millions of particle trajectories)
 - **Reproducibility:** Identical hardware across multiple runs for benchmarking and verification
-
----
-
-## Academic Projects
-
-| # | Project | Physical System | Numerical Method | OpenMP | HPC |
-|---|---|---|---|---|---|
-| 1 | [Realistic Projectile Motion](Project%201%3A%20realistic%20projectile%20motion/) | 3D ballistics with drag, spin (Magnus), wind | 4th-order Runge-Kutta | — | — |
-| 2 | [Driven Damped Oscillations](Project%202%3A%20driven%20damped%20oscillations/) | Nonlinear pendulum → periodic & chaotic regimes | RK4 + Euler-Cromer; Poincaré sections | — | — |
-| 3 | [Celestial Dynamics](Project%203%3A%20Celestial%20Dynamics/) | N-body gravitational orbits (full Solar System) | RK4, Euler-Cromer, Störmer-Verlet | — | — |
-| 4 | [Overrelaxation](Project%204%3A%20Overrelaxation/) | 3D Laplace's equation (electrostatics) | Red-Black SOR with optimal $\omega$ | ✓  | ✓ |
-| 5 | [Oscillations on a String](Project%205%3A%20Occilations%20on%20a%20string/) | Damped stiff wave equation + spectral analysis | Finite differences (2nd + 4th order) + KissFFT | ✓ parallel spatial | — |
-| 6 | [Diffusion](Project%206%3A%20Diffusion/) | 3D Brownian random-walk ensemble | Monte Carlo with reflective BCs | ✓ parallel particles | ✓ |
-| 7 | [The Ising Model](Project%207%3A%20The%20Ising%20Model/) | 3D ferromagnetic phase transition | Metropolis MCMC, checkerboard sweep | ✓ multifactor parallel | ✓ 128 CPUs |
-| 8 | [Molecular Dynamics](Project%208%3A%20Molicular%20Dynamics/) | 2D Lennard-Jones fluid (400 particles) | Velocity Verlet, O(N²) pair forces | ✓ thread-local accumulators | ✓ 8 CPUs |
-
-### Progression
-
-The projects follow a deliberate arc of increasing computational sophistication:
-
-- **Projects 1–3** build fluency with ODE integration (RK4, symplectic methods) and interactive simulations
-- **Project 4** introduces PDE solving, iterative methods, and OpenMP parallelism
-- **Projects 5–6** combine PDE/stochastic methods with spectral analysis and 3D particle tracking
-- **Project 7** synthesizes everything: statistical physics, Monte Carlo methods, precomputed lookup tables, multi-dimensional parameter sweeps, and full HPC deployment
-- **Project 8 (Capstone)** tackles the hardest parallelization challenge — an $O(N^2)$ N-body problem where Newton's third law optimizations create race conditions, resolved via thread-local accumulators and guided scheduling
-
----
-
-## Personal Projects
-
-| # | Project | Domain | Key Challenge | Parallelism |
-|---|---|---|---|---|
-| 1 | [Collatz Conjecture (3n+1)](Personal%20Project%201%3A%203n%2B1/) | Number theory | Exhaustive sequence analysis for $n \leq 10^6$; recursive max-value chaining | — |
-| 2 | [Euler's Idoneal Numbers](Personal%20Project%202%3A%20Idelic%20Numbers/) | Number theory | Sieve over triple loop $a < b < c$ up to $5 \times 10^7$; thread-safe monotonic writes | ✓ OpenMP `dynamic` |
-| 3 | [Monty Hall Problem](Personal%20Project%203%3A%20Monty%20Hall%20Simulation%20%28Goat%20and%20Car%20Game%20Show%29/) | Probability & Statistics | Monte Carlo simulation to empirically verify counterintuitive theoretical predictions | — |
-
----
-
-## Selected Results
-
-### Project 7: The Ising Model
-
-<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
-    <iframe
-        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive_embedded.html"
-        width="100%"
-        height="100%"
-        style="border: none; display: block;">
-    </iframe>
-</div>
-
-<a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html" target="_blank">View Simulation Fullscreen ↗️</a>
-
-<p align="center">
-  <img src="Project%207%3A%20The%20Ising%20Model/output/Out_1/magnetization_3d_surface_angle3.png" alt="Ising Model — 3D magnetization surface" width="48%"/>
-  <img src="Project%207%3A%20The%20Ising%20Model/output/Out_1/magnetization_contour.png" alt="Ising Model — contour map" width="48%"/>
-</p>
-
-Magnetization surface and contour map of the 3D Ising model, revealing the ferromagnetic phase transition at $T_c \approx 4.51\,J/k_B$. Monte Carlo Metropolis algorithm with checkerboard sweep optimization across 2D temperature × magnetic field parameter space.
-
-[→ View detailed results](Project%207%3A%20The%20Ising%20Model/#results)
-
----
-
-### Project 8: Molecular Dynamics
-
-<p align="center">
-  <video width="70%" controls autoplay muted loop style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-    <source src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/videos/md_animation2.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-  <br>
-  <em>Heating/cooling cycle simulation of 400 particles under Lennard-Jones potential. Particle trajectories show transition from ordered grid to gas-like disorder during heating, then re-ordering during cooling. A shock wave propagates down from the top and reflects back up after the particles expand to the container boundary.</em>
-</p>
-
-[→ View detailed results](Project%208%3A%20Molicular%20Dynamics/#results)
-
----
-
-### Project 4: Overrelaxation (Electrostatics)
-
-<div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
-    <iframe
-        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic_embedded.html"
-        width="100%"
-        height="100%"
-        style="border: none; display: block;">
-    </iframe>
-</div>
-
-<a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic.html" target="_blank">View Simulation Fullscreen ↗️</a>
-
-Interactive 3D visualization of electrostatic potential field solved via Successive Over-Relaxation (SOR) with optimal relaxation parameter $\omega \approx 1.84$. Navigate through z-axis slices to explore the full 3D solution space ($N=1000^3$ grid points).
-
-[→ View detailed results](Project%204%3A%20Overrelaxation/#results)
-
----
-
-### Project 3: Celestial Dynamics
-
-<p align="center">
-  <img src="Project%203%3A%20Celestial%20Dynamics/Output/celestial_analysis_9_3d.png" alt="Celestial Dynamics — 3D orbits" width="60%"/>
-</p>
-
-N-body orbital dynamics of the Solar System computed with 4th-order Runge-Kutta integration. Simulation tracks all major planets over multi-year timescales, demonstrating long-term orbital stability and resonance effects.
-
-[→ View detailed results](Project%203%3A%20Celestial%20Dynamics/#results)
-
----
-
-### Project 5: Oscillations on a String
-
-<p align="center">
-  <img src="Project%205%3A%20Occilations%20on%20a%20string/mean_power_spectrum.png" alt="String oscillations — power spectrum" width="60%"/>
-</p>
-
-Mean power spectrum of transverse string oscillations showing discrete normal-mode peaks. FFT spectral analysis reveals harmonic structure and damping characteristics from finite-difference wave equation solver.
-
-[→ View detailed results](Project%205%3A%20Occilations%20on%20a%20string/#results)
-
----
-
-### Project 6: Diffusion
-
-<p align="center">
-  <img src="Project%206%3A%20Diffusion/output/fixed_Mean_Squared_Distance_plot.png" alt="Diffusion MSD" width="60%"/>
-</p>
-
-Mean squared displacement from 3D random-walk Monte Carlo simulation, confirming Einstein's diffusion law $\langle r^2 \rangle = 6Dt$. Ensemble of $10^6$ particle trajectories with reflective boundary conditions.
-
-[→ View detailed results](Project%206%3A%20Diffusion/#results)
 
 ---
 

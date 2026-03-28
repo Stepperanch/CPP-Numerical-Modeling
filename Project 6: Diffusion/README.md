@@ -4,6 +4,11 @@
 
 # Project 6: 3D Random-Walk Diffusion Simulation
 
+> [!TIP]
+> Every highlighted link in this page is clickable.
+> For fast navagation use [Table of Contents](#table-of-contents)
+
+
 **Author:** Nels Buhrley
 **Language:** C++17 with OpenMP · Python 3 (visualization)
 **HPC:** Run on the BYU Supercomputer

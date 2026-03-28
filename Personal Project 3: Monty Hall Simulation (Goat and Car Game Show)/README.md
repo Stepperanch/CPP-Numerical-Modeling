@@ -4,6 +4,11 @@
 
 # Personal Project 3: The Monty Hall Problem — A Probabilistic Paradox
 
+> [!TIP]
+> Every highlighted link in this page is clickable.
+> For fast navagation use [Table of Contents](#table-of-contents)
+
+
 **Author:** Nels Buhrley
 **Language:** Python 3
 **Visualization:** Matplotlib

@@ -10,17 +10,10 @@ import multiprocessing as mp
 import argparse
 
 """
-File Header:
-
-Author: Nels Buhrley
-Date: 2026-03-02
-
-Description:
-    Animation and energy plots for Project 8: Molecular Dynamics.
-    Loads the most recent output directory (./output/out_N/results.npz).
-    Positions array shape: (timeSteps, numParticles, 2)
-    Metadata array: [L, numParticles, timeSteps, finalTime]
-    Animation is rendered in parallel segments and stitched with ffmpeg.
+/**
+@brief Parallel animation renderer for molecular-dynamics trajectories.
+@details Loads the latest output run, renders frame segments in parallel workers, and concatenates MP4 fragments with ffmpeg.
+*/
 """
 
 FFMPEG = "/apps/spack/root/opt/spack/linux-rhel9-haswell/gcc-13.2.0/ffmpeg-7.0.1-pzg5pllmqfjzz2ubrlm3jcxyyh7gtpyr/bin/ffmpeg"
@@ -110,8 +103,12 @@ print(f"Loaded data: {numPosFrames} position frames, {timeSteps} timesteps, {num
 
 # ── Parallel segment renderer ─────────────────────────────────────────────────
 def render_segment(args):
-    """Render a contiguous slice of frames to a temp .mp4 file.
-    Receives only pos_slice (the frames this worker needs) to avoid OOM.
+    """
+    /**
+    @brief Render one contiguous frame segment to a temporary MP4 file.
+    @param args Tuple containing frame indices, local position slice, box size, FPS, and output path.
+    @return Output path of the rendered segment.
+    */
     """
     seg_frames, pos_slice, width, height, FPS, out_path = args
     # pos_slice shape: (len(seg_frames), numParticles, 2)

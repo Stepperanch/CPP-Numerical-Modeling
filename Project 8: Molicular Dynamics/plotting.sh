@@ -1,4 +1,8 @@
 #!/bin/bash
+# /**
+# @brief SLURM batch script for generating post-run energy analysis plots.
+# @details Loads Python tooling and executes plot_energy.py against the latest output directory.
+# */
 #SBATCH --job-name=molecular_dynamics_plotting  # Job name
 #SBATCH --output=slurm_out/slurm_%j.out       # stdout log (%j = job ID)
 #SBATCH --error=slurm_out/slurm_%j.err        # stderr log

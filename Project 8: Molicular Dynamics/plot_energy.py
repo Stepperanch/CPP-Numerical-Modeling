@@ -7,9 +7,23 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+"""
+/**
+@brief Comprehensive energy analysis for molecular dynamics runs.
+@details Loads modern NPY or legacy NPZ outputs, computes drift/statistics, and writes publication-ready diagnostic figures plus CSV summaries.
+*/
+"""
+
 
 def find_output_dir(project_dir: str, run_index: int | None) -> Tuple[str, int]:
-    """Return (output_directory, run_index) for requested/latest run."""
+    """
+    /**
+    @brief Resolve the output directory for a requested run or the latest run.
+    @param project_dir Project root containing the output folder.
+    @param run_index Optional run index; None selects newest run.
+    @return Tuple of absolute run directory path and integer run index.
+    */
+    """
     output_root = os.path.join(project_dir, "output")
     if not os.path.isdir(output_root):
         raise FileNotFoundError(f"Output root not found: {output_root}")
@@ -36,7 +50,13 @@ def find_output_dir(project_dir: str, run_index: int | None) -> Tuple[str, int]:
 
 
 def _parse_metadata(metadata: np.ndarray) -> Dict[str, float | int | None]:
-    """Handle both 5-value and legacy 4-value metadata formats."""
+    """
+    /**
+    @brief Parse metadata arrays from modern and legacy output formats.
+    @param metadata Raw metadata array loaded from disk.
+    @return Dictionary with width, height, num_particles, time_steps, and final_time.
+    */
+    """
     md = np.asarray(metadata).flatten()
 
     if md.size >= 5:
@@ -64,7 +84,14 @@ def _parse_metadata(metadata: np.ndarray) -> Dict[str, float | int | None]:
 
 
 def load_energy_data(run_dir: str, run_index: int) -> Tuple[Dict[str, np.ndarray], Dict[str, float | int | None]]:
-    """Load energy and temperature arrays from modern .npy or legacy .npz outputs."""
+    """
+    /**
+    @brief Load core energy/temperature arrays from a run directory.
+    @param run_dir Path to output/out_N directory.
+    @param run_index Numeric run index used for legacy NPZ lookup.
+    @return Tuple containing data arrays and parsed metadata dictionary.
+    */
+    """
     npy_temp = os.path.join(run_dir, "temperatures.npy")
     npz_path = os.path.join(run_dir, f"results_{run_index}.npz")
 
@@ -95,6 +122,14 @@ def load_energy_data(run_dir: str, run_index: int) -> Tuple[Dict[str, np.ndarray
 
 
 def moving_average(x: np.ndarray, window: int) -> np.ndarray:
+    """
+    /**
+    @brief Compute a centered moving-average smoothing of a 1D signal.
+    @param x Input signal.
+    @param window Window size in samples.
+    @return Smoothed signal with same length as input.
+    */
+    """
     if window <= 1:
         return x.copy()
     if window > len(x):
@@ -104,6 +139,14 @@ def moving_average(x: np.ndarray, window: int) -> np.ndarray:
 
 
 def compute_stats(total: np.ndarray, temperature: np.ndarray) -> Dict[str, float]:
+    """
+    /**
+    @brief Compute scalar diagnostics for total energy and temperature traces.
+    @param total Total-energy time series.
+    @param temperature Temperature time series.
+    @return Dictionary of extrema, moments, and drift metrics.
+    */
+    """
     drift = total - total[0]
     denom = abs(total[0]) if abs(total[0]) > 1e-15 else 1.0
     rel_drift = drift / denom
@@ -127,6 +170,13 @@ def compute_stats(total: np.ndarray, temperature: np.ndarray) -> Dict[str, float
 
 
 def save_stats_csv(path: str, stats: Dict[str, float]) -> None:
+    """
+    /**
+    @brief Persist computed scalar diagnostics to CSV.
+    @param path Output CSV path.
+    @param stats Metric dictionary returned by compute_stats.
+    */
+    """
     with open(path, "w", encoding="utf-8") as f:
         f.write("metric,value\n")
         for key, value in stats.items():
@@ -143,6 +193,20 @@ def make_plots(
     temperature: np.ndarray,
     smooth_window: int,
 ) -> Tuple[str, str]:
+    """
+    /**
+    @brief Generate and save summary diagnostic figures.
+    @param run_dir Output directory for saved figures.
+    @param run_index Run identifier used in filenames.
+    @param time_axis Time coordinates for all series.
+    @param potential Potential-energy series.
+    @param kinetic Kinetic-energy series.
+    @param total Total-energy series.
+    @param temperature Temperature series.
+    @param smooth_window Moving-average window for overlays.
+    @return Paths to the composite analysis plot and temperature-vs-energy plot.
+    */
+    """
     drift = total - total[0]
     denom = abs(total[0]) if abs(total[0]) > 1e-15 else 1.0
     rel_drift = drift / denom
@@ -232,12 +296,25 @@ def make_plots(
 
 
 def build_time_axis(n: int, final_time: float | None) -> np.ndarray:
+    """
+    /**
+    @brief Build a time axis from metadata or sample indices.
+    @param n Number of samples.
+    @param final_time Optional final physical time.
+    @return Linearly spaced physical axis if final_time is valid, else index axis.
+    */
+    """
     if final_time is not None and final_time > 0:
         return np.linspace(0.0, final_time, n)
     return np.arange(n, dtype=float)
 
 
 def main() -> None:
+    """
+    /**
+    @brief Command-line entry point for energy analysis workflow.
+    */
+    """
     parser = argparse.ArgumentParser(
         description="Comprehensive energy analysis and plotting for molecular dynamics output."
     )

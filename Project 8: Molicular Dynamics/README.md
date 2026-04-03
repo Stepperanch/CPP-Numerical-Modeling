@@ -6,7 +6,7 @@
 
 > [!TIP]
 > Every highlighted link in this page is clickable.
-> For fast navagation use [Table of Contents](#table-of-contents)
+> For fast navigation use [Table of Contents](#table-of-contents)
 
 
 **Author:** Nels Buhrley
@@ -21,7 +21,7 @@
 - Built a full 2D molecular dynamics engine in C++17 from scratch (Lennard-Jones physics, velocity Verlet integrator, configurable boundary conditions, gravity, and scripted heating/cooling).
 - Solved a non-trivial parallelization problem in an $O(N^2)$ force kernel using OpenMP thread-local accumulators plus guided scheduling to keep updates race-free and scalable.
 - Shipped production-style outputs for analysis and demos: structured NumPy/CSV artifacts, automated energy diagnostics, and parallel-rendered MP4 animations.
-- Designed for reproducible compute workflows: config-driven runs (`simulation.cfg`), release/debug/PGO build modes, and SLURM execution via `job.sh`.
+- Designed for reproducible compute workflows: config-driven runs (`simulation_1.cfg` / `simulation_2.cfg`), release/debug/PGO build modes, benchmark auto-tuning, and SLURM execution via `job.sh`.
 - Demonstrates end-to-end engineering: numerical methods, performance optimization, HPC deployment, and polished communication of results.
 
 For fast verification, jump to [Results](#results), [Build & Run](#build--run), and [Simulation Parameters](#simulation-parameters).
@@ -58,7 +58,7 @@ For fast verification, jump to [Results](#results), [Build & Run](#build--run), 
 
 This project implements a **2D Molecular Dynamics simulation** of interacting particles governed by the **Lennard-Jones potential**. The system evolves via the **velocity Verlet integration** algorithm with periodic boundary conditions, modeling the thermodynamic behavior of a simple fluid. An external **energy injection/extraction schedule** drives the system through heating and cooling phases, allowing observation of phase-like transitions in real time.
 
-The implementation combines **OpenMP parallelism** for force calculations, **minimum image convention** for periodic boundaries, and a **cutoff radius** for efficient pairwise interaction evaluation. Results are saved as `.npz` and `.csv` files, with a Python pipeline that produces an animated particle trajectory and energy analysis plots — rendered in parallel segments and stitched with `ffmpeg`.
+The implementation combines **OpenMP parallelism** for force calculations, **minimum image convention** for periodic boundaries, and a **cell-based Verlet neighbor list** to reduce unnecessary pair checks. Results are saved as `.npy` and `.csv` files, with Python tooling that produces parallel-rendered particle animations and comprehensive energy diagnostics.
 
 ---
 
@@ -113,8 +113,8 @@ All simulation logic lives in two files:
 
 | File | Role |
 |---|---|
-| `main.cpp` | Sets parameters, constructs `MolucularSystem`, calls `runSimulation()` and `save()` |
-| `processing.h` | `MolucularSystem` class: integration, force calculation, energy tracking, I/O |
+| `main.cpp` | Parses config, runs simulation, and supports `--benchmark` tuning sweeps |
+| `processing.h` | `MolucularSystem` class: integration, neighbor-list force evaluation, energy tracking, and I/O |
 
 ### `MolucularSystem` Class
 
@@ -123,10 +123,10 @@ Each `MolucularSystem` instance represents a complete simulation state for $N$ p
 #### Construction
 
 ```cpp
-MolucularSystem(initialPositions, energyFunction, timeSteps, finalTime, boxSize)
+MolucularSystem(config)
 ```
 
-- **Positions** are stored in a flat `std::vector<std::array<double, d>>` of size `timeSteps × numParticles`, accessed via `getPosition(t, i)` and `setPosition(t, i, pos)` using row-major indexing.
+- **Positions** are integrated in `currPositions` and sampled into `sampledPositions` every `stepSkip` steps to keep output sizes manageable.
 - **Velocities** and **accelerations** are single-frame arrays of size `numParticles`.
 - All particles start at rest except particle 0, which receives a small initial velocity `{0.001, 0.001}` to break symmetry and seed energy flow.
 - The dimensionality is compile-time configurable via `static constexpr int d = 2`.
@@ -143,20 +143,23 @@ MolucularSystem(initialPositions, energyFunction, timeSteps, finalTime, boxSize)
 
 #### `calculateAccelerations(t)` — Force Calculation
 
-Computes all pairwise Lennard-Jones forces for time step `t`:
+Computes Lennard-Jones forces using a Verlet neighbor list with linked-cell binning:
 
 ```cpp
+if (shouldRebuildNeighborList(currPositions))
+  rebuildNeighborList(currPositions);
+
 for (p1 = 0; p1 < N; p1++)
-    for (p2 = p1+1; p2 < N; p2++)
-        dx = p1.x - p2.x
-        dx -= L * round(dx / L)     // minimum image convention
-        r² = dx² + dy²
-        if (r² > rc²) continue      // cutoff
-        F = 24 * (2/r¹⁴ - 1/r⁸)    // computed as r × force / r²
-        a[p1] += F;  a[p2] -= F     // Newton's third law
+  for (p2 in neighbors[p1])
+    dx = p1.x - p2.x
+    dx -= L * round(dx / L)      // minimum image convention
+    r² = dx² + dy²
+    if (r² > rc²) continue       // force cutoff
+    F = 24 * (2/r¹⁴ - 1/r⁸)
+    a[p1] += F;  a[p2] -= F      // Newton's third law
 ```
 
-**Parallelism:** When `numParticles > 50`, the outer loop is parallelized with OpenMP using thread-local acceleration and potential energy accumulators, merged via `#pragma omp critical`. The schedule is `guided` to balance the triangular iteration pattern.
+**Parallelism:** When `numParticles > 50`, the loop over particles is parallelized with OpenMP. Each thread accumulates into thread-local acceleration/potential buffers and the buffers are reduced after the parallel region.
 
 **Minimum image convention:** Periodic boundary conditions are enforced by shifting displacements to the nearest image: `dx -= L * round(dx / L)`.
 
@@ -223,10 +226,10 @@ Progress is logged every 5% of the simulation.
 
 | Method | Output |
 |---|---|
-| `saveResultsToNPZ()` | Compressed `.npz` with positions, velocities, accelerations, energies, temperatures, metadata |
+| `saveResultsToNpy()` | Separate `.npy` arrays for sampled positions, energies, temperatures, and metadata |
 | `saveEnergyToCSV()` | CSV with columns: TimeStep, Temperature, PE, KE, TE |
 | `savePositionsToCSV()` | CSV with columns: TimeStep, ParticleIndex, X, Y |
-| `save()` | Auto-creates `output/out_N/` (incrementing index) and calls all three savers |
+| `save()` | Auto-creates `output/out_N/` (incrementing index) and writes NPY + CSV outputs |
 
 ---
 
@@ -234,93 +237,87 @@ Progress is logged every 5% of the simulation.
 
 ### The O(N²) Challenge
 
-Molecular dynamics with pairwise potentials is an inherently $O(N^2)$ problem: every particle interacts with every other particle. For $N = 400$ particles over 300,000 time steps, that amounts to roughly $4.8 \times 10^{10}$ pair evaluations — a workload that demands parallelism but resists it in subtle ways.
+The baseline all-pairs Lennard-Jones loop is $O(N^2)$, which becomes expensive quickly for dense systems and long trajectories. The current code reduces this cost by rebuilding a Verlet neighbor list only when particles move enough to invalidate the list.
 
-The naive parallelization strategy — splitting the outer particle loop across threads — immediately encounters a fundamental correctness issue. When particle $i$ computes its force contribution from particle $j$, Newton's third law ($\mathbf{F}_{ij} = -\mathbf{F}_{ji}$) means we want to update *both* `acceleration[i]` and `acceleration[j]` simultaneously. But if two threads are running simultaneously, Thread A (computing forces on particle $i$) and Thread B (computing forces on particle $k$) might both try to update `acceleration[j]` at the same time — a classic **write-write race condition**.
+This turns the hot loop into "iterate only nearby particles" instead of "iterate every particle pair," while preserving exact pairwise force updates inside the cutoff radius.
 
 ### Race Conditions in Force Accumulation
 
-The race condition arises specifically in the **triangular pair loop**:
+Race hazards still exist because Newton's third law updates two particles per interaction. The implementation avoids shared-write races by assigning each thread a private acceleration buffer:
 
 ```cpp
-for (int p1 = 0; p1 < N; p1++)           // outer: parallelized
-    for (int p2 = p1 + 1; p2 < N; p2++)  // inner: sequential
+for (int p1 = 0; p1 < N; p1++)
+  for (int p2 : neighborList[p1])
         F = compute_LJ_force(p1, p2);
-        acceleration[p1] += F;            // ← Thread writing to p1's slot
-        acceleration[p2] -= F;            // ← RACE: another thread may also write to p2
+    localAcceleration[p1] += F;
+    localAcceleration[p2] -= F;
 ```
 
-The `acceleration[p2] -= F` line is the culprit. When the outer loop is distributed across threads, *any* thread could be updating `acceleration[p2]` for the same `p2` at the same time. Standard approaches like `#pragma omp atomic` would be prohibitively expensive here — called $O(N^2/2)$ times per time step, the synchronization overhead would dwarf the computation.
-
-A `reduction` clause is also unsuitable because the reduction target is a *vector of arrays*, not a scalar, and the reduction would need to operate on the full $N \times d$ acceleration matrix.
+Each thread writes only to its own local arrays during force traversal; shared arrays are combined in a deterministic reduction pass after the parallel loop.
 
 ### The Thread-Local Accumulator Solution
 
-The solution implemented in `calculateAccelerations()` uses **thread-local accumulator arrays** merged via a single `#pragma omp critical` block at the end:
+The current solution combines two optimizations:
+
+1. **Linked-cell neighbor-list rebuilds** with configurable `neighborSkin`.
+2. **Thread-local force accumulation** with post-loop buffer summation.
+
+This structure keeps force evaluation race-free while reducing pair checks significantly for realistic densities.
 
 ```cpp
 #pragma omp parallel if (numParticles > 50)
 {
-    // Each thread gets its own private copy of the full acceleration array
-    std::vector<std::array<double, d>> localAccelerations(numParticles, {0.0, 0.0});
+    // Each thread writes to its own acceleration buffer.
+    std::vector<std::array<double, d>> localAccelerations = threadAccelerations[tid];
     double localPE = 0.0;
 
     #pragma omp for schedule(guided)
     for (int p1 = 0; p1 < numParticles; p1++) {
-        for (int p2 = p1 + 1; p2 < numParticles; p2++) {
+        for (int p2 : neighborList[p1]) {
             // ... force calculation ...
             localAccelerations[p1][dim] += force_component;
             localAccelerations[p2][dim] -= force_component;  // safe: thread-private
         }
     }
-
-    #pragma omp critical
-    {
-        // Merge all thread-local results into the shared array
-        for (int i = 0; i < numParticles; i++)
-            for (int dim = 0; dim < d; dim++)
-                accelerations[i][dim] += localAccelerations[i][dim];
-        currentPE += localPE;
-    }
 }
+
+  // After the parallel region, reduce thread buffers into shared accelerations.
 ```
 
-Each thread accumulates forces into its own private `localAccelerations` vector. The Newton's third law update `localAccelerations[p2] -= F` is now completely safe because no other thread touches this thread's copy. Only after all pair computations are finished does each thread merge its local result into the shared state — and the `critical` block serializes these merges.
-
-**Trade-off:** This approach uses $O(\text{threads} \times N \times d)$ extra memory. For 8 threads and 400 particles in 2D, that's only $\sim$50 KB — negligible. But for much larger particle counts or 3D systems, this memory overhead would grow and alternative strategies (cell lists, domain decomposition) would become necessary.
+  The trade-off is extra memory for per-thread acceleration arrays, but it removes fine-grained synchronization overhead and scales well on shared-memory nodes.
 
 ### Guided Scheduling for Triangular Loops
 
-The pair loop is **triangular**: particle 0 has $N-1$ inner iterations, particle 1 has $N-2$, and so on. Static scheduling would assign equal ranges of outer indices to each thread, but the first threads would get far more work than the last. `schedule(guided)` addresses this by assigning large chunks initially and progressively smaller chunks as threads finish, adapting to the non-uniform workload:
+Even with neighbor lists, work per particle is non-uniform because local density varies. `schedule(guided)` is used so overloaded threads can shed work dynamically:
 
 ```cpp
 #pragma omp for schedule(guided)
 for (int p1 = 0; p1 < numParticles; p1++) { ... }
 ```
 
-This keeps all threads busy until the very end of the sweep, maximizing parallel efficiency for the triangular iteration pattern.
+This improves balance for both dense startup lattices and later disordered states.
 
 ### Lessons Learned
 
-1. **Not all $O(N^2)$ problems parallelize cleanly.** The Newton's third law optimization (halving pair evaluations) introduces write dependencies that naively conflict with thread parallelism. Choosing to *duplicate* memory via thread-local accumulators was the pragmatic solution — trading space for correctness.
+1. **Neighbor lists are the biggest practical speedup.** Rebuilding occasionally is cheaper than checking all pairs each step.
 
-2. **`omp critical` is acceptable when called $O(\text{threads})$ times, not $O(N^2)$ times.** The merge step runs once per thread per time step — negligible overhead. Putting synchronization *inside* the pair loop would have been catastrophic.
+2. **Thread-local buffers remove write races cleanly.** Newton's third-law updates stay local during parallel work and are reduced afterward.
 
-3. **Dynamic/guided scheduling is essential for unbalanced loops.** The triangular pattern means static scheduling leaves threads idle; `guided` scheduling adapts automatically.
+3. **Guided scheduling remains important.** Density-driven imbalance appears even when pair loops are no longer strictly triangular.
 
-4. **Threshold guards prevent small-problem overhead.** The `if (numParticles > 50)` guard on the parallel region ensures that the thread-spawning overhead doesn't dominate for small particle counts during testing.
+4. **Auto-tuning matters on shared clusters.** The benchmark mode (`--benchmark`) sweeps threads and `neighborSkin` to select better run settings per node.
 
 ---
 
 ## Visualization (`plotting.py`)
 
-The Python pipeline performs two tasks:
+The Python pipeline performs two tasks with separate scripts:
 
 ### 1. Particle Animation (Parallel Rendering)
 
 The animation is rendered in parallel using `multiprocessing`:
 
-1. Frame indices are split across up to 128 workers
+1. Frame indices are split across configurable workers (`--workers`, default based on CPU count)
 2. Each worker renders its segment to a temporary `.mp4` via `matplotlib.animation`
 3. Segments are stitched with `ffmpeg -concat` into a single animation
 
@@ -328,13 +325,12 @@ This avoids the serial bottleneck of rendering thousands of frames on one core.
 
 ### 2. Energy Analysis Plots
 
-Three-panel figure:
+`plot_energy.py` creates summary and diagnostic figures:
 
 | Panel | Content |
 |---|---|
-| Top | Potential, kinetic, and total energy vs. time step |
-| Middle | Temperature vs. time step |
-| Bottom | Energy drift $\Delta E = E(t) - E(0)$ vs. time step |
+| Composite Figure | Energy components, drift, temperature, and temperature-vs-energy scatter |
+| Detailed Figure | Binned temperature-over-energy trend plus raw samples |
 
 ---
 
@@ -348,7 +344,7 @@ Three-panel figure:
     Your browser does not support the video tag.
   </video>
   <br>
-  <em>Particle trajectory animation showing the heating–cooling cycle. Particles evolve from a regular grid through a gas-like disordered phase during heating, then re-order as energy is extracted — illustrating the connection between kinetic energy and temperature at the microscopic level. In this simulation you can see a transition from kenetic energy to thermal energy as the blocks fall. </em>
+  <em>Particle trajectory animation showing the heating-cooling cycle. Particles evolve from a regular grid through a gas-like disordered phase during heating, then re-order as energy is extracted, illustrating the connection between kinetic energy and temperature at the microscopic level.</em>
 </p>
 
 <!-- Uncomment below if you have an MP4 instead of GIF:
@@ -375,7 +371,7 @@ The energy plot shows the heating/cooling cycle: kinetic energy rises during the
 | Velocity rescaling | Instantaneous rescaling is not thermostatting — not canonical ensemble | Acceptable for driven heating/cooling; use Nosé-Hoover for equilibrium studies |
 | Initial symmetry | Grid start with zero velocities is artificial | Small perturbation on particle 0 breaks symmetry; long heating phase equilibrates |
 
-**Computational complexity:** $\mathcal{O}(N^2 \times T)$ — all-pairs force calculation at each of $T$ time steps. For 400 particles and 300,000 steps this is $\sim 4.8 \times 10^{10}$ pair evaluations.
+**Computational complexity:** Force evaluation is neighbor-list based: typical runtime is closer to $\mathcal{O}(N \times n_{nbr} \times T)$ with periodic $\mathcal{O}(N)$ rebuilds, while worst-case behavior remains $\mathcal{O}(N^2 \times T)$ in very dense/pathological layouts.
 
 ---
 
@@ -385,7 +381,7 @@ The energy plot shows the heating/cooling cycle: kinetic energy rises during the
 
 - **C++17** compiler (`g++` or `clang++`)
 - **OpenMP** (`brew install libomp` on macOS)
-- **zlib** (for `.npz` output via `cnpy`)
+- **zlib** (for `cnpy` I/O linkage)
 - **Python 3** with `numpy` and `matplotlib`
 - **ffmpeg** (for animation rendering)
 
@@ -395,31 +391,32 @@ The energy plot shows the heating/cooling cycle: kinetic energy rises during the
 make release   # Optimized build (-O3, LTO, vectorization, march=native)
 make unsafe    # Adds -ffast-math (may introduce minor FP drift)
 make debug     # -O0, full warnings, OpenMP disabled
-make profile-gen && ./bin/main simulation.cfg && make profile-use  # Profile-guided optimization
+make profile-gen && ./bin/main simulation_2.cfg && make profile-use  # Profile-guided optimization
 ```
 
 ### Run
 
 ```bash
-./bin/main simulation.cfg
+./bin/main simulation_2.cfg
+./bin/main simulation_2.cfg --benchmark
 ```
 
 Output is auto-saved to `output/out_N/` (incrementing index):
 
 | File | Description |
 |---|---|
-| `positions.npy` | Position history as `(sampledSteps, N, 2)` (sampled every 10 solver steps) |
+| `positions.npy` | Position history as `(sampledSteps, N, 2)` sampled every `stepSkip` solver steps |
 | `temperatures.npy` | Temperature time series |
 | `potentialEnergies.npy` | Potential energy time series |
 | `kineticEnergies.npy` | Kinetic energy time series |
 | `totalEnergies.npy` | Total energy time series |
 | `metadata.npy` | `[width, height, numParticles, timeSteps, finalTime]` |
-| `energy_data_N.csv` | Full-resolution energy/temperature CSV |
-| `positions_data_N.csv` | Full-resolution per-particle trajectory CSV |
+| `energy_data.csv` | Sampled energy/temperature CSV |
+| `positions_data.csv` | Sampled per-particle trajectory CSV |
 
-### Configuration (simulation.cfg)
+### Configuration (simulation_1.cfg / simulation_2.cfg)
 
-The simulation is fully configured through `simulation.cfg` using `key=value` pairs.
+The simulation is fully configured through `.cfg` files using `key=value` pairs.
 
 Required keys currently parsed by `main.cpp`/`processing.h`:
 
@@ -432,6 +429,9 @@ Required keys currently parsed by `main.cpp`/`processing.h`:
 | `xBoundaryCondition` | string | `periodic` or `reflective` |
 | `yBoundaryCondition` | string | `periodic` or `reflective` |
 | `gravity` | float | Constant acceleration in `-y` |
+| `stepSkip` | int | Sampling stride for stored positions/CSV output |
+| `neighborSkin` | float | Verlet neighbor-list skin distance |
+| `showProgress` | int (optional) | Progress-print toggle (`0` off, `1` on; default on) |
 | `initialPositionsInstructions` | string | Shape instructions for initial particle set |
 | `EnergyInstructions` | string | Time-segmented heating/cooling schedule |
 
@@ -456,13 +456,19 @@ Each segment distributes its total energy change uniformly over that percent ran
 ### Visualize
 
 ```bash
-python3 plotting.py
+python3 plotting.py --workers 8
+python3 plot_energy.py --run 0
 ```
 
-`plotting.py` automatically loads the newest `output/out_N/` directory, then writes:
+`plotting.py` automatically loads the newest `output/out_N/` directory and writes:
 
 - `md_animation_N.mp4`
-- `energy_plot_N.png`
+
+`plot_energy.py` automatically loads either the latest or requested run and writes:
+
+- `energy_analysis_N.png`
+- `temperature_over_energy_N.png`
+- `energy_summary_N.csv`
 
 Note: `plotting.py` currently points to a cluster-specific ffmpeg path. If running locally, update the `FFMPEG` variable or replace it with your system ffmpeg path.
 
@@ -472,23 +478,25 @@ Note: `plotting.py` currently points to a cluster-specific ffmpeg path. If runni
 sbatch job.sh
 ```
 
-The batch script builds in release mode (only when needed), runs `./bin/main simulation.cfg`, and then executes `python plotting.py`. Default allocation is 1 task with 8 OpenMP threads (`--cpus-per-task=8`).
+The batch script builds in release mode only when needed, optionally auto-tunes `OMP_NUM_THREADS` and `neighborSkin` via benchmark mode, runs `./bin/main simulation_2.cfg`, then submits `anamation.sh` and `plotting.sh` as follow-up SLURM jobs.
 
 ---
 
 ## Simulation Parameters
 
-Configured in `simulation.cfg` (not hardcoded in `main.cpp`).
+Configured in `simulation_2.cfg` (not hardcoded in `main.cpp`).
 
 | Parameter | Default | Description |
 |---|---|---|
-| `initialPositionsInstructions` | `Hexagon,50.0,50.0,0.0,1.1,25` | Initial particle layout (shape-composed) |
-| `timeSteps` | `100000` | Number of integration steps |
-| `finalTime` | `150.0` | Total simulation time (reduced units) |
-| `width`,`height` | `100.0`,`100.0` | 2D box dimensions |
-| `xBoundaryCondition`,`yBoundaryCondition` | `reflective`,`reflective` | Boundary handling by axis |
+| `initialPositionsInstructions` | `Rectangle, 125.0, 30.0, 0.0, 1.1, 200, 50` | Initial particle layout (shape-composed) |
+| `timeSteps` | `1000000` | Number of integration steps |
+| `finalTime` | `2000.0` | Total simulation time (reduced units) |
+| `width`,`height` | `250.0`,`150.0` | 2D box dimensions |
+| `xBoundaryCondition`,`yBoundaryCondition` | `periodic`,`reflective` | Boundary handling by axis |
 | `gravity` | `0.01` | Constant downward acceleration |
-| `EnergyInstructions` | `2,8,-300;8,15,1000.0;30,40,1000.0;45,80,-2000.0;80,95,-400.0` | Multi-stage heating/cooling schedule |
+| `neighborSkin` | `0.2` | Skin distance for neighbor-list rebuild policy |
+| `stepSkip` | `160` | Save sampled frames every 160 timesteps |
+| `EnergyInstructions` | `2,8,-50;8,50,800;50,60,-600;60,95,-200` | Multi-stage heating/cooling schedule |
 | `rc` | 2.5 σ | Lennard-Jones cutoff radius |
 
 ---
@@ -501,11 +509,12 @@ Configured in `simulation.cfg` (not hardcoded in `main.cpp`).
 | Lennard-Jones potential with cutoff | Realistic short-range interactions with $O(N^2)$ scaling |
 | Minimum image convention | Correct nearest-image distances for periodic boundaries |
 | Newton's third law ($\mathbf{F}_{ij} = -\mathbf{F}_{ji}$) | Halves the number of pair evaluations |
-| Thread-local accumulators + `omp critical` reduce | Race-free parallel force summation |
-| `guided` OpenMP schedule | Balances triangular pair-loop workload across threads |
+| Verlet neighbor lists + linked-cell grid | Reduces force checks to nearby particles and enables scalable runs |
+| Thread-local accumulators + post-loop reduction | Race-free parallel force summation without per-interaction synchronization |
+| `guided` OpenMP schedule | Balances non-uniform per-particle workloads across threads |
 | Velocity rescaling energy injection | Precisely controls energy input/output for driven simulations |
 | Flat `std::array<double, d>` storage | Cache-friendly, compile-time dimensionality |
-| `cnpy` NPZ output | Compact binary format directly loadable by NumPy |
+| `cnpy` NPY output | Stores large runs safely without NPZ ZIP-size limits |
 | Parallel animation rendering | Multiprocessing + ffmpeg concat avoids serial matplotlib bottleneck |
 | Profile-guided optimization (PGO) | Compiler uses runtime data for branch prediction and inlining |
 
@@ -518,8 +527,10 @@ Project 8: Molicular Dynamics/
 ├── main.cpp        # Entry point: reads config path and launches simulation
 ├── processing.h    # MolucularSystem class: integration, forces, energy, I/O
 ├── Makefile        # Multi-target build: debug, release, unsafe, profile-guided
-├── simulation.cfg  # Primary runtime configuration file
-├── plotting.py     # Python visualization: parallel animation + energy plots
+├── simulation_1.cfg  # Smaller exploratory config
+├── simulation_2.cfg  # Primary runtime configuration file
+├── plotting.py       # Python visualization: parallel animation renderer
+├── plot_energy.py    # Python post-processing: energy diagnostics and summaries
 ├── job.sh          # SLURM batch script (default: 8 OpenMP CPUs)
 ├── bin/            # Compiled executable
 ├── slurm_out/      # SLURM output logs from HPC runs
@@ -532,10 +543,12 @@ Project 8: Molicular Dynamics/
   │   ├── kineticEnergies.npy    # Kinetic energy time series
   │   ├── totalEnergies.npy      # Total energy time series
   │   ├── metadata.npy           # width, height, particle count, timeSteps, finalTime
-  │   ├── energy_data_N.csv      # Energy & temperature time series (CSV)
-  │   ├── positions_data_N.csv   # Full particle trajectories (CSV)
+  │   ├── energy_data.csv        # Energy & temperature time series (CSV)
+  │   ├── positions_data.csv     # Sampled particle trajectories (CSV)
   │   ├── md_animation_N.mp4     # Particle trajectory animation
-  │   └── energy_plot_N.png      # Energy analysis figure
+  │   ├── energy_analysis_N.png  # Composite energy diagnostics figure
+  │   ├── temperature_over_energy_N.png  # Detailed T(E) trend plot
+  │   └── energy_summary_N.csv   # Scalar diagnostics summary
     └── ...
 ```
 

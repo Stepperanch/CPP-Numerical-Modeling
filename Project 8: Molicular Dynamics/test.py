@@ -1,6 +1,13 @@
 import numpy as np
 import os
 
+"""
+/**
+@brief Quick smoke-test loader for latest molecular-dynamics output arrays.
+@details Validates that trajectory and energy arrays can be loaded and prints early frame samples for manual inspection.
+*/
+"""
+
 FINAL_INDEX = None  # last data index to animate (None = use all)
 STEP_SKIP   = 4     # data timesteps skipped between frames
 

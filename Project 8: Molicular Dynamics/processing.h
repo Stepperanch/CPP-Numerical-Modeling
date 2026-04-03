@@ -38,7 +38,7 @@
  *
  */
 
-// Use doxey style comments for documentation generation
+// Use Doxygen-style comments for documentation generation.
 
 /** @brief Parses a configuration file and returns a map of key-value pairs.
  * The configuration file should have lines in the format "key=value". Lines that are empty or start with '#' will be ignored.
@@ -453,6 +453,13 @@ class MolucularSystem {
 
     // Assume sigma, epsilon, and mass are all 1 for simplicity in reduced units
 
+    /** @brief Multiply two size_t values with overflow checking.
+     * @param a Left multiplicand.
+     * @param b Right multiplicand.
+     * @param context Text used in the thrown error message.
+     * @return Product of a and b.
+     * @throws std::overflow_error If the multiplication would overflow size_t.
+     */
     static size_t checkedMul(size_t a, size_t b, const std::string& context) {
         if (a != 0 && b > (std::numeric_limits<size_t>::max() / a)) {
             throw std::overflow_error("Size overflow while computing " + context);
@@ -460,6 +467,9 @@ class MolucularSystem {
         return a * b;
     }
 
+    /** @brief Construct a molecular system from parsed configuration values.
+     * @param config Key-value configuration map parsed from the .cfg file.
+     */
     MolucularSystem(std::map<std::string, std::string> config) {
         this->timeSteps = std::stoull(config["timeSteps"]);
         this->finalTime = std::stof(config["finalTime"]);
@@ -625,6 +635,10 @@ class MolucularSystem {
         yMinImFn(dy, height);
     }
 
+    /** @brief Decide whether the Verlet neighbor list must be rebuilt.
+     * @param activePositions Current particle positions.
+     * @return True when any particle moved farther than half the skin distance from the reference snapshot.
+     */
     inline bool shouldRebuildNeighborList(const std::vector<std::array<double, d>>& activePositions) {
         if (!neighborListInitialized) {
             return true;
@@ -642,11 +656,18 @@ class MolucularSystem {
         return false;
     }
 
+    /** @brief Wrap a cell index into [0, nCells) for periodic cell-grid traversal.
+     * @param idx Candidate cell index (possibly outside bounds).
+     * @param nCells Number of cells along one axis.
+     * @return Wrapped index in range [0, nCells).
+     */
     inline int wrapCellIndex(int idx, int nCells) const {
         int wrapped = idx % nCells;
         return (wrapped < 0) ? (wrapped + nCells) : wrapped;
     }
 
+    /** @brief Ensure per-thread acceleration and potential-energy buffers match current OpenMP thread count.
+     */
     inline void ensureThreadBuffers() {
         int wantedThreads = omp_get_max_threads();
         if (wantedThreads <= 0) {
@@ -661,6 +682,9 @@ class MolucularSystem {
         threadPotentialEnergies.assign(static_cast<size_t>(threadBufferCount), 0.0);
     }
 
+    /** @brief Rebuild the linked-cell Verlet neighbor list for the current positions.
+     * @param activePositions Current particle positions.
+     */
     void rebuildNeighborList(const std::vector<std::array<double, d>>& activePositions) {
         const double cellSize = neighborCutoff;
         cellCountX = std::max(1, static_cast<int>(width / cellSize));
@@ -1032,6 +1056,10 @@ class MolucularSystem {
         temperatures[t] = currentKE_times2 / (numParticles * d);  // Calculate temperature using the kinetic energy and degrees of freedom
     }
 
+    /** @brief Emit progress and detect invalid states during the main simulation loop.
+     * @param t Current raw simulation timestep.
+     * @return True when the simulation should abort early.
+     */
     inline bool monitoringLogic(size_t t) {
         if (showProgress && t % onePercentOfTimeSteps == 0) {
             std::cout << "Completed " << (t * 100) / timeSteps << "% of simulation." << std::endl;
@@ -1158,6 +1186,8 @@ class MolucularSystem {
         savePositionsToCSV(outputDir + "/positions_data" + ".csv");
     }
 
+    /** @brief Save simulation outputs in binary NPY format only.
+     */
     void binSave() {
         // Implement the logic to save the results (positions, energies, etc.) to a file
         // create a directory within the ./output dir titled
@@ -1169,6 +1199,9 @@ class MolucularSystem {
         saveResultsToNpy(outputDir);
     }
 
+    /** @brief Determine the next available output directory name.
+     * @return Path in the form ./output/out_N where N is the first unused index.
+     */
     inline std::string getOutputDir() {
         std::string outputDir = "./output/";
         int i = 0;

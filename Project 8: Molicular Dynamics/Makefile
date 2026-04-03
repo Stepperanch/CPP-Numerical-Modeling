@@ -1,3 +1,7 @@
+# /**
+# @brief Build definitions for Project 8 molecular dynamics executable.
+# @details Provides debug, release, unsafe, and PGO targets with platform-specific OpenMP flags for macOS and Linux.
+# */
 CXX = g++
 
 # Detect platform: Linux uses -fopenmp directly; macOS needs libomp from Homebrew

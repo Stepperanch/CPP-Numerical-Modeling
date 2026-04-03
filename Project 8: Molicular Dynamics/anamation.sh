@@ -1,4 +1,8 @@
 #!/bin/bash
+# /**
+# @brief SLURM batch script for rendering molecular-dynamics animations from the latest output run.
+# @details Allocates compute resources, loads Python and ffmpeg modules, and executes plotting.py with worker count tied to allocated CPUs.
+# */
 #SBATCH --job-name=molecular_dynamics_anamation  # Job name
 #SBATCH --output=slurm_out/slurm_%j.out       # stdout log (%j = job ID)
 #SBATCH --error=slurm_out/slurm_%j.err        # stderr log

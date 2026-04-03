@@ -1,4 +1,8 @@
 #!/bin/bash
+# /**
+# @brief Primary SLURM workflow for Project 8.
+# @details Validates build freshness, optionally auto-tunes thread and neighbor-skin settings, runs the simulation, then submits plotting and animation follow-up jobs.
+# */
 #SBATCH --job-name=molecular_dynamics  # Job name
 #SBATCH --output=slurm_out/slurm_%j.out       # stdout log (%j = job ID)
 #SBATCH --error=slurm_out/slurm_%j.err        # stderr log
@@ -34,6 +38,10 @@ cd "$SLURM_SUBMIT_DIR"
 # Flags are sorted so the comparison is stable across different lscpu output
 # orderings.  Only flags that affect code-gen with -march=native are tracked.
 # ---------------------------------------------------------------------------
+# /**
+# @brief Build a compact CPU feature signature used to detect architecture changes across nodes.
+# @return Colon-delimited SIMD feature list via stdout.
+# */
 get_cpu_signature() {
     grep -m1 "^flags" /proc/cpuinfo \
         | tr ' ' '\n' \

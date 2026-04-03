@@ -10,17 +10,10 @@ import multiprocessing as mp
 import argparse
 
 """
-File Header:
-
-Author: Nels Buhrley
-Date: 2026-03-02
-
-Description:
-    Animation and energy plots for Project 8: Molecular Dynamics.
-    Loads the most recent output directory (./output/out_N/results.npz).
-    Positions array shape: (timeSteps, numParticles, 2)
-    Metadata array: [L, numParticles, timeSteps, finalTime]
-    Animation is rendered in parallel segments and stitched with ffmpeg.
+/**
+@brief Debug utility for inspecting selected trajectory samples.
+@details Loads latest run outputs and prints targeted index ranges to diagnose discontinuities or suspicious force/energy behavior.
+*/
 """
 
 # ── Find most recent output directory ────────────────────────────────────────

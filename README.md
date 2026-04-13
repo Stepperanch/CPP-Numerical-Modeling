@@ -344,33 +344,33 @@ pip3 install numpy matplotlib pandas
 
 ```
 CPP_Workspace/
-├── README.md                          # ← This file (Portfolio Hub)
-│
-├── Project 1: realistic projectile motion/    # RK4 ballistics with drag & Magnus
-├── Project 2: driven damped oscillations/     # Nonlinear pendulum & chaos
-├── Project 3: Celestial Dynamics/             # N-body gravitational simulation
-├── Project 4: Overrelaxation/                 # 3D Laplace solver (SOR + OpenMP)
-├── Project 5: Occilations on a string/        # Wave equation FD + FFT spectral
-├── Project 6: Diffusion/                      # 3D random-walk Monte Carlo
-├── Project 7: The Ising Model/                # 3D Metropolis MCMC (HPC)
-│
-├── Personal Project 1: 3n+1/                 # Collatz conjecture exploration
-├── Personal Project 2: Idelic Numbers/        # Euler's idoneal number sieve
-│
-├── include/                                   # Shared libraries
-│   ├── cnpy.h                                 # NPZ I/O library
-│   └── vector3d.h                             # 3D vector utilities
-├── src/
-│   └── cnpy.cpp                               # cnpy implementation
-│
-├── reference/                                 # Study notes & cheatsheets
-│   ├── CPP_BASICS.md
-│   ├── FUNCTIONS_REFERENCE.md
-│   ├── NUMERICAL_PHYSICS.md
-│   ├── OPTIMIZATION_TIPS.md
-│   └── SLURM_FORMATING.md
-│
-└── Template Makefile                          # Reusable build template
+|-- README.md                          # <- This file (Portfolio Hub)
+|
+|-- Project 1: realistic projectile motion/    # RK4 ballistics with drag & Magnus
+|-- Project 2: driven damped oscillations/     # Nonlinear pendulum & chaos
+|-- Project 3: Celestial Dynamics/             # N-body gravitational simulation
+|-- Project 4: Overrelaxation/                 # 3D Laplace solver (SOR + OpenMP)
+|-- Project 5: Occilations on a string/        # Wave equation FD + FFT spectral
+|-- Project 6: Diffusion/                      # 3D random-walk Monte Carlo
+|-- Project 7: The Ising Model/                # 3D Metropolis MCMC (HPC)
+|
+|-- Personal Project 1: 3n+1/                 # Collatz conjecture exploration
+|-- Personal Project 2: Idelic Numbers/        # Euler's idoneal number sieve
+|
+|-- include/                                   # Shared libraries
+|   |-- cnpy.h                                 # NPZ I/O library
+|   `-- vector3d.h                             # 3D vector utilities
+|-- src/
+|   `-- cnpy.cpp                               # cnpy implementation
+|
+|-- reference/                                 # Study notes & cheatsheets
+|   |-- CPP_BASICS.md
+|   |-- FUNCTIONS_REFERENCE.md
+|   |-- NUMERICAL_PHYSICS.md
+|   |-- OPTIMIZATION_TIPS.md
+|   `-- SLURM_FORMATING.md
+|
+`-- Template Makefile                          # Reusable build template
 ```
 
 ---

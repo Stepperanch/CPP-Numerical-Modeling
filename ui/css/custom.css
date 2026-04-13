@@ -213,14 +213,12 @@ body {
     table-layout: auto;
     border-radius: 10px;
     overflow: hidden;
-    border: 2px solid var(--table-frame);
+    border: 1px solid var(--table-cell-line);
     background: var(--surface);
     background-clip: padding-box;
     clip-path: inset(0 round 10px);
     -webkit-mask-image: -webkit-radial-gradient(white, black);
-    box-shadow:
-        0 0 0 1px color-mix(in srgb, var(--table-frame) 65%, transparent),
-        0 4px 14px rgba(5, 20, 38, 0.04);
+    box-shadow: 0 4px 14px rgba(5, 20, 38, 0.04);
 }
 
 .main-content th {

@@ -375,19 +375,19 @@ Configured in [main.cpp](main.cpp):
 
 ```
 Project 9: Quantum Mechanics/
-├── main.cpp                    # Entry point: configures degrees, iterations, parameters
-├── processing.h                # Core solver: Numerov, nodal bracketing, bisection refinement
-├── Makefile                    # Multi-target build: debug, release, clean
-├── postprocessing.py           # Generates interactive Plotly dashboards from NPZ output
-├── requirements.txt            # Python dependencies (numpy, plotly)
-└── output/
-    └── eigenstates.npz         # Compressed eigenstate database
-        ├── psi_degree_2_state_0..9       # Wavefunction trajectories for n=2
-        ├── energies_degree_2             # Energy levels for n=2
-        ├── psi_degree_3_state_0..9       # Wavefunction trajectories for n=3
-        ├── energies_degree_3             # Energy levels for n=3
-        ├── ... (similarly for n=4,5,6)
-        └── targetXEnd                    # Integration endpoint (8.0)
+|-- main.cpp                    # Entry point: configures degrees, iterations, parameters
+|-- processing.h                # Core solver: Numerov, nodal bracketing, bisection refinement
+|-- Makefile                    # Multi-target build: debug, release, clean
+|-- postprocessing.py           # Generates interactive Plotly dashboards from NPZ output
+|-- requirements.txt            # Python dependencies (numpy, plotly)
+`-- output/
+    `-- eigenstates.npz         # Compressed eigenstate database
+        |-- psi_degree_2_state_0..9       # Wavefunction trajectories for n=2
+        |-- energies_degree_2             # Energy levels for n=2
+        |-- psi_degree_3_state_0..9       # Wavefunction trajectories for n=3
+        |-- energies_degree_3             # Energy levels for n=3
+        |-- ... (similarly for n=4,5,6)
+        `-- targetXEnd                    # Integration endpoint (8.0)
 ```
 
 ---

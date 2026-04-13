@@ -526,32 +526,32 @@ Configured in `simulation_2.cfg` (not hardcoded in `main.cpp`).
 
 ```
 Project 8: Molicular Dynamics/
-├── main.cpp        # Entry point: reads config path and launches simulation
-├── processing.h    # MolucularSystem class: integration, forces, energy, I/O
-├── Makefile        # Multi-target build: debug, release, unsafe, profile-guided
-├── simulation_1.cfg  # Smaller exploratory config
-├── simulation_2.cfg  # Primary runtime configuration file
-├── plotting.py       # Python visualization: parallel animation renderer
-├── plot_energy.py    # Python post-processing: energy diagnostics and summaries
-├── job.sh          # SLURM batch script (default: 8 OpenMP CPUs)
-├── bin/            # Compiled executable
-├── slurm_out/      # SLURM output logs from HPC runs
-└── output/
-    ├── Test Out/           # Early test run
-    ├── out_0/ – out_9/     # Simulation runs (auto-incrementing)
-  │   ├── positions.npy          # Sampled positions
-  │   ├── temperatures.npy       # Temperature time series
-  │   ├── potentialEnergies.npy  # Potential energy time series
-  │   ├── kineticEnergies.npy    # Kinetic energy time series
-  │   ├── totalEnergies.npy      # Total energy time series
-  │   ├── metadata.npy           # width, height, particle count, timeSteps, finalTime
-  │   ├── energy_data.csv        # Energy & temperature time series (CSV)
-  │   ├── positions_data.csv     # Sampled particle trajectories (CSV)
-  │   ├── md_animation_N.mp4     # Particle trajectory animation
-  │   ├── energy_analysis_N.png  # Composite energy diagnostics figure
-  │   ├── temperature_over_energy_N.png  # Detailed T(E) trend plot
-  │   └── energy_summary_N.csv   # Scalar diagnostics summary
-    └── ...
+|-- main.cpp        # Entry point: reads config path and launches simulation
+|-- processing.h    # MolucularSystem class: integration, forces, energy, I/O
+|-- Makefile        # Multi-target build: debug, release, unsafe, profile-guided
+|-- simulation_1.cfg  # Smaller exploratory config
+|-- simulation_2.cfg  # Primary runtime configuration file
+|-- plotting.py       # Python visualization: parallel animation renderer
+|-- plot_energy.py    # Python post-processing: energy diagnostics and summaries
+|-- job.sh          # SLURM batch script (default: 8 OpenMP CPUs)
+|-- bin/            # Compiled executable
+|-- slurm_out/      # SLURM output logs from HPC runs
+`-- output/
+    |-- Test Out/           # Early test run
+    |-- out_0/ -- out_9/     # Simulation runs (auto-incrementing)
+  |   |-- positions.npy          # Sampled positions
+  |   |-- temperatures.npy       # Temperature time series
+  |   |-- potentialEnergies.npy  # Potential energy time series
+  |   |-- kineticEnergies.npy    # Kinetic energy time series
+  |   |-- totalEnergies.npy      # Total energy time series
+  |   |-- metadata.npy           # width, height, particle count, timeSteps, finalTime
+  |   |-- energy_data.csv        # Energy & temperature time series (CSV)
+  |   |-- positions_data.csv     # Sampled particle trajectories (CSV)
+  |   |-- md_animation_N.mp4     # Particle trajectory animation
+  |   |-- energy_analysis_N.png  # Composite energy diagnostics figure
+  |   |-- temperature_over_energy_N.png  # Detailed T(E) trend plot
+  |   `-- energy_summary_N.csv   # Scalar diagnostics summary
+    `-- ...
 ```
 
 ---

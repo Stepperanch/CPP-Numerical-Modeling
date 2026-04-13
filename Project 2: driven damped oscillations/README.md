@@ -252,17 +252,17 @@ The plotting script auto-detects output files in `Output/` and generates six-pan
 
 ```
 Project 2: driven damped oscillations/
-├── main.cpp              # Entry point
-├── include/
-│   ├── oscillator.h      # Oscillator class: physical parameters, derivatives
-│   └── processing.h      # Integrators (RK4, Euler-Cromer), logic controller
-├── src/
-│   ├── oscillator.cpp    # Derivative computation: gravity + damping + driving
-│   └── processing.cpp    # Integration loops, interactive menu, CSV output
-├── plotting.py           # Six-panel analysis: time series, phase space, Poincaré
-├── Makefile              # Build targets: release, debug, clean
-├── bin/                  # Compiled executables
-└── Output/               # CSV data and PNG analysis figures
+|-- main.cpp              # Entry point
+|-- include/
+|   |-- oscillator.h      # Oscillator class: physical parameters, derivatives
+|   `-- processing.h      # Integrators (RK4, Euler-Cromer), logic controller
+|-- src/
+|   |-- oscillator.cpp    # Derivative computation: gravity + damping + driving
+|   `-- processing.cpp    # Integration loops, interactive menu, CSV output
+|-- plotting.py           # Six-panel analysis: time series, phase space, Poincare
+|-- Makefile              # Build targets: release, debug, clean
+|-- bin/                  # Compiled executables
+`-- Output/               # CSV data and PNG analysis figures
 ```
 
 ---

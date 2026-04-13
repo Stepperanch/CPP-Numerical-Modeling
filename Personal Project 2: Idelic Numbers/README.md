@@ -100,7 +100,7 @@ for (long long a = 1; a * a * 3 + a * 2 <= limit; a++) {
     for (long long b = a + 1; a * b + (a + b) * (b + 1) <= limit; b++) {
         for (long long c = b + 1; a * b + b * c + a * c <= limit; c++) {
             long long val = a * b + b * c + a * c;
-            isNonIdoneal[val] = true;   // atomic by design — only writes true
+            isNonIdoneal[val] = true;   // atomic by design -- only writes true
         }
     }
 }
@@ -198,11 +198,11 @@ Configured in [main.cpp](main.cpp):
 
 ```
 Personal Project 2: Idelic Numbers/
-├── main.cpp      # Sieve implementation with OpenMP parallelization
-├── Makefile      # Build targets: default, release, clean
-├── my_program    # Compiled executable
-└── bin/
-    └── main      # Alternative executable location
+|-- main.cpp      # Sieve implementation with OpenMP parallelization
+|-- Makefile      # Build targets: default, release, clean
+|-- my_program    # Compiled executable
+`-- bin/
+    `-- main      # Alternative executable location
 ```
 
 ---

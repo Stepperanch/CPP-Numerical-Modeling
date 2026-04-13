@@ -227,18 +227,18 @@ Configured interactively at runtime or via preset classes:
 
 ```
 Project 1: realistic projectile motion/
-├── main.cpp              # Entry point — interactive simulation launcher
-├── include/
-│   ├── Projectile.h      # Vector3D, Vector4D, Projectile, preset subclasses
-│   └── Processing.h      # RK4 integrator, Run controller
-├── src/
-│   ├── Projectile.cpp    # Physics: acceleration, vector ops, CSV output
-│   └── Processing.cpp    # Integration loop, interactive menu, file I/O
-├── ploting.py            # Python 3D trajectory visualization
-├── bin/                  # Compiled executables
-└── Output/               # CSV data and PNG trajectory plots
-    ├── trajectory1.csv
-    └── trajectory1.png
+|-- main.cpp              # Entry point -- interactive simulation launcher
+|-- include/
+|   |-- Projectile.h      # Vector3D, Vector4D, Projectile, preset subclasses
+|   `-- Processing.h      # RK4 integrator, Run controller
+|-- src/
+|   |-- Projectile.cpp    # Physics: acceleration, vector ops, CSV output
+|   `-- Processing.cpp    # Integration loop, interactive menu, file I/O
+|-- ploting.py            # Python 3D trajectory visualization
+|-- bin/                  # Compiled executables
+`-- Output/               # CSV data and PNG trajectory plots
+    |-- trajectory1.csv
+    `-- trajectory1.png
 ```
 
 ---

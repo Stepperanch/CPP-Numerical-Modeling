@@ -178,12 +178,12 @@ The **mean power spectrum** is then computed as the spatial average of $\lvert\h
 The update formula at step $t$ reads from steps $t-1$ and $t-2$. This is an irreducible sequential dependency: no thread can compute step $t$ until all spatial points at $t-1$ are finished. OpenMP's implicit **barrier at the end of each `#pragma omp for`** enforces this automatically — all threads complete the spatial sweep before any begins the next time step.
 
 ```
-─── Sequential ───────────────────────────────────────────────────────────────
-for t = 1 … timeSteps:
-    ─── Parallel ─────────────────────────────────────────────────────────────
+--- Sequential ---------------------------------------------------------------
+for t = 1 ... timeSteps:
+    --- Parallel -------------------------------------------------------------
     #pragma omp parallel for
-    for i = 1 … N-1:   u[t][i] = f(u[t-1], u[t-2])
-    ─── [implicit barrier: all threads sync before t+1] ──────────────────────
+    for i = 1 ... N-1:   u[t][i] = f(u[t-1], u[t-2])
+    --- [implicit barrier: all threads sync before t+1] ----------------------
 ```
 
 ### FFT Race Condition Prevention
@@ -225,13 +225,13 @@ The Python script [plotting.py](plotting.py) loads the `.npz` archive and produc
 ### Figure Layout
 
 ```
-┌────────────────────────┬────────────────────────┐
-│  Initial Displacement  │   Mean Power Spectrum  │
-│       (t = 0)          │     (log-scale, Hz)    │
-├────────────────────────┴────────────────────────┤
-│         String Propagation Animation            │
-│           (full time evolution)                 │
-└─────────────────────────────────────────────────┘
++------------------------+------------------------+
+|  Initial Displacement  |   Mean Power Spectrum  |
+|       (t = 0)          |     (log-scale, Hz)    |
++------------------------+------------------------+
+|         String Propagation Animation            |
+|           (full time evolution)                 |
++-------------------------------------------------+
 ```
 
 **Panel 1 — Initial String Displacement:** A static line plot of $u(x, 0)$, showing the superimposed Gaussian pulses as the starting condition.
@@ -376,17 +376,17 @@ testString.superemposeNaturalMode(3, 0.5);  // third harmonic
 
 ```
 Project 5: Occilations on a string/
-├── main.cpp              # Entry point: configures string, sets ICs, runs simulation
-├── processing.h          # string class: FD solver, FFT, CSV and NPZ output
-├── kiss_fft.h / .c       # KissFFT library (included, no external dependency)
-├── _kiss_fft_guts.h      # KissFFT implementation internals
-├── kiss_fft_log.h        # KissFFT logging utilities
-├── Makefile              # Multi-target build: debug, release, profile-guided
-├── plotting.py           # Python visualization: 3-panel figure + MP4 animation
-└── output/
-    ├── string_oscillations.npz             # Full simulation data (NumPy archive)
-    ├── string_oscillations_positions.csv   # Spatiotemporal displacement (CSV)
-    └── string_oscillations_spectrum.csv    # Mean power spectrum (CSV)
+|-- main.cpp              # Entry point: configures string, sets ICs, runs simulation
+|-- processing.h          # string class: FD solver, FFT, CSV and NPZ output
+|-- kiss_fft.h / .c       # KissFFT library (included, no external dependency)
+|-- _kiss_fft_guts.h      # KissFFT implementation internals
+|-- kiss_fft_log.h        # KissFFT logging utilities
+|-- Makefile              # Multi-target build: debug, release, profile-guided
+|-- plotting.py           # Python visualization: 3-panel figure + MP4 animation
+`-- output/
+    |-- string_oscillations.npz             # Full simulation data (NumPy archive)
+    |-- string_oscillations_positions.csv   # Spatiotemporal displacement (CSV)
+    `-- string_oscillations_spectrum.csv    # Mean power spectrum (CSV)
 ```
 
 ---

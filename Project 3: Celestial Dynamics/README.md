@@ -293,18 +293,18 @@ Configured interactively at runtime:
 
 ```
 Project 3: Celestial Dynamics/
-├── main.cpp                 # Entry point
-├── include/
-│   ├── objects.h            # CelestialObject, CelestialSystem, force computation
-│   ├── processing.h         # RK4, Euler-Cromer, Verlet integrators (templates)
-│   └── run.h                # Interactive Run class, Solar System data
-├── plotting.py              # 2D/3D orbit plots + animated videos
-├── Makefile                 # Build configuration
-├── bin/                     # Compiled executable
-└── Output/                  # CSV trajectories and PNG/MP4 visualizations
-    ├── celestial_output_N.csv
-    ├── celestial_analysis_N_2d.png
-    └── celestial_analysis_N_3d.png
+|-- main.cpp                 # Entry point
+|-- include/
+|   |-- objects.h            # CelestialObject, CelestialSystem, force computation
+|   |-- processing.h         # RK4, Euler-Cromer, Verlet integrators (templates)
+|   `-- run.h                # Interactive Run class, Solar System data
+|-- plotting.py              # 2D/3D orbit plots + animated videos
+|-- Makefile                 # Build configuration
+|-- bin/                     # Compiled executable
+`-- Output/                  # CSV trajectories and PNG/MP4 visualizations
+    |-- celestial_output_N.csv
+    |-- celestial_analysis_N_2d.png
+    `-- celestial_analysis_N_3d.png
 ```
 
 ---

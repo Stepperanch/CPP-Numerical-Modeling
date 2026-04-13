@@ -93,7 +93,7 @@ Computes the Collatz total stopping time for every integer from 1 to 1,000,000. 
 for n = 1 to 1,000,000:
     count = 0
     x = n
-    while x ≠ 1:
+    while x != 1:
         x = T(x)
         count++
     if count > max_count:
@@ -153,7 +153,7 @@ g++ -std=c++17 -O2 collatz_data_generator.cpp -o collatz_data_gen
 ### Run
 
 ```bash
-# Full survey (1–1,000,000)
+# Full survey (1--1,000,000)
 ./collatz_survey
 
 # Interactive mode
@@ -203,11 +203,11 @@ python3 plot_collatz.py -o collatz_plot.pdf
 
 ```
 Personal Project 1: 3n+1/
-├── 3n+1.cpp                  # Exhaustive stopping-time survey (1–10⁶)
-├── 3n+1#2.cpp                # Interactive recursive sequence explorer
-├── collatz_data_generator.cpp # CSV data generator for plotting
-├── plot_collatz.py            # Python visualization (max values vs. iteration)
-└── collatz_data.csv           # Generated data file
+|-- 3n+1.cpp                  # Exhaustive stopping-time survey (1--10^6)
+|-- 3n+1#2.cpp                # Interactive recursive sequence explorer
+|-- collatz_data_generator.cpp # CSV data generator for plotting
+|-- plot_collatz.py            # Python visualization (max values vs. iteration)
+`-- collatz_data.csv           # Generated data file
 ```
 
 ---

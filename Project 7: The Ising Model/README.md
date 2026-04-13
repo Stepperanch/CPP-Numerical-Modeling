@@ -142,8 +142,8 @@ For site $(x,y,z)$, the neighbor sum is computed and mapped to a table index:
 
 ```cpp
 void flipSpin(int x, int y, int z) {
-    uint8_t neighborstate = (sum of 6 neighbors) / 2 + 3;  // maps [-6,6] → [0,6]
-    uint8_t spinState = (getSpin(x, y, z) + 1) / 2;        // maps {-1,+1} → {0,1}
+    uint8_t neighborstate = (sum of 6 neighbors) / 2 + 3;  // maps [-6,6] -> [0,6]
+    uint8_t spinState = (getSpin(x, y, z) + 1) / 2;        // maps {-1,+1} -> {0,1}
     if (deltaE_table[spinState][neighborstate] <= 0 ||
         distribution(gen) < exp_table[spinState][neighborstate]) {
         setSpin(x, y, z, -getSpin(x, y, z));
@@ -167,8 +167,8 @@ Rather than wrapping indices on every neighbor access, the $(N+2)^3$ lattice car
 ```cpp
 // Z faces
 for (x) for (y) {
-    setSpin(x, y, 0,   getSpin(x, y, n-2));   // bottom ghost ← top interior
-    setSpin(x, y, n-1, getSpin(x, y, 1));     // top ghost ← bottom interior
+    setSpin(x, y, 0,   getSpin(x, y, n-2));   // bottom ghost <- top interior
+    setSpin(x, y, n-1, getSpin(x, y, 1));     // top ghost <- bottom interior
 }
 // Y and X faces updated the same way
 ```
@@ -237,9 +237,9 @@ The `Simulation` class owns the full parameter sweep, analysis, and output. `mai
 
 ```
 Simulation::runIsingSimulation()
-    ├── runSimulation()                       — parallel Metropolis sweep
-    ├── findCriticalTemperatureAndCalculateBeta()  — post-process
-    └── saveResults()                         — NPZ + CSV output
+    |-- runSimulation()                       -- parallel Metropolis sweep
+    |-- findCriticalTemperatureAndCalculateBeta()  -- post-process
+    `-- saveResults()                         -- NPZ + CSV output
 ```
 
 #### `Simulation::runSimulation()` — Parallel Sweep
@@ -275,7 +275,9 @@ Near $T_c$ the order parameter scales as $\langle \vert m\vert  \rangle \sim (T_
 $$\ln \langle \vert m\vert  \rangle = \beta \ln(T_c - T) + \text{const}$$
 The code selects up to 40 points just below $T_c$ (filtering out points where $\vert m\vert  < 0.01$ or $T \geq T_c$ to avoid log-of-zero issues) and fits the slope via ordinary least squares in log-log space:
 ```cpp
-slope = (n·ΣlogM·logT - ΣlogM·ΣlogT) / (n·ΣlogT² - (ΣlogT)²)
+double numerator = n * sumLogMLogT - sumLogM * sumLogT;
+double denominator = n * sumLogTSquared - sumLogT * sumLogT;
+double slope = numerator / denominator;
 beta_exponents[j] = slope;
 ```
 The extracted $\beta$ is saved alongside $T_c$ for each field row.
@@ -437,42 +439,42 @@ Configured in [main.cpp](main.cpp):
 
 ```
 Project 7: The Ising Model/
-├── main.cpp        # Entry point: configures and launches the simulation
-├── processing.h    # Material + Simulation classes: Metropolis engine, sweep, analysis, I/O
-├── Makefile        # Multi-target build: debug, release, unsafe, profile-guided
-├── plotting.py     # Python visualization: 3D surface plots + contour map
-├── job.sh          # SLURM batch script (BYU Supercomputer — 128 CPUs, 1 hr)
-├── requirements.txt
-├── slurm_out/      # SLURM stderr logs from HPC runs
-│   ├── slurm_10498461.err
-│   ├── slurm_10498501.err
-│   ├── slurm_10537695.err
-│   ├── slurm_10537987.err
-│   └── slurm_10538011.err
-└── output/
-    ├── Out_1/                              # Simulation run 1 (Best Visuals)
-    │   ├── magnetization_3d_surface_angle1–4.png
-    │   ├── magnetization_contour.png
-    │   └── notes.md
-    ├── Out_2/                              # Simulation run 2 (Finest Mesh)
-    │   ├── ising_results.npz
-    │   ├── magnetization_3d_surface_angle1–4.png
-    │   ├── magnetization_contour.png
-    │   └── notes.md
-    ├── Out_3/                              # Simulation run 3 (most recent full output)
-    │   ├── ising_results.npz              # Compressed simulation data (NumPy)
-    │   ├── ising_results.csv              # Magnetization + susceptibility (CSV)
-    │   ├── magnetization_3d_surface_angle1–4.png
-    │   ├── magnetization_contour.png      # 2D contour map M(T,h)
-    │   └── notes.md
-    ├── Magnetization Vs. Temperture at destinct H values/
-    │   ├── magnetization_vs_temperature_h=0.1.png
-    │   ├── magnetization_vs_temperature_h=1.png
-    │   └── magnetization_vs_temperature_h=10.png
-    └── Testing Output/                    # Small test run
-        ├── ising_results.npz
-        ├── magnetization_3d_surface.png
-        └── magnetization_contour.png
+|-- main.cpp        # Entry point: configures and launches the simulation
+|-- processing.h    # Material + Simulation classes: Metropolis engine, sweep, analysis, I/O
+|-- Makefile        # Multi-target build: debug, release, unsafe, profile-guided
+|-- plotting.py     # Python visualization: 3D surface plots + contour map
+|-- job.sh          # SLURM batch script (BYU Supercomputer -- 128 CPUs, 1 hr)
+|-- requirements.txt
+|-- slurm_out/      # SLURM stderr logs from HPC runs
+|   |-- slurm_10498461.err
+|   |-- slurm_10498501.err
+|   |-- slurm_10537695.err
+|   |-- slurm_10537987.err
+|   `-- slurm_10538011.err
+`-- output/
+    |-- Out_1/                              # Simulation run 1 (Best Visuals)
+    |   |-- magnetization_3d_surface_angle1--4.png
+    |   |-- magnetization_contour.png
+    |   `-- notes.md
+    |-- Out_2/                              # Simulation run 2 (Finest Mesh)
+    |   |-- ising_results.npz
+    |   |-- magnetization_3d_surface_angle1--4.png
+    |   |-- magnetization_contour.png
+    |   `-- notes.md
+    |-- Out_3/                              # Simulation run 3 (most recent full output)
+    |   |-- ising_results.npz              # Compressed simulation data (NumPy)
+    |   |-- ising_results.csv              # Magnetization + susceptibility (CSV)
+    |   |-- magnetization_3d_surface_angle1--4.png
+    |   |-- magnetization_contour.png      # 2D contour map M(T,h)
+    |   `-- notes.md
+    |-- Magnetization Vs. Temperture at destinct H values/
+    |   |-- magnetization_vs_temperature_h=0.1.png
+    |   |-- magnetization_vs_temperature_h=1.png
+    |   `-- magnetization_vs_temperature_h=10.png
+    `-- Testing Output/                    # Small test run
+        |-- ising_results.npz
+        |-- magnetization_3d_surface.png
+        `-- magnetization_contour.png
 ```
 
 ---

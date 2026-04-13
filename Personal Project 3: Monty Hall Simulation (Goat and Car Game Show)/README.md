@@ -197,10 +197,10 @@ The script runs the simulation and generates two PNG files:
 
 ```
 Personal Project 3: Monty Hall Simulation (Goat and Car Game Show)/
-├── code.py                           # Main simulation & visualization
-├── monty_hall_convergence.png        # Convergence plot (output)
-├── monty_hall_comparison.png         # Comparison bar chart (output)
-└── README.md                         # This file
+|-- code.py                           # Main simulation & visualization
+|-- monty_hall_convergence.png        # Convergence plot (output)
+|-- monty_hall_comparison.png         # Comparison bar chart (output)
+`-- README.md                         # This file
 ```
 
 ---

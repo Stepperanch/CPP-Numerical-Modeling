@@ -125,10 +125,10 @@ The outermost dimension indexes **time** (steps), the next indexes **particles**
 The propagation must respect a strict dependency: the position of particle $i$ at step $t$ depends on its position at step $t-1$. This makes the **step dimension sequential** and the **particle dimension embarrassingly parallel**:
 
 ```
-Sequential:  for each step t = 1 … N_steps
-    Parallel:  for each particle i = 0 … N_particles
-                   movePoint(t, i)   ← reads t-1, writes t
-    [implicit OpenMP barrier — all particles finish t before any begin t+1]
+Sequential:  for each step t = 1 ... N_steps
+    Parallel:  for each particle i = 0 ... N_particles
+                   movePoint(t, i)   <- reads t-1, writes t
+    [implicit OpenMP barrier -- all particles finish t before any begin t+1]
 ```
 
 The barrier at the end of each `#pragma omp for` is the key correctness guarantee: no thread can advance to step $t+1$ until every particle has completed step $t$.
@@ -159,7 +159,7 @@ After propagation, the RMS is computed in a fully parallel pass over the step di
 for (size_t step = 0; step < steps; ++step) {
     float sumSq = 0.f;
     for (size_t p = 0; p < numPoints; ++p) {
-        sumSq += x² + y² + z²;
+        sumSq += x^2 + y^2 + z^2;
     }
     rRMS[step] = sqrt(sumSq / numPoints);
 }
@@ -318,16 +318,16 @@ Configured in [main.cpp](main.cpp):
 
 ```
 Project 6: Defusion/
-├── main.cpp        # Entry point: configures and runs the simulation
-├── processing.h    # Space class: random walk, RMS, CSV and NPZ output
-├── Makefile        # Multi-target build: debug, release, profile-guided
-├── plotting.py     # Python visualization: 3D animation + MSD plot
-└── output/
-    ├── defusion_output.npz            # Compressed simulation data
-    ├── defusion_output_Positions.csv  # Per-step particle positions (CSV)
-    ├── defusion_output_RMS.csv        # Per-step RMS displacement (CSV)
-    ├── diffusion_animation.mp4        # Animated 3D particle cloud
-    └── Mean_Squared_Distance_plot.png # MSD vs step number
+|-- main.cpp        # Entry point: configures and runs the simulation
+|-- processing.h    # Space class: random walk, RMS, CSV and NPZ output
+|-- Makefile        # Multi-target build: debug, release, profile-guided
+|-- plotting.py     # Python visualization: 3D animation + MSD plot
+`-- output/
+    |-- defusion_output.npz            # Compressed simulation data
+    |-- defusion_output_Positions.csv  # Per-step particle positions (CSV)
+    |-- defusion_output_RMS.csv        # Per-step RMS displacement (CSV)
+    |-- diffusion_animation.mp4        # Animated 3D particle cloud
+    `-- Mean_Squared_Distance_plot.png # MSD vs step number
 ```
 
 ---

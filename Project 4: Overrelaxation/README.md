@@ -254,13 +254,13 @@ Configured in [main.cpp](main.cpp):
 
 ```
 Project 4: Overrelaxation/
-├── main.cpp        # Entry point: configures grid, charges, runs SOR
-├── Processing.h    # PotentialField class: SOR kernel, residual, I/O
-├── Makefile        # Build targets: release, debug, profile-guided
-├── bin/            # Compiled executable
-├── output.csv      # Full 3D potential (hierarchical text)
-├── output.npz      # Full 3D potential (NumPy compressed)
-└── output/         # Visualization outputs (PNG slices)
+|-- main.cpp        # Entry point: configures grid, charges, runs SOR
+|-- Processing.h    # PotentialField class: SOR kernel, residual, I/O
+|-- Makefile        # Build targets: release, debug, profile-guided
+|-- bin/            # Compiled executable
+|-- output.csv      # Full 3D potential (hierarchical text)
+|-- output.npz      # Full 3D potential (NumPy compressed)
+`-- output/         # Visualization outputs (PNG slices)
 ```
 
 ---

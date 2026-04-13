@@ -1,13 +1,62 @@
 (function () {
-    var storageKey = "site-theme";
+    var themeStorageKey = "site-theme";
+    var motionStorageKey = "site-motion";
     var mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    var navLinks = [
+        { title: "Portfolio Hub", href: "/" },
+        { title: "Project 1: Realistic Projectile Motion", href: "/Project%201%3A%20realistic%20projectile%20motion/" },
+        { title: "Project 2: Driven Damped Oscillations", href: "/Project%202%3A%20driven%20damped%20oscillations/" },
+        { title: "Project 3: Celestial Dynamics", href: "/Project%203%3A%20Celestial%20Dynamics/" },
+        { title: "Project 4: Overrelaxation", href: "/Project%204%3A%20Overrelaxation/" },
+        { title: "Project 5: Oscillations on a String", href: "/Project%205%3A%20Occilations%20on%20a%20string/" },
+        { title: "Project 6: Diffusion", href: "/Project%206%3A%20Diffusion/" },
+        { title: "Project 7: The Ising Model", href: "/Project%207%3A%20The%20Ising%20Model/" },
+        { title: "Project 8: Molecular Dynamics", href: "/Project%208%3A%20Molicular%20Dynamics/" },
+        { title: "Project 9: Quantum Mechanics", href: "/Project%209%3A%20Quantum%20Mechanics/" },
+        { title: "Personal Project 1: 3n+1", href: "/Personal%20Project%201%3A%203n%2B1/" },
+        { title: "Personal Project 2: Idelic Numbers", href: "/Personal%20Project%202%3A%20Idelic%20Numbers/" },
+        { title: "Personal Project 3: Monty Hall", href: "/Personal%20Project%203%3A%20Monty%20Hall%20Simulation%20%28Goat%20and%20Car%20Game%20Show%29/" }
+    ];
 
     function getStoredTheme() {
-        var value = localStorage.getItem(storageKey);
+        var value = localStorage.getItem(themeStorageKey);
         if (value === "light" || value === "dark" || value === "auto") {
             return value;
         }
         return "auto";
+    }
+
+    function getStoredMotion() {
+        var value = localStorage.getItem(motionStorageKey);
+        if (value === "default" || value === "reduced") {
+            return value;
+        }
+        return "default";
+    }
+
+    function getBaseUrl() {
+        var baseUrl = window.__SITE_BASEURL || "";
+        if (baseUrl && baseUrl.endsWith("/")) {
+            return baseUrl.slice(0, -1);
+        }
+        return baseUrl;
+    }
+
+    function buildPageUrl(relativePath) {
+        var baseUrl = getBaseUrl();
+        return baseUrl + relativePath;
+    }
+
+    function normalizePath(pathname) {
+        var baseUrl = getBaseUrl();
+        var path = pathname || "/";
+        if (baseUrl && path.indexOf(baseUrl) === 0) {
+            path = path.slice(baseUrl.length);
+        }
+        if (!path.endsWith("/")) {
+            path += "/";
+        }
+        return path;
     }
 
     function getEffectiveTheme(themeChoice) {
@@ -23,56 +72,183 @@
         document.documentElement.style.colorScheme = effectiveTheme;
     }
 
-    function persistTheme(themeChoice) {
-        localStorage.setItem(storageKey, themeChoice);
+    function applyMotion(motionChoice) {
+        var shouldReduce = motionChoice === "reduced";
+        document.documentElement.classList.toggle("reduce-motion", shouldReduce);
     }
 
-    function buildControl(currentChoice) {
-        if (document.querySelector(".theme-control")) {
-            return;
-        }
+    function persistTheme(themeChoice) {
+        localStorage.setItem(themeStorageKey, themeChoice);
+    }
 
-        var container = document.createElement("div");
-        container.className = "theme-control";
+    function persistMotion(motionChoice) {
+        localStorage.setItem(motionStorageKey, motionChoice);
+    }
 
-        var label = document.createElement("label");
-        label.setAttribute("for", "theme-select");
-        label.textContent = "Theme";
-
+    function buildSelect(options, id, ariaLabel, selectedValue) {
         var select = document.createElement("select");
-        select.id = "theme-select";
-        select.setAttribute("aria-label", "Choose theme");
+        select.id = id;
+        select.setAttribute("aria-label", ariaLabel);
 
-        [
-            { value: "auto", text: "Auto" },
-            { value: "light", text: "Light" },
-            { value: "dark", text: "Dark" }
-        ].forEach(function (item) {
+        options.forEach(function (item) {
             var option = document.createElement("option");
             option.value = item.value;
             option.textContent = item.text;
-            if (item.value === currentChoice) {
+            if (item.value === selectedValue) {
                 option.selected = true;
             }
             select.appendChild(option);
         });
 
-        select.addEventListener("change", function () {
-            var nextChoice = select.value;
+        return select;
+    }
+
+    function buildNavList() {
+        var nav = document.createElement("nav");
+        nav.className = "corner-menu-nav";
+        nav.setAttribute("aria-label", "Site navigation");
+
+        var currentPath = normalizePath(window.location.pathname);
+
+        navLinks.forEach(function (item) {
+            var link = document.createElement("a");
+            var targetPath = normalizePath(item.href);
+            link.href = buildPageUrl(item.href);
+            link.textContent = item.title;
+            if (currentPath === targetPath) {
+                link.classList.add("is-active");
+            }
+            nav.appendChild(link);
+        });
+
+        return nav;
+    }
+
+    function buildMenu(themeChoice, motionChoice) {
+        if (document.querySelector(".corner-menu")) {
+            return;
+        }
+
+        var container = document.createElement("div");
+        container.className = "corner-menu";
+        container.setAttribute("aria-expanded", "false");
+
+        var toggleButton = document.createElement("button");
+        toggleButton.className = "corner-menu-toggle";
+        toggleButton.type = "button";
+        toggleButton.setAttribute("aria-label", "Open site menu");
+        toggleButton.setAttribute("aria-expanded", "false");
+        toggleButton.innerHTML = "<span>Menu</span><span aria-hidden=\"true\">&#9662;</span>";
+
+        var panel = document.createElement("div");
+        panel.className = "corner-menu-panel";
+
+        var navSection = document.createElement("section");
+        navSection.className = "corner-menu-section";
+
+        var navTitle = document.createElement("p");
+        navTitle.className = "corner-menu-title";
+        navTitle.textContent = "Navigate";
+
+        navSection.appendChild(navTitle);
+        navSection.appendChild(buildNavList());
+
+        var settingsSection = document.createElement("section");
+        settingsSection.className = "corner-menu-section";
+
+        var settingsTitle = document.createElement("p");
+        settingsTitle.className = "corner-menu-title";
+        settingsTitle.textContent = "Settings";
+
+        var themeRow = document.createElement("div");
+        themeRow.className = "corner-menu-row";
+
+        var themeLabel = document.createElement("label");
+        themeLabel.className = "corner-menu-label";
+        themeLabel.setAttribute("for", "theme-select");
+        themeLabel.textContent = "Theme";
+
+        var themeSelect = buildSelect(
+            [
+                { value: "auto", text: "Auto" },
+                { value: "light", text: "Light" },
+                { value: "dark", text: "Dark" }
+            ],
+            "theme-select",
+            "Choose theme",
+            themeChoice
+        );
+
+        themeSelect.addEventListener("change", function () {
+            var nextChoice = themeSelect.value;
             persistTheme(nextChoice);
             applyTheme(nextChoice);
         });
 
-        container.appendChild(label);
-        container.appendChild(select);
+        themeRow.appendChild(themeLabel);
+        themeRow.appendChild(themeSelect);
+
+        var motionRow = document.createElement("div");
+        motionRow.className = "corner-menu-row";
+
+        var motionLabel = document.createElement("label");
+        motionLabel.className = "corner-menu-label";
+        motionLabel.setAttribute("for", "motion-select");
+        motionLabel.textContent = "Motion";
+
+        var motionSelect = buildSelect(
+            [
+                { value: "default", text: "Default" },
+                { value: "reduced", text: "Reduced" }
+            ],
+            "motion-select",
+            "Choose animation mode",
+            motionChoice
+        );
+
+        motionSelect.addEventListener("change", function () {
+            var nextChoice = motionSelect.value;
+            persistMotion(nextChoice);
+            applyMotion(nextChoice);
+        });
+
+        motionRow.appendChild(motionLabel);
+        motionRow.appendChild(motionSelect);
+
+        settingsSection.appendChild(settingsTitle);
+        settingsSection.appendChild(themeRow);
+        settingsSection.appendChild(motionRow);
+
+        panel.appendChild(navSection);
+        panel.appendChild(settingsSection);
+
+        toggleButton.addEventListener("click", function () {
+            var isExpanded = container.getAttribute("aria-expanded") === "true";
+            var nextValue = String(!isExpanded);
+            container.setAttribute("aria-expanded", nextValue);
+            toggleButton.setAttribute("aria-expanded", nextValue);
+        });
+
+        document.addEventListener("click", function (event) {
+            if (!container.contains(event.target)) {
+                container.setAttribute("aria-expanded", "false");
+                toggleButton.setAttribute("aria-expanded", "false");
+            }
+        });
+
+        container.appendChild(toggleButton);
+        container.appendChild(panel);
         document.body.appendChild(container);
     }
 
-    function initializeTheme() {
-        var currentChoice = getStoredTheme();
-        applyTheme(currentChoice);
+    function initializeMenu() {
+        var themeChoice = getStoredTheme();
+        var motionChoice = getStoredMotion();
 
-        if (currentChoice === "auto") {
+        applyTheme(themeChoice);
+        applyMotion(motionChoice);
+
+        if (themeChoice === "auto") {
             mediaQuery.addEventListener("change", function () {
                 applyTheme("auto");
             });
@@ -80,12 +256,12 @@
 
         if (document.readyState === "loading") {
             document.addEventListener("DOMContentLoaded", function () {
-                buildControl(currentChoice);
+                buildMenu(themeChoice, motionChoice);
             });
         } else {
-            buildControl(currentChoice);
+            buildMenu(themeChoice, motionChoice);
         }
     }
 
-    initializeTheme();
+    initializeMenu();
 })();

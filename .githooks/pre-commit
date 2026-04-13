@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+cd "$ROOT_DIR"
+
+scripts/markdown_math_pipe_guard.sh fix
+
+# Re-stage markdown files that may have been auto-fixed.
+git add -A '*.md'
+
+# Final safety check (blocks commit if any raw bars remain).
+scripts/markdown_math_pipe_guard.sh check

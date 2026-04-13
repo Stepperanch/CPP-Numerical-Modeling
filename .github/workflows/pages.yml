@@ -39,6 +39,12 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      - name: Normalize Markdown for Pages
+        run: |
+          chmod +x scripts/markdown_math_pipe_guard.sh scripts/normalize_markdown_for_pages.sh
+          scripts/markdown_math_pipe_guard.sh fix
+          scripts/normalize_markdown_for_pages.sh
+
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:

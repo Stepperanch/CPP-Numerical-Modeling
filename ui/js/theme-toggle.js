@@ -131,14 +131,15 @@
 
         var container = document.createElement("div");
         container.className = "corner-menu";
-        container.setAttribute("aria-expanded", "false");
+        container.setAttribute("data-pinned", "false");
 
         var toggleButton = document.createElement("button");
         toggleButton.className = "corner-menu-toggle";
         toggleButton.type = "button";
         toggleButton.setAttribute("aria-label", "Open site menu");
+        toggleButton.setAttribute("aria-haspopup", "true");
         toggleButton.setAttribute("aria-expanded", "false");
-        toggleButton.innerHTML = "<span>Menu</span><span aria-hidden=\"true\">&#9662;</span>";
+        toggleButton.innerHTML = "<span>Menu</span><span aria-hidden=\"true\">&#9776;</span>";
 
         var panel = document.createElement("div");
         panel.className = "corner-menu-panel";
@@ -222,23 +223,57 @@
         panel.appendChild(navSection);
         panel.appendChild(settingsSection);
 
+        function isPinned() {
+            return container.getAttribute("data-pinned") === "true";
+        }
+
+        function syncExpandedState() {
+            var expanded = isPinned() || container.matches(":hover") || container.matches(":focus-within");
+            toggleButton.setAttribute("aria-expanded", String(expanded));
+        }
+
+        function setPinned(nextPinned) {
+            container.setAttribute("data-pinned", String(nextPinned));
+            syncExpandedState();
+        }
+
         toggleButton.addEventListener("click", function () {
-            var isExpanded = container.getAttribute("aria-expanded") === "true";
-            var nextValue = String(!isExpanded);
-            container.setAttribute("aria-expanded", nextValue);
-            toggleButton.setAttribute("aria-expanded", nextValue);
+            setPinned(!isPinned());
         });
 
         document.addEventListener("click", function (event) {
             if (!container.contains(event.target)) {
-                container.setAttribute("aria-expanded", "false");
-                toggleButton.setAttribute("aria-expanded", "false");
+                setPinned(false);
+            }
+        });
+
+        document.addEventListener("keydown", function (event) {
+            if (event.key === "Escape") {
+                setPinned(false);
+            }
+        });
+
+        container.addEventListener("mouseenter", syncExpandedState);
+        container.addEventListener("mouseleave", syncExpandedState);
+        container.addEventListener("focusin", syncExpandedState);
+        container.addEventListener("focusout", function (event) {
+            var nextTarget = event.relatedTarget;
+            if (nextTarget && container.contains(nextTarget)) {
+                return;
+            }
+            syncExpandedState();
+        });
+
+        panel.addEventListener("click", function (event) {
+            if (event.target && event.target.closest("a")) {
+                setPinned(false);
             }
         });
 
         container.appendChild(toggleButton);
         container.appendChild(panel);
         document.body.appendChild(container);
+        syncExpandedState();
     }
 
     function initializeMenu() {

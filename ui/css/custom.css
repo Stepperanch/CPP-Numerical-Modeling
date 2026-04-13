@@ -31,8 +31,8 @@
     --tok-operator: #6a2d9b;
     --tok-identifier: #133f78;
     --tok-constant: #9f3d05;
-    --table-frame: #69849a;
-    --table-cell-line: #93abbd;
+    --table-frame: #547189;
+    --table-cell-line: #547189;
     --block-soft-bg: #e7f1f9;
     --block-soft-border: #98b1c7;
 
@@ -70,8 +70,8 @@
     --tok-operator: #f0b7ff;
     --tok-identifier: #b6d5ff;
     --tok-constant: #ffc089;
-    --table-frame: #6f8ca7;
-    --table-cell-line: #47627a;
+    --table-frame: #86a8c6;
+    --table-cell-line: #86a8c6;
     --block-soft-bg: #1c2c3a;
     --block-soft-border: #486078;
 
@@ -209,16 +209,18 @@ body {
     width: auto;
     max-width: 100%;
     margin: 1rem 0;
-    border-collapse: collapse;
+    border-collapse: collapse !important;
     table-layout: auto;
     border-radius: 10px;
     overflow: hidden;
-    border: 1px solid var(--table-cell-line);
+    border: 1px solid var(--table-cell-line) !important;
     background: var(--surface);
     background-clip: padding-box;
     clip-path: inset(0 round 10px);
     -webkit-mask-image: -webkit-radial-gradient(white, black);
-    box-shadow: 0 4px 14px rgba(5, 20, 38, 0.04);
+    box-shadow:
+        inset 0 0 0 1px var(--table-cell-line),
+        0 4px 14px rgba(5, 20, 38, 0.04);
 }
 
 .main-content th {
@@ -228,9 +230,13 @@ body {
 
 .main-content th,
 .main-content td {
-    border: 1px solid var(--table-cell-line);
+    border: 1px solid var(--table-cell-line) !important;
     padding: 0.62rem 0.72rem;
     vertical-align: top;
+}
+
+.main-content table thead th {
+    border-bottom: 1px solid var(--table-cell-line) !important;
 }
 
 .main-content code,

@@ -92,7 +92,7 @@ where $\gamma$ is the damping coefficient. This causes all modes to decay expone
 
 ### Power Spectrum and Normal Modes
 
-After the simulation runs, the time series $u(x_i, t)$ at each spatial point $x_i$ is transformed into the frequency domain via the **Discrete Fourier Transform**. The power $P(f) \propto |\hat{u}(f)|^2$ reveals which frequencies are excited and how strongly. Averaging over all spatial positions gives the **mean power spectrum**, which clearly shows peaks at the normal mode frequencies $f_n$ — a direct verification of the wave physics.
+After the simulation runs, the time series $u(x_i, t)$ at each spatial point $x_i$ is transformed into the frequency domain via the **Discrete Fourier Transform**. The power $P(f) \propto \lvert\hat{u}(f)\rvert^2$ reveals which frequencies are excited and how strongly. Averaging over all spatial positions gives the **mean power spectrum**, which clearly shows peaks at the normal mode frequencies $f_n$ — a direct verification of the wave physics.
 
 ---
 
@@ -160,7 +160,7 @@ Two optimizations are applied:
 
 2. **One-sided spectrum:** Since the input is real-valued, the FFT output is Hermitian-symmetric. Only the first $N/2 + 1$ bins are unique and are retained, halving the storage and computation needed for the power spectrum.
 
-The **mean power spectrum** is then computed as the spatial average of $|\hat{u}(f)|^2$ across all points — a single serial pass over bins and segments, avoided from parallelization to prevent accumulation race conditions.
+The **mean power spectrum** is then computed as the spatial average of $\lvert\hat{u}(f)\rvert^2$ across all points — a single serial pass over bins and segments, avoided from parallelization to prevent accumulation race conditions.
 
 ---
 
@@ -236,7 +236,7 @@ The Python script [plotting.py](plotting.py) loads the `.npz` archive and produc
 
 **Panel 1 — Initial String Displacement:** A static line plot of $u(x, 0)$, showing the superimposed Gaussian pulses as the starting condition.
 
-**Panel 2 — Mean Power Spectrum:** A semi-log plot of the spatially averaged power $\langle |\hat{u}(f)|^2 \rangle_x$ vs frequency. Peaks correspond to the excited normal modes of the string. The frequency axis is automatically clipped to the range containing significant power, keeping the plot readable regardless of simulation length.
+**Panel 2 — Mean Power Spectrum:** A semi-log plot of the spatially averaged power $\langle \lvert\hat{u}(f)\rvert^2 \rangle_x$ vs frequency. Peaks correspond to the excited normal modes of the string. The frequency axis is automatically clipped to the range containing significant power, keeping the plot readable regardless of simulation length.
 
 **Panel 3 — Animation:** A live line plot of the string profile $u(x, t)$ stepped through time, saved to `string_oscillations.mp4` via `ffmpeg`. The title updates to show the simulated time in seconds.
 
@@ -286,7 +286,7 @@ L, c, kappa, r, dt = data["parameters"]
   <img src="mean_power_spectrum.png" alt="Mean power spectrum of string oscillations" width="70%"/>
 </p>
 
-*Spatially averaged power spectrum $\langle |\hat{u}(f)|^2 \rangle_x$ revealing the excited normal-mode frequencies. Peaks at $f_n = nc/2L$ confirm the standing-wave structure predicted by the wave equation.*
+*Spatially averaged power spectrum $\langle \lvert\hat{u}(f)\rvert^2 \rangle_x$ revealing the excited normal-mode frequencies. Peaks at $f_n = nc/2L$ confirm the standing-wave structure predicted by the wave equation.*
 
 ### String Propagation
 

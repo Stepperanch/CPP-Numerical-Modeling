@@ -230,7 +230,7 @@ Configured in [main.cpp](main.cpp):
 | `N` | 1000 | Cubic grid edge length ($N^3$ unknowns) |
 | `physicalDimensions` | 1.0 m | Physical size of the simulation cube |
 | `tolerance` | 4×10⁻¹⁰ | Convergence threshold on $L^2$ residual |
-| $\omega$ | auto | Optimal SOR parameter $2/(1 + \sin(\pi/N))$ |
+| $\omega$ \lvertauto\rvert Optimal SOR parameter $2/(1 + \sin(\pi/N))$ |
 | Max iterations | $8N$ | Safety limit |
 
 ---

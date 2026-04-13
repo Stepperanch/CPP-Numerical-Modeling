@@ -80,7 +80,7 @@ $$\psi''(x) = 2[V(x) - E]\psi(x)$$
 
 ### Bound States and Quantization
 
-For a finite-range potential $V(x) \to 0$ as $|x| \to \infty$, **bound states** exist when $E < V_{\max}$ and satisfy the boundary conditions:
+For a finite-range potential $V(x) \to 0$ as $\lvert x \rvert \to \infty$, **bound states** exist when $E < V_{\max}$ and satisfy the boundary conditions:
 
 - $\psi(x) \to 0$ as $x \to \pm\infty$
 
@@ -162,7 +162,7 @@ The shooting method integrates forward from $x = 0$ with known boundary conditio
 2. Integrate $\psi(x; E_{\text{mid}})$ from $x = 0$ to $x = x_{\text{end}}$ using Numerov
 3. Evaluate the wavefunction at the far boundary: $\psi(x_{\text{end}})$
 4. Track the sign of $\psi(x_{\text{end}})$ across the energy bracket: if $\psi(x_{\text{end}})$ has the same sign at $E_+$, replace $E_+$; otherwise replace $E_-$
-5. Update midpoint $E_{\text{mid}} = (E_- + E_+) / 2$ and repeat until $|E_+ - E_-| < \epsilon_{\text{tol}}$
+5. Update midpoint $E_{\text{mid}} = (E_- + E_+) / 2$ and repeat until $\lvert E_+ - E_- \rvert < \epsilon_{\text{tol}}$
 
 **Advantages:** Physically direct — integrates forward with true boundary conditions; one pass per energy trial
 
@@ -201,7 +201,7 @@ Both shooting and matching methods are effective for symmetric potentials, but t
 - Integrates forward from $x = 0$ with initial conditions based on parity: $\psi(0) = 1, \psi'(0) = 0$ (even parity) or $\psi(0) = 0, \psi'(0) = 1$ (odd parity)
 - **Advantages:** Physically direct — imposes true boundary conditions at a point where the wavefunction is large ($\psi(0) = O(1)$). The forward integration accumulates phase smoothly through both spatial quadrants. Convergence is rapid because the boundary value $\psi(x_{\text{end}})$ reflects high-quality accumulated information.
 - **Efficiency:** One forward pass per energy trial; well-defined boundary evaluations with no exponential decay complications.
-- **Why it works for symmetric wells:** The parity structure guarantees symmetric decay in both directions. Even with exponential decay at large $|x|$, the boundary value remains $O(\epsilon)$ where $\epsilon \sim e^{-\int |k| dx}$ is the same from either direction.
+- **Why it works for symmetric wells:** The parity structure guarantees symmetric decay in both directions. Even with exponential decay at large $\lvertx\rvert$, the boundary value remains $O(\epsilon)$ where $\epsilon \sim e^{-\int \lvert k \rvert\,dx}$ is the same from either direction.
 
 **Matching Method — Backward Integration from Boundary**
 - Integrates backward from $x = x_{\text{end}}$ to extract boundary-condition information at the origin: $[\psi(0), \psi'(0)]$
@@ -231,7 +231,7 @@ The default setting in [main.cpp](main.cpp) is `useShootingMethod = false` (matc
 Once the eigenstate energy is converged:
 
 1. **Trim:** Remove the divergent tail (tail magnitude > interior magnitude)
-2. **Normalize:** Enforce $\int_{-\infty}^{\infty} |\psi(x)|^2 dx = 1$
+2. **Normalize:** Enforce $\int_{-\infty}^{\infty} \lvert\psi(x)\rvert^2 dx = 1$
 
 ---
 

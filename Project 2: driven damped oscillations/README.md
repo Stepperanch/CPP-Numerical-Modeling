@@ -182,7 +182,7 @@ The `logic` class provides:
 | Source | Nature | Mitigation |
 |---|---|---|
 | **Temporal truncation** | RK4: $\mathcal{O}(h^4)$; Euler-Cromer: $\mathcal{O}(h)$ | Small time steps ($dt = 0.001$ s or less) |
-| **Sensitivity to initial conditions** | Chaotic trajectories diverge exponentially: $|\delta\theta(t)| \sim e^{\lambda t}$ | This is physics, not a bug — Lyapunov exponent $\lambda > 0$ defines chaos |
+| **Sensitivity to initial conditions** | Chaotic trajectories diverge exponentially: $\lvert\delta\theta(t)\rvert \sim e^{\lambda t}$ | This is physics, not a bug — Lyapunov exponent $\lambda > 0$ defines chaos |
 | **Angle wrapping artifacts** | Wrapping $\theta$ to $[-\pi, \pi]$ creates visual discontinuities | Unwrapped angle also recorded; wrapping applied only for phase-space visualization |
 | **Poincaré timing** | Stroboscopic samples at $t = n \cdot 2\pi/\omega_D$ may not land exactly on a time step | Nearest-step sampling; small $dt$ minimizes interpolation error |
 | **Symplecticity (RK4)** | RK4 is not symplectic — energy drifts over very long integrations | Euler-Cromer used for long validation runs; RK4 used when accuracy matters more than conservation |

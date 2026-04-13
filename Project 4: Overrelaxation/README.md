@@ -156,12 +156,12 @@ The interactive plot above renders the same 3D electrostatic potential field as 
 This allows intuitive exploration of the dipole and disk geometry without generating dozens of static images.
 
 <div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
-    <iframe
-        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic_embedded.html"
-        width="100%"
-        height="100%"
-        style="border: none; display: block;">
-    </iframe>
+<iframe
+  src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic_embedded.html"
+  width="100%"
+  height="100%"
+  style="border: none; display: block;">
+</iframe>
 </div>
 
 <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/potential_3d_interactive_dynamic.html" target="_blank">View Simulation Fullscreen ↗️</a>

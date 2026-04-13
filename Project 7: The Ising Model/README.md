@@ -327,12 +327,12 @@ The interactive plot above renders the same 3D field as the static slice, but wi
 This allows intuitive exploration of the phase change geometry without generating dozens of static images.
 
 <div style="width: 100%; aspect-ratio: 16 / 9; max-height: 80vh; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
-    <iframe
-        src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive_embedded.html"
-        width="100%"
-        height="100%"
-        style="border: none; display: block;">
-    </iframe>
+<iframe
+  src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive_embedded.html"
+  width="100%"
+  height="100%"
+  style="border: none; display: block;">
+</iframe>
 </div>
 
 <a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/magnetization_3d_interactive.html" target="_blank">View Simulation Fullscreen ↗️</a>

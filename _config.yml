@@ -24,7 +24,6 @@ kramdown:
   math_engine: mathjax
   input: GFM
   hard_wrap: false
-  parse_block_html: true
   syntax_highlighter: rouge
 
 # MathJax v3 — injected into every page via custom <head> include

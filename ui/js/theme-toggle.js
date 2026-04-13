@@ -145,7 +145,7 @@
         panel.className = "corner-menu-panel";
 
         var navSection = document.createElement("section");
-        navSection.className = "corner-menu-section";
+        navSection.className = "corner-menu-section corner-menu-section--nav";
 
         var navTitle = document.createElement("p");
         navTitle.className = "corner-menu-title";
@@ -155,7 +155,7 @@
         navSection.appendChild(buildNavList());
 
         var settingsSection = document.createElement("section");
-        settingsSection.className = "corner-menu-section";
+        settingsSection.className = "corner-menu-section corner-menu-section--settings";
 
         var settingsTitle = document.createElement("p");
         settingsTitle.className = "corner-menu-title";
@@ -220,8 +220,8 @@
         settingsSection.appendChild(themeRow);
         settingsSection.appendChild(motionRow);
 
-        panel.appendChild(navSection);
         panel.appendChild(settingsSection);
+        panel.appendChild(navSection);
 
         function isPinned() {
             return container.getAttribute("data-pinned") === "true";

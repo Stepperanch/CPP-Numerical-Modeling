@@ -31,6 +31,8 @@
     --tok-operator: #6a2d9b;
     --tok-identifier: #133f78;
     --tok-constant: #9f3d05;
+    --table-frame: #69849a;
+    --table-cell-line: #93abbd;
     --block-soft-bg: #e7f1f9;
     --block-soft-border: #98b1c7;
 
@@ -68,6 +70,8 @@
     --tok-operator: #f0b7ff;
     --tok-identifier: #b6d5ff;
     --tok-constant: #ffc089;
+    --table-frame: #6f8ca7;
+    --table-cell-line: #47627a;
     --block-soft-bg: #1c2c3a;
     --block-soft-border: #486078;
 
@@ -209,12 +213,14 @@ body {
     table-layout: auto;
     border-radius: 10px;
     overflow: hidden;
-    border: 1px solid var(--line-strong);
+    border: 2px solid var(--table-frame);
     background: var(--surface);
     background-clip: padding-box;
     clip-path: inset(0 round 10px);
     -webkit-mask-image: -webkit-radial-gradient(white, black);
-    box-shadow: 0 4px 14px rgba(5, 20, 38, 0.04);
+    box-shadow:
+        0 0 0 1px color-mix(in srgb, var(--table-frame) 65%, transparent),
+        0 4px 14px rgba(5, 20, 38, 0.04);
 }
 
 .main-content th {
@@ -224,7 +230,7 @@ body {
 
 .main-content th,
 .main-content td {
-    border: 1px solid var(--line);
+    border: 1px solid var(--table-cell-line);
     padding: 0.62rem 0.72rem;
     vertical-align: top;
 }
@@ -492,6 +498,9 @@ body {
         opacity 170ms ease,
         transform 170ms ease,
         max-height 170ms ease;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 .corner-menu:hover .corner-menu-panel,
@@ -500,8 +509,22 @@ body {
     opacity: 1;
     transform: translateY(0) scale(1);
     pointer-events: auto;
-    max-height: min(72vh, 560px);
+    max-height: min(calc(100vh - 54px), 760px);
     overflow-y: auto;
+}
+
+.corner-menu-section--settings {
+    position: sticky;
+    top: -0.78rem;
+    z-index: 1;
+    background: color-mix(in srgb, var(--surface) 95%, transparent);
+    margin: -0.78rem -0.78rem 0;
+    padding: 0.72rem 0.78rem 0.64rem;
+    border-bottom: 1px solid var(--line);
+}
+
+.corner-menu-section--settings .corner-menu-title {
+    margin-bottom: 0.42rem;
 }
 
 .corner-menu-section+.corner-menu-section {

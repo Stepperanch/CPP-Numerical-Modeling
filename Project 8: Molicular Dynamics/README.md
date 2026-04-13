@@ -153,9 +153,11 @@ for (p1 = 0; p1 < N; p1++)
   for (p2 in neighbors[p1])
     dx = p1.x - p2.x
     dx -= L * round(dx / L)      // minimum image convention
-    r² = dx² + dy²
-    if (r² > rc²) continue       // force cutoff
-    F = 24 * (2/r¹⁴ - 1/r⁸)
+    r2 = dx*dx + dy*dy
+    if (r2 > rc2) continue       // force cutoff
+    invR2 = 1.0 / r2
+    invR6 = invR2 * invR2 * invR2
+    F = 24.0 * (2.0 * invR6 * invR6 - invR6) * invR2
     a[p1] += F;  a[p2] -= F      // Newton's third law
 ```
 

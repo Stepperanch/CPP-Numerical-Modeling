@@ -19,9 +19,18 @@
     --code-bg: #dbe8f4;
     --code-text: #08253a;
     --code-border: #95acc0;
-    --code-block-bg: #112739;
-    --code-block-text: #edf6ff;
-    --code-block-border: #385a78;
+    --code-block-bg: #f2f8ff;
+    --code-block-text: #0b1f31;
+    --code-block-border: #8fa8bf;
+    --tok-comment: #2f6f37;
+    --tok-keyword: #7d2ac2;
+    --tok-type: #0c4aab;
+    --tok-function: #9a4b0a;
+    --tok-string: #9c1c4e;
+    --tok-number: #005f95;
+    --tok-operator: #6a2d9b;
+    --tok-identifier: #133f78;
+    --tok-constant: #9f3d05;
     --block-soft-bg: #e7f1f9;
     --block-soft-border: #98b1c7;
 
@@ -47,9 +56,18 @@
     --code-bg: #1c3146;
     --code-text: #edf7ff;
     --code-border: #4d6781;
-    --code-block-bg: #0b1a29;
+    --code-block-bg: #071a2c;
     --code-block-text: #edf7ff;
     --code-block-border: #43607b;
+    --tok-comment: #8fdca2;
+    --tok-keyword: #d2a6ff;
+    --tok-type: #82d2ff;
+    --tok-function: #ffbf80;
+    --tok-string: #ff9fcb;
+    --tok-number: #7ce9ff;
+    --tok-operator: #f0b7ff;
+    --tok-identifier: #b6d5ff;
+    --tok-constant: #ffc089;
     --block-soft-bg: #1c2c3a;
     --block-soft-border: #486078;
 
@@ -183,8 +201,12 @@ body {
 }
 
 .main-content table {
-    width: 100%;
+    display: table;
+    width: auto;
+    max-width: 100%;
+    margin: 1rem 0;
     border-collapse: collapse;
+    table-layout: auto;
     border-radius: 10px;
     overflow: hidden;
     border: 1px solid var(--line-strong);
@@ -234,7 +256,6 @@ body {
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
-.main-content .highlight,
 .main-content .highlighter-rouge {
     background: var(--code-block-bg);
     color: var(--code-block-text);
@@ -243,6 +264,14 @@ body {
     overflow: hidden;
     background-clip: padding-box;
     -webkit-mask-image: -webkit-radial-gradient(white, black);
+}
+
+.main-content .highlighter-rouge .highlight {
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    overflow: visible;
+    -webkit-mask-image: none;
 }
 
 .main-content .highlight pre,
@@ -257,8 +286,106 @@ body {
     border: 0;
     border-radius: 0;
     padding: 0;
-    color: inherit;
+    color: var(--code-block-text);
     font-weight: 500;
+}
+
+.main-content pre sup,
+.main-content pre sub,
+.main-content .highlight sup,
+.main-content .highlight sub {
+    background: transparent;
+    color: inherit;
+}
+
+/* Rouge syntax palette: strong contrast in both themes. */
+.main-content .highlight .c,
+.main-content .highlight .cm,
+.main-content .highlight .c1,
+.main-content .highlight .cs,
+.main-content .highlight .cp,
+.main-content .highlight .cpf {
+    color: var(--tok-comment) !important;
+    font-style: italic;
+}
+
+.main-content .highlight .k,
+.main-content .highlight .kc,
+.main-content .highlight .kd,
+.main-content .highlight .kn,
+.main-content .highlight .kp,
+.main-content .highlight .kr,
+.main-content .highlight .kt,
+.main-content .highlight .ow {
+    color: var(--tok-keyword) !important;
+    font-weight: 700;
+}
+
+.main-content .highlight .kt,
+.main-content .highlight .nc,
+.main-content .highlight .nt,
+.main-content .highlight .nn {
+    color: var(--tok-type) !important;
+}
+
+.main-content .highlight .nf,
+.main-content .highlight .fm {
+    color: var(--tok-function) !important;
+}
+
+.main-content .highlight .s,
+.main-content .highlight .sa,
+.main-content .highlight .sb,
+.main-content .highlight .sc,
+.main-content .highlight .dl,
+.main-content .highlight .sd,
+.main-content .highlight .s1,
+.main-content .highlight .s2,
+.main-content .highlight .se,
+.main-content .highlight .sh,
+.main-content .highlight .si,
+.main-content .highlight .sx,
+.main-content .highlight .sr,
+.main-content .highlight .ss {
+    color: var(--tok-string) !important;
+}
+
+.main-content .highlight .m,
+.main-content .highlight .mb,
+.main-content .highlight .mf,
+.main-content .highlight .mh,
+.main-content .highlight .mi,
+.main-content .highlight .il,
+.main-content .highlight .mo {
+    color: var(--tok-number) !important;
+}
+
+.main-content .highlight .o,
+.main-content .highlight .p {
+    color: var(--tok-operator) !important;
+}
+
+.main-content .highlight .n,
+.main-content .highlight .na,
+.main-content .highlight .nb,
+.main-content .highlight .nd,
+.main-content .highlight .ne,
+.main-content .highlight .nl,
+.main-content .highlight .no,
+.main-content .highlight .nv,
+.main-content .highlight .nx,
+.main-content .highlight .py,
+.main-content .highlight .bp,
+.main-content .highlight .vc,
+.main-content .highlight .vg,
+.main-content .highlight .vi,
+.main-content .highlight .vm {
+    color: var(--tok-identifier) !important;
+}
+
+.main-content .highlight .no,
+.main-content .highlight .bp {
+    color: var(--tok-constant) !important;
 }
 
 .main-content td code,

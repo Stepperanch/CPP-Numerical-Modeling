@@ -245,6 +245,19 @@ cube, r0  = data["metadata"]   # cube side (m), step length (m)
 
 ## Results
 
+### Particle Diffusion Animation
+
+<p align="center">
+  <video width="70%" controls autoplay muted loop style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <source src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/videos/diffusion_animation.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <br>
+  <em>3D particle diffusion animation showing 2,500 independent particles undergoing random walks inside a reflective cubic volume. The cloud expands outward from the origin following Einstein's diffusion law, then becomes bounded as particles reach the reflective walls.</em>
+</p>
+
+---
+
 ### Mean Squared Displacement
 
 <p align="center">

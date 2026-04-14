@@ -44,6 +44,7 @@ For a fast technical check, jump to [Numerical Methods](#numerical-methods) and 
 - [Results](#results)
   - [2D Orbit Plots](#2d-orbit-plots)
   - [3D Orbit Plots](#3d-orbit-plots)
+  - [Orbit Animation](#orbit-animation)
 - [Sources of Error](#sources-of-error)
 - [Build & Run](#build--run)
   - [Prerequisites](#prerequisites)
@@ -198,6 +199,17 @@ The interactive menu offers three modes:
 </p>
 
 *3D orbit visualizations showing orbital inclinations and the true spatial structure of planetary systems.*
+
+### Orbit Animation
+
+<p align="center">
+  <video width="70%" controls autoplay muted loop style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <source src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/videos/celestial_analysis_11_3d.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <br>
+  <em>3D orbit animation of an N-body gravitational simulation. Planets trace their trajectories over time, illustrating the long-term stability of orbital mechanics under the chosen integrator.</em>
+</p>
 
 ---
 

@@ -305,7 +305,7 @@ L, c, kappa, r, dt = data["parameters"]
     Your browser does not support the video tag.
   </video>
   <br>
-  <em>Animation of the transverse displacement $u(x, t)$ evolving over the full simulation. The three superimposed Gaussian pulses propagate, reflect off the fixed ends, and gradually decay as energy is dissipated through damping, illustrating the interplay of wave superposition and energy dissipation on a stiff string.</em>
+  <em>Animation of the transverse displacement $u(x, t)$ evolving over the full simulation. The three superimposed Gaussian pulses propagate, reflect off the fixed ends, and gradually lose amplitude due to damping, illustrating the interplay of wave superposition and energy dissipation on a stiff string.</em>
 </p>
 
 ---

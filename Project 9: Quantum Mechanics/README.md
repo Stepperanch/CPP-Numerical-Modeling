@@ -243,14 +243,14 @@ The eigenstates across all implemented even-degree potentials (n = 2, 4, 6, 8, 1
 
 <div style="width: 100%; aspect-ratio: 1 / 1; overflow: hidden; border: 1px solid #ddd; border-radius: 8px;">
 <iframe
-  src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/eigenstates_tabs.html"
+  src="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs.html"
   width="100%"
   height="100%"
   style="border: none; display: block;">
 </iframe>
 </div>
 
-<a href="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/html-assets/eigenstates_tabs.html" target="_blank">View Detailed Eigenstates Fullscreen ↗️</a>
+<a href="https://nelsbuhrley.github.io/assets/html-assets/eigenstates_tabs.html" target="_blank">View Detailed Eigenstates Fullscreen ↗️</a>
 
 **Features:**
 - **Tabs by potential degree:** Switch between harmonic (n=2), quartic (n=4), sextic (n=6), octic (n=8), and decic (n=10) wells

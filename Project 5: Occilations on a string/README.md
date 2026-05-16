@@ -297,6 +297,17 @@ L, c, kappa, r, dt = data["parameters"]
 
 *Left: snapshot of the string displacement during time evolution. Right: initial state reference. The interplay of reflection, superposition, and damping shapes the evolving waveform.*
 
+### String Oscillation Animation
+
+<p align="center">
+  <video width="70%" controls autoplay muted loop style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+    <source src="https://nelsbuhrley.github.io/CPP-Numerical-Modeling/assets/videos/string_oscillations.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+  </video>
+  <br>
+  <em>Animation of the transverse displacement $u(x, t)$ evolving over the full simulation. The three superimposed Gaussian pulses propagate, reflect off the fixed ends, and gradually lose amplitude due to damping, illustrating the interplay of wave superposition and energy dissipation on a stiff string.</em>
+</p>
+
 ---
 
 ## Build & Run

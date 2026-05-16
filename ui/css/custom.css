@@ -477,37 +477,22 @@ body {
     top: calc(100% + 2px);
     right: 0;
     width: min(330px, calc(100vw - 20px));
-    border: 1px solid transparent;
+    border: 1px solid var(--line-strong);
     border-radius: 14px;
-    padding: 0;
+    padding: 0.78rem;
     background: color-mix(in srgb, var(--surface) 94%, transparent);
     backdrop-filter: blur(12px);
-    box-shadow: none;
-    opacity: 0;
-    transform: translateY(-6px) scale(0.98);
+    box-shadow: var(--shadow-card);
     transform-origin: top right;
-    pointer-events: none;
-    max-height: 0;
-    overflow: hidden;
-    transition:
-        opacity 170ms ease,
-        transform 170ms ease,
-        max-height 170ms ease,
-        padding 170ms ease;
-    display: flex;
+    display: none;
     flex-direction: column;
     gap: 0.5rem;
+    max-height: min(calc(100vh - 54px), 760px);
+    overflow-y: auto;
 }
 
 .corner-menu[data-pinned="true"] .corner-menu-panel {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
-    padding: 0.78rem;
-    border-color: var(--line-strong);
-    box-shadow: var(--shadow-card);
-    max-height: min(calc(100vh - 54px), 760px);
-    overflow-y: auto;
+    display: flex;
 }
 
 .corner-menu-section--settings {

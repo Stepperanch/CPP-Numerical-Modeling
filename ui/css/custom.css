@@ -211,16 +211,9 @@ body {
     margin: 1rem 0;
     border-collapse: collapse !important;
     table-layout: auto;
-    border-radius: 10px;
-    overflow: hidden;
     border: 1px solid var(--table-cell-line) !important;
     background: var(--surface);
-    background-clip: padding-box;
-    clip-path: inset(0 round 10px);
-    -webkit-mask-image: -webkit-radial-gradient(white, black);
-    box-shadow:
-        inset 0 0 0 1px var(--table-cell-line),
-        0 4px 14px rgba(5, 20, 38, 0.04);
+    box-shadow: 0 4px 14px rgba(5, 20, 38, 0.04);
 }
 
 .main-content th {
@@ -467,8 +460,6 @@ body {
 
 .corner-menu-toggle:hover,
 .corner-menu-toggle:focus-visible,
-.corner-menu:hover .corner-menu-toggle,
-.corner-menu:focus-within .corner-menu-toggle,
 .corner-menu[data-pinned="true"] .corner-menu-toggle {
     opacity: 1;
     color: var(--text);
@@ -507,8 +498,6 @@ body {
     gap: 0.5rem;
 }
 
-.corner-menu:hover .corner-menu-panel,
-.corner-menu:focus-within .corner-menu-panel,
 .corner-menu[data-pinned="true"] .corner-menu-panel {
     opacity: 1;
     transform: translateY(0) scale(1);
